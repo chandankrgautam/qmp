@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./cp-shell.js"></script>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Devanagari:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:var(--bg); }
+  * { box-sizing:border-box; }
+  a { color:#0F5C63; text-decoration:none; }
+  a:hover { color:#13757E; text-decoration:underline; }
+  @keyframes riseIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+</style>
+</helmet>
+<div style="--bg:#F7F8F8;--surface:#FFFFFF;--surface2:#EDEFF0;--ink:#14181B;--ink2:#5A646B;--ink3:#7B858C;--line:#DFE3E5;--line2:#C7CDD1;--accent:#0F5C63;--accentH:#13757E;--accentTint:#E2F0F0;--ok:#1F6F4A;--okT:#E7F1EC;--warn:#8A5A00;--warnT:#F6EEDD;--bad:#A32A21;--badT:#F7E9E7;--info:#2C5A8A;--infoT:#E7EEF5;font-family:'IBM Plex Sans','IBM Plex Sans Devanagari',system-ui,sans-serif;color:var(--ink);background:var(--bg);min-height:100vh;display:grid;grid-template-columns:248px minmax(0,1fr)">
+
+  <aside style="background:#14181B;color:#C7CDD1;display:flex;flex-direction:column;gap:4px;padding:18px 12px;min-height:100vh">
+    <div style="display:flex;align-items:center;gap:11px;padding:6px 10px 20px">
+      <span aria-label="Civil Portal" style="width:32px;height:32px;border-radius:7px;background:#161C21;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)"><svg viewBox="0 0 100 100" style="width:86%;height:86%"><polygon points="50.0,12.0 50.0,12.0 71.6,30.0 28.4,30.0" fill="#B9C2C8"></polygon><polygon points="24.8,33.0 75.2,33.0 86.0,42.0 86.0,50.0 14.0,50.0 14.0,42.0" fill="#86919A"></polygon><polygon points="14.0,53.0 86.0,53.0 86.0,68.0 14.0,68.0" fill="#34C7B0"></polygon><polygon points="14.0,71.0 86.0,71.0 86.0,86.0 14.0,86.0" fill="#5C6770"></polygon></svg></span>
+      <span style="display:flex;flex-direction:column;line-height:1.25;min-width:0">
+        <span style="font-size:14px;font-weight:600;color:#F2F4F5">Civil Portal</span>
+        <span style="font-size:11px;color:#7B858C;font-family:{{ font }}">{{ t.console }}</span>
+      </span>
+    </div>
+    <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="6">
+      <button onClick="{{ n.go }}" disabled="{{ n.disabled }}" style="display:flex;align-items:center;gap:11px;border:0;border-radius:8px;background:{{ n.bg }};color:{{ n.fg }};font:500 14px/1 'IBM Plex Sans';padding:11px 10px;cursor:{{ n.cursor }};text-align:left;min-height:42px;width:100%;font-family:{{ font }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex:none"><path d="{{ n.path }}"></path></svg>
+        <span style="flex:1;min-width:0">{{ n.label }}</span>
+        <sc-if value="{{ n.badge }}" hint-placeholder-val="{{ false }}">
+          <span style="font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;padding:2px 7px;border-radius:10px;background:rgba(224,166,60,.22);color:#E8C070">{{ n.badge }}</span>
+        </sc-if>
+      </button>
+    </sc-for>
+    <div style="margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px 10px;border-top:1px solid #2E363C">
+      <span style="width:32px;height:32px;border-radius:50%;background:#2E363C;color:#C7CDD1;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex:none">PK</span>
+      <span style="display:flex;flex-direction:column;line-height:1.3;min-width:0">
+        <span style="font-size:13px;font-weight:500;color:#F2F4F5">P. Kushwaha</span>
+        <span style="font-size:11px;color:#7B858C;font-family:{{ font }}">{{ t.role }}</span>
+      </span>
+    </div>
+  </aside>
+
+  <main style="display:flex;flex-direction:column;min-width:0">
+    <header style="position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 28px;background:var(--surface);border-bottom:1px solid var(--line)">
+      <div style="display:flex;flex-direction:column;gap:2px;margin-right:auto;min-width:0">
+        <span style="font-size:12px;color:var(--ink3);font-family:{{ font }}">{{ t.crumb }}</span>
+        <span style="font-size:20px;font-weight:600;line-height:26px;font-family:{{ font }}">{{ pageTitle }}</span>
+      </div>
+      <button onClick="{{ primary }}" style="border:0;border-radius:8px;background:var(--accent);color:#fff;font:600 14px/1 'IBM Plex Sans';padding:12px 16px;cursor:pointer;min-height:42px;font-family:{{ font }}" style-hover="background:var(--accentH)">{{ primaryLabel }}</button>
+      <cp-command-trigger></cp-command-trigger>
+      <cp-theme-toggle compact=""></cp-theme-toggle>
+      <div style="display:flex;gap:4px;padding:3px;background:var(--surface2);border-radius:8px">
+        <button onClick="{{ setEn }}" style="border:0;cursor:pointer;font:500 13px/1 'IBM Plex Sans';padding:9px 12px;border-radius:6px;background:{{ enBg }};color:{{ enFg }}">EN</button>
+        <button onClick="{{ setHi }}" style="border:0;cursor:pointer;font:500 13px/1 'IBM Plex Sans Devanagari';padding:9px 12px;border-radius:6px;background:{{ hiBg }};color:{{ hiFg }}">हिं</button>
+      </div>
+    </header>
+
+    <div style="padding:24px 28px 56px;display:flex;flex-direction:column;gap:20px;min-width:0">
+
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid var(--line2);border-radius:8px;background:var(--surface);min-height:42px;flex:1;min-width:220px;max-width:380px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex:none;color:var(--ink3)"><path d="M11 11m-7 0a7 7 0 1 0 14 0a7 7 0 1 0-14 0M20 20l-4-4"></path></svg>
+          <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="{{ searchPh }}" style="font:400 14px/1.4 'IBM Plex Sans','IBM Plex Sans Devanagari';border:0;outline:0;background:transparent;color:var(--ink);flex:1;padding:10px 0;min-width:0">
+        </div>
+        <sc-for list="{{ chips }}" as="c" hint-placeholder-count="3">
+          <button onClick="{{ c.pick }}" style="border:1px solid {{ c.border }};border-radius:8px;background:{{ c.bg }};color:{{ c.fg }};font:500 13px/1 'IBM Plex Sans';padding:11px 13px;cursor:pointer;min-height:42px;font-family:{{ font }}">{{ c.label }}</button>
+        </sc-for>
+        <span style="margin-left:auto;font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums;font-family:{{ font }}">{{ countLabel }}</span>
+      </div>
+
+      <sc-if value="{{ isUsers }}" hint-placeholder-val="{{ true }}">
+        <section style="border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow-x:auto">
+          <div style="display:grid;min-width:980px;grid-template-columns:minmax(0,1.3fr) 110px minmax(0,1.2fr) 150px 110px 96px;gap:14px;padding:11px 16px;background:var(--surface2);border-bottom:1px solid var(--line);font-size:12px;font-weight:600;color:var(--ink2);position:sticky;top:0">
+            <sc-for list="{{ userCols }}" as="c" hint-placeholder-count="6"><span style="font-family:{{ font }}">{{ c }}</span></sc-for>
+          </div>
+          <sc-for list="{{ users }}" as="u" hint-placeholder-count="8">
+            <div style="display:grid;min-width:980px;grid-template-columns:minmax(0,1.3fr) 110px minmax(0,1.2fr) 150px 110px 96px;gap:14px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px;align-items:center" style-hover="background:var(--accentTint)">
+              <span style="display:flex;align-items:center;gap:10px;min-width:0">
+                <span style="width:30px;height:30px;border-radius:50%;background:var(--surface2);color:var(--ink2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex:none">{{ u.initials }}</span>
+                <span style="display:flex;flex-direction:column;gap:1px;min-width:0">
+                  <span style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ u.name }}</span>
+                  <span style="font-size:11px;color:var(--ink3);font-family:'IBM Plex Mono'">{{ u.mobile }}</span>
+                </span>
+              </span>
+              <span style="font-family:'IBM Plex Mono';font-size:12px;color:var(--ink2)">{{ u.id }}</span>
+              <span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ u.role }}</span>
+              <span style="font-size:13px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ u.area }}</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:4px;font-size:12px;font-weight:500;justify-self:start;background:{{ u.bg }};color:{{ u.fg }};font-family:{{ font }}">{{ u.status }}</span>
+              <button onClick="{{ u.edit }}" style="border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);font:500 13px/1 'IBM Plex Sans';padding:9px 11px;cursor:pointer;min-height:38px;justify-self:start;font-family:{{ font }}">{{ t.edit }}</button>
+            </div>
+          </sc-for>
+        </section>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+          <sc-for list="{{ roleCards }}" as="r" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;gap:6px;padding:14px 16px;border:1px solid var(--line);border-radius:8px;background:var(--surface)">
+              <span style="display:flex;align-items:baseline;gap:8px"><span style="font-size:14px;font-weight:600;flex:1;min-width:0;font-family:{{ font }}">{{ r.name }}</span><span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink2)">{{ r.count }}</span></span>
+              <span style="font-size:12px;line-height:18px;color:var(--ink2);font-family:{{ font }}">{{ r.scope }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isQuarters }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+          <section style="flex:999 1 640px;min-width:0;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow-x:auto">
+            <div style="display:grid;min-width:640px;grid-template-columns:110px minmax(0,1fr) 90px minmax(0,1fr) 92px;gap:14px;padding:11px 16px;background:var(--surface2);border-bottom:1px solid var(--line);font-size:12px;font-weight:600;color:var(--ink2)">
+              <sc-for list="{{ qtrCols }}" as="c" hint-placeholder-count="5"><span style="font-family:{{ font }}">{{ c }}</span></sc-for>
+            </div>
+            <sc-for list="{{ quarters }}" as="q" hint-placeholder-count="8">
+              <button onClick="{{ q.pick }}" style="display:grid;width:100%;min-width:640px;grid-template-columns:110px minmax(0,1fr) 90px minmax(0,1fr) 92px;gap:14px;padding:12px 16px;border:0;border-bottom:1px solid var(--line);font:400 14px/1.3 'IBM Plex Sans';align-items:center;text-align:left;cursor:pointer;background:{{ q.bg }};color:var(--ink)" style-hover="background:var(--accentTint)">
+                <span style="font-weight:600;font-variant-numeric:tabular-nums">{{ q.no }}</span>
+                <span style="font-size:13px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ q.colony }}</span>
+                <span style="font-size:13px;color:var(--ink2)">{{ q.type }}</span>
+                <span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }};color:{{ q.occColor }}">{{ q.occupant }}</span>
+                <span style="font-size:12px;font-weight:500;color:{{ q.kindColor }};font-family:{{ font }}">{{ q.kind }}</span>
+              </button>
+            </sc-for>
+          </section>
+          <section style="flex:1 1 320px;min-width:min(100%,320px);border:1px solid var(--line);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;position:sticky;top:90px">
+            <div style="padding:16px 18px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:17px;font-weight:600;font-variant-numeric:tabular-nums">{{ selQtr.no }}, {{ selQtr.areaName }}</span>
+              <span style="font-size:12px;color:var(--ink3);font-family:{{ font }}">{{ selQtr.colony }}</span>
+            </div>
+            <div style="padding:16px 18px;display:flex;flex-direction:column;gap:12px">
+              <sc-for list="{{ qtrFields }}" as="fd" hint-placeholder-count="4">
+                <label style="display:flex;flex-direction:column;gap:5px">
+                  <span style="font-size:12px;font-weight:500;color:var(--ink2);font-family:{{ font }}">{{ fd.label }}</span>
+                  <input value="{{ fd.value }}" readOnly="{{ true }}" style="font:400 14px/1.4 'IBM Plex Sans','IBM Plex Sans Devanagari';padding:10px 11px;border:1px solid var(--line2);border-radius:4px;background:var(--surface);color:var(--ink);min-height:42px;width:100%">
+                </label>
+              </sc-for>
+              <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border:1px dashed var(--line2);border-radius:8px;background:var(--bg);margin-top:4px">
+                <span style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--ink2);font-family:{{ font }}">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M6 10.5h12V21H6zM8.5 10.5V7a3.5 3.5 0 0 1 7 0v3.5"></path></svg>{{ t.estateTitle }}
+                </span>
+                <sc-for list="{{ estateFields }}" as="ef" hint-placeholder-count="3">
+                  <label style="display:flex;flex-direction:column;gap:5px">
+                    <span style="font-size:12px;color:var(--ink3);font-family:{{ font }}">{{ ef.label }}</span>
+                    <input value="{{ ef.value }}" disabled="{{ true }}" style="font:400 14px/1.4 'IBM Plex Sans','IBM Plex Sans Devanagari';padding:10px 11px;border:1px solid var(--line);border-radius:4px;background:var(--surface2);color:var(--ink3);min-height:42px;width:100%;cursor:not-allowed">
+                  </label>
+                </sc-for>
+                <span style="font-size:11px;line-height:16px;color:var(--ink3);font-family:{{ font }}">{{ t.estateNote }}</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;padding:14px 18px;border-top:1px solid var(--line);background:var(--bg);border-radius:0 0 8px 8px">
+              <button style="margin-left:auto;border:0;border-radius:8px;background:var(--accent);color:#fff;font:600 14px/1 'IBM Plex Sans';padding:12px 16px;cursor:pointer;min-height:44px;font-family:{{ font }}" onClick="{{ saveQtr }}">{{ t.saveQtr }}</button>
+            </div>
+          </section>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSla }}" hint-placeholder-val="{{ false }}">
+        <section style="border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow-x:auto">
+          <div style="display:grid;min-width:900px;grid-template-columns:minmax(0,1.4fr) 110px 120px 120px 130px 92px;gap:14px;padding:11px 16px;background:var(--surface2);border-bottom:1px solid var(--line);font-size:12px;font-weight:600;color:var(--ink2)">
+            <sc-for list="{{ slaCols }}" as="c" hint-placeholder-count="6"><span style="font-family:{{ font }}">{{ c }}</span></sc-for>
+          </div>
+          <sc-for list="{{ slaRows }}" as="s" hint-placeholder-count="8">
+            <div style="display:grid;min-width:900px;grid-template-columns:minmax(0,1.4fr) 110px 120px 120px 130px 92px;gap:14px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:center">
+              <span style="display:flex;align-items:center;gap:11px;min-width:0">
+                <span style="display:flex;width:34px;height:34px;border-radius:8px;background:var(--accentTint);color:var(--accent);align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="{{ s.path }}"></path></svg></span>
+                <span style="display:flex;flex-direction:column;gap:1px;min-width:0">
+                  <span style="font-size:14px;font-weight:500;font-family:'IBM Plex Sans'">{{ s.en }}</span>
+                  <span style="font-size:12px;color:var(--ink3);font-family:'IBM Plex Sans Devanagari'">{{ s.hi }}</span>
+                </span>
+              </span>
+              <span style="display:flex;align-items:center;gap:4px">
+                <button onClick="{{ s.dec }}" style="width:30px;height:30px;border:1px solid var(--line2);border-radius:4px;background:var(--surface);cursor:pointer;color:var(--ink2);font:600 15px/1 'IBM Plex Sans'">−</button>
+                <span style="min-width:38px;text-align:center;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums">{{ s.hours }}</span>
+                <button onClick="{{ s.inc }}" style="width:30px;height:30px;border:1px solid var(--line2);border-radius:4px;background:var(--surface);cursor:pointer;color:var(--ink2);font:600 15px/1 'IBM Plex Sans'">+</button>
+              </span>
+              <span style="font-size:13px;font-variant-numeric:tabular-nums;color:var(--warn)">{{ s.warnAt }}</span>
+              <span style="font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink2)">{{ s.escalate }}</span>
+              <span style="font-size:13px;font-family:'IBM Plex Mono';color:var(--ink2)">{{ s.penalty }}</span>
+              <button onClick="{{ s.toggle }}" style="width:44px;height:26px;border-radius:13px;border:0;cursor:pointer;background:{{ s.trackBg }};position:relative;padding:0">
+                <span style="position:absolute;top:3px;left:{{ s.knobLeft }};width:20px;height:20px;border-radius:50%;background:var(--surface);box-shadow:0 1px 3px rgba(20,24,27,.25);transition:left .15s ease-out"></span>
+              </button>
+            </div>
+          </sc-for>
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:13px 16px;background:var(--infoT)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex:none;margin-top:2px;color:var(--info)"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 11v5M12 8h.01"></path></svg>
+            <span style="font-size:13px;line-height:20px;font-family:{{ font }}">{{ t.slaNote }}</span>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ isTrans }}" hint-placeholder-val="{{ false }}">
+        <section style="border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow-x:auto">
+          <div style="display:grid;min-width:960px;grid-template-columns:220px minmax(0,1fr) minmax(0,1fr) 110px;gap:14px;padding:11px 16px;background:var(--surface2);border-bottom:1px solid var(--line);font-size:12px;font-weight:600;color:var(--ink2);position:sticky;top:0">
+            <sc-for list="{{ transCols }}" as="c" hint-placeholder-count="4"><span style="font-family:{{ font }}">{{ c }}</span></sc-for>
+          </div>
+          <sc-for list="{{ strings }}" as="s" hint-placeholder-count="9">
+            <div style="display:grid;min-width:960px;grid-template-columns:220px minmax(0,1fr) minmax(0,1fr) 110px;gap:14px;padding:11px 16px;border-bottom:1px solid var(--line);align-items:center;background:{{ s.rowBg }}">
+              <span style="font-family:'IBM Plex Mono';font-size:11px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.key }}</span>
+              <span style="font-size:14px;line-height:20px;font-family:'IBM Plex Sans'">{{ s.en }}</span>
+              <input value="{{ s.hi }}" onChange="{{ s.onEdit }}" placeholder="{{ s.fallback }}" style="font:400 14px/1.4 'IBM Plex Sans Devanagari';padding:9px 10px;border:1px solid {{ s.border }};border-radius:4px;background:var(--surface);color:var(--ink);min-height:40px;width:100%">
+              <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:4px;font-size:12px;font-weight:500;justify-self:start;background:{{ s.stBg }};color:{{ s.stFg }};font-family:{{ font }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex:none"><path d="{{ s.stPath }}"></path></svg>{{ s.status }}
+              </span>
+            </div>
+          </sc-for>
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:13px 16px;background:var(--infoT)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex:none;margin-top:2px;color:var(--info)"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 11v5M12 8h.01"></path></svg>
+            <span style="font-size:13px;line-height:20px;font-family:{{ font }}">{{ t.transNote }}</span>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ isAudit }}" hint-placeholder-val="{{ false }}">
+        <section style="border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow-x:auto">
+          <div style="display:grid;min-width:980px;grid-template-columns:190px 170px 140px minmax(0,1.6fr) 130px;gap:14px;padding:11px 16px;background:var(--surface2);border-bottom:1px solid var(--line);font-size:12px;font-weight:600;color:var(--ink2);position:sticky;top:0">
+            <sc-for list="{{ auditCols }}" as="c" hint-placeholder-count="5"><span style="font-family:{{ font }}">{{ c }}</span></sc-for>
+          </div>
+          <sc-for list="{{ audit }}" as="a" hint-placeholder-count="9">
+            <div style="display:grid;min-width:980px;grid-template-columns:190px 170px 140px minmax(0,1.6fr) 130px;gap:14px;padding:11px 16px;border-bottom:1px solid var(--line);align-items:center;font-size:13px">
+              <span style="display:flex;flex-direction:column;gap:1px">
+                <span style="font-variant-numeric:tabular-nums">{{ a.abs }}</span>
+                <span style="font-size:11px;color:var(--ink3);font-family:{{ font }}">{{ a.rel }}</span>
+              </span>
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.actor }}</span>
+              <span style="display:inline-flex;align-items:center;padding:4px 9px;border-radius:4px;font-size:12px;font-weight:500;justify-self:start;background:{{ a.bg }};color:{{ a.fg }};font-family:{{ font }}">{{ a.action }}</span>
+              <span style="color:var(--ink2);line-height:19px;font-family:{{ font }}">{{ a.detail }}</span>
+              <span style="font-family:'IBM Plex Mono';font-size:11px;color:var(--ink3)">{{ a.ip }}</span>
+            </div>
+          </sc-for>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;flex-wrap:wrap">
+            <span style="font-size:12px;color:var(--ink3);margin-right:auto;font-family:{{ font }}">{{ t.retention }}</span>
+            <button style="border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);font:500 13px/1 'IBM Plex Sans';padding:10px 13px;cursor:pointer;min-height:40px;font-family:{{ font }}">{{ t.exportCsv }}</button>
+          </div>
+        </section>
+      </sc-if>
+
+    </div>
+  </main>
+
+  <sc-if value="{{ addOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeAdd }}" style="position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:28px">
+      <div onClick="{{ stopClick }}" role="dialog" aria-modal="true" style="width:min(780px,100%);max-height:90vh;border-radius:14px;background:var(--surface);box-shadow:0 16px 40px rgba(20,24,27,.30);display:flex;flex-direction:column;animation:riseIn .2s ease-out;overflow:hidden">
+        <div style="display:flex;align-items:flex-start;gap:14px;padding:22px 24px 16px;border-bottom:1px solid var(--line)">
+          <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0">
+            <span style="font-size:19px;font-weight:600;line-height:25px;font-family:{{ font }}">{{ t.addTitle }}</span>
+            <span style="font-size:13px;color:var(--ink2);font-family:{{ font }}">{{ t.addSub }}</span>
+          </div>
+          <button onClick="{{ closeAdd }}" aria-label="Close" style="border:0;background:transparent;cursor:pointer;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--ink2);margin:-8px -10px 0 0;flex:none;border-radius:8px" style-hover="background:var(--surface2);color:var(--ink)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+          </button>
+        </div>
+
+        <div style="overflow-y:auto;padding:20px 24px 24px;display:flex;flex-direction:column;gap:22px">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:13px;font-weight:600;font-family:{{ font }}">{{ t.roleQ }}</span>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px">
+              <sc-for list="{{ roleOptions }}" as="r" hint-placeholder-count="8">
+                <button onClick="{{ r.pick }}" style="display:flex;align-items:flex-start;gap:10px;text-align:left;padding:11px 12px;border:1px solid {{ r.border }};background:{{ r.bg }};border-radius:8px;cursor:pointer;min-height:56px">
+                  <span style="width:18px;height:18px;border-radius:50%;border:2px solid {{ r.dotBorder }};display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px"><span style="width:8px;height:8px;border-radius:50%;background:{{ r.dot }}"></span></span>
+                  <span style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                    <span style="font-size:13px;font-weight:600;line-height:18px;color:var(--ink);font-family:{{ font }}">{{ r.label }}</span>
+                    <span style="font-size:11px;line-height:15px;color:var(--ink3);font-family:{{ font }}">{{ r.desc }}</span>
+                  </span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <span style="font-size:13px;font-weight:600;font-family:{{ font }}">{{ t.detailsQ }}</span>
+            <sc-if value="{{ showFixBanner }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:9px;padding:11px 13px;border-radius:8px;background:var(--badT);color:var(--bad);font-size:13px;font-weight:500;font-family:{{ font }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;flex:none"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 8v4M12 16h.01"></path></svg>{{ t.fixErrors }}
+              </div>
+            </sc-if>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px 18px">
+              <sc-for list="{{ formFields }}" as="fd" hint-placeholder-count="5">
+                <div style="display:flex;flex-direction:column;gap:6px;min-width:0;grid-column:{{ fd.span }}">
+                  <span style="font-size:13px;font-weight:500;font-family:{{ font }}">{{ fd.label }}</span>
+                  <sc-if value="{{ fd.isText }}" hint-placeholder-val="{{ true }}">
+                    <input value="{{ fd.value }}" onChange="{{ fd.onInput }}" placeholder="{{ fd.ph }}" inputMode="{{ fd.mode }}" style="font-size:15px;line-height:1.4;padding:11px 12px;border:1px solid {{ fd.border }};border-radius:4px;background:var(--surface);color:var(--ink);min-height:44px;width:100%;font-family:{{ fd.fontFam }}" style-focus="outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)">
+                  </sc-if>
+                  <sc-if value="{{ fd.isSelect }}" hint-placeholder-val="{{ false }}">
+                    <select value="{{ fd.value }}" onChange="{{ fd.onInput }}" style="font:400 15px/1.4 'IBM Plex Sans','IBM Plex Sans Devanagari';padding:11px 12px;border:1px solid {{ fd.border }};border-radius:4px;background:var(--surface);color:{{ fd.selColor }};min-height:44px;width:100%;cursor:pointer" style-focus="outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)">
+                      <option value="">{{ fd.ph }}</option>
+                      <sc-for list="{{ fd.options }}" as="o" hint-placeholder-count="4">
+                        <option value="{{ o.v }}">{{ o.label }}</option>
+                      </sc-for>
+                    </select>
+                  </sc-if>
+                  <sc-if value="{{ fd.isChips }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                      <sc-for list="{{ fd.chips }}" as="c" hint-placeholder-count="5">
+                        <button onClick="{{ c.toggle }}" style="display:inline-flex;align-items:center;gap:6px;padding:10px 12px;border:1px solid {{ c.border }};background:{{ c.bg }};border-radius:4px;font:500 13px/1 'IBM Plex Sans';color:{{ c.fg }};cursor:pointer;min-height:40px;font-family:{{ font }}">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;opacity:{{ c.tick }}"><path d="M4 12.5 9 17.5 20 6.5"></path></svg>{{ c.label }}
+                        </button>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ fd.hasError }}" hint-placeholder-val="{{ false }}">
+                    <span style="display:flex;align-items:flex-start;gap:6px;font-size:12px;line-height:17px;color:var(--bad);font-family:{{ font }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex:none;margin-top:2px"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 8v4M12 16h.01"></path></svg>{{ fd.error }}</span>
+                  </sc-if>
+                  <sc-if value="{{ fd.hasHint }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-size:12px;line-height:17px;color:var(--ink3);font-family:{{ font }}">{{ fd.hint }}</span>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 24px;border-top:1px solid var(--line);background:var(--bg)">
+          <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;line-height:17px;color:var(--ink2);margin-right:auto;flex:1 1 240px;min-width:0;font-family:{{ font }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex:none"><path d="M6 10.5h12V21H6zM8.5 10.5V7a3.5 3.5 0 0 1 7 0v3.5"></path></svg>{{ roleSign }}
+          </span>
+          <button onClick="{{ closeAdd }}" style="border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);font:500 14px/1 'IBM Plex Sans';padding:12px 16px;cursor:pointer;min-height:44px;font-family:{{ font }}" style-hover="background:var(--surface2)">{{ t.cancel }}</button>
+          <button onClick="{{ submitAdd }}" style="border:0;border-radius:8px;background:var(--accent);color:#fff;font:600 14px/1 'IBM Plex Sans';padding:12px 18px;cursor:pointer;min-height:44px;font-family:{{ font }}" style-hover="background:var(--accentH)">{{ t.create }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;right:28px;bottom:28px;z-index:50;display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:8px;background:#1D2328;color:#F2F4F5;box-shadow:0 12px 28px rgba(20,24,27,.30);animation:riseIn .2s ease-out;max-width:420px">
+      <span style="display:flex;width:26px;height:26px;border-radius:50%;background:rgba(127,211,166,.18);color:#7FD3A6;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M4 12.5 9 17.5 20 6.5"></path></svg></span>
+      <span style="font-size:14px;font-weight:500;flex:1;font-family:{{ font }}">{{ toastText }}</span>
+      <button onClick="{{ undo }}" style="border:0;background:transparent;color:#5FC4CA;font:600 13px/1 'IBM Plex Sans';cursor:pointer;padding:8px;font-family:{{ font }}">{{ t.undo }}</button>
+    </div>
+  </sc-if>
+</div>
+
+<cp-command-palette></cp-command-palette>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1000}}">
+const P = {
+  surface:'var(--surface)', surface2:'var(--surface2)', ink:'var(--ink)', ink2:'var(--ink2)', ink3:'var(--ink3)',
+  line:'var(--line)', line2:'var(--line2)', accent:'var(--accent)', accentTint:'var(--accentTint)',
+  ok:'var(--ok)', okT:'var(--okT)', warn:'var(--warn)', warnT:'var(--warnT)', bad:'var(--bad)', badT:'var(--badT)',
+  info:'var(--info)', infoT:'var(--infoT)'
+};
+const I = {
+  users:'M13 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M8 6.5m-3.5 0a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M17 13.5a4 4 0 0 1 4 4V20M15 3.3a3.5 3.5 0 0 1 0 6.4',
+  home:'M3 10.5 12 3l9 7.5M5.5 9.5V20h13V9.5M10 20v-6h4v6',
+  clock:'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 7v5l3 2',
+  lang:'M4 5h8M8 3v2M6 5c0 4 3 7 6 8M10 5c0 3-3 7-6 8M13 21l4-9 4 9M14.5 18h5',
+  log:'M6 3h8l4 4v14H6zM14 3v4h4M9 13h6M9 17h6',
+  lock:'M6 10.5h12V21H6zM8.5 10.5V7a3.5 3.5 0 0 1 7 0v3.5',
+  droplets:'M12 3c3 3.5 5 6.4 5 8.7A5 5 0 0 1 7 11.7C7 9.4 9 6.5 12 3Z',
+  rain:'M7.5 14.5a3.5 3.5 0 0 1 .4-7 5 5 0 0 1 9.4 1.3 3.2 3.2 0 0 1-.8 6.3M8 18l-1 2.5M12 18l-1 2.5M16 18l-1 2.5',
+  brick:'M3 6h18v12H3zM3 12h18M8 6v6M16 6v6M12 12v6',
+  door:'M4 20h16M6 20V5a1 1 0 0 1 1.2-1l7-1.4A1 1 0 0 1 15.5 3.6V20M12 12.5v1',
+  floor:'M3 3h18v18H3zM12 3v18M3 12h18',
+  paint:'M3 4h13v6H3zM16 7h4v4h-7v3M11 14h4v6h-4z',
+  drain:'M2 7c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 13c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 19c2-2 4-2 6 0s4 2 6 0 4-2 6 0',
+  fence:'M4 21V8l2-3 2 3v13M11 21V8l2-3 2 3v13M18 21V8l2-3 2 3v13M2 11h20M2 16h20',
+  check:'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M8 12.5l2.5 2.5L16 9.5',
+  alert:'M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0ZM12 9v4M12 17h.01',
+  edit:'M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4'
+};
+
+const TABS = ['users','quarters','sla','trans','audit'];
+
+const AREA_LIST = [
+  ['Amlohri','अमलोरी'],['Nigahi','निगाही'],['Jayant','जयंत'],['Dudhichua','दुधीचुआ'],['Khadia','खड़िया'],
+  ['Krishnashila','कृष्णशिला'],['Bina','बीना'],['Kakri','ककरी'],['Jhingurda','झिंगुरदा'],['Block-B','ब्लॉक-बी'],
+  ['Central Workshop','केंद्रीय कार्यशाला'],['NSC','एनएससी'],['NCL HQ','एनसीएल मुख्यालय']
+];
+const FIELDS = {
+  empId:{ en:'Employee ID', hi:'कर्मचारी क्रमांक', type:'text', mono:true, ph:'90214578', phHi:'90214578',
+    re:/^\d{8}$/, err:'Enter the 8-digit employee ID printed on the NCL card.', errHi:'एनसीएल कार्ड पर छपा 8 अंकों का क्रमांक दर्ज करें।',
+    hint:'Name and designation are fetched from HR records.', hintHi:'नाम और पदनाम एचआर रिकॉर्ड से लिए जाते हैं।' },
+  name:{ en:'Full name', hi:'पूरा नाम', type:'text', ph:'As on ID proof', phHi:'पहचान पत्र के अनुसार',
+    re:/^.{3,}$/, err:'Enter the full name, at least 3 letters.', errHi:'पूरा नाम दर्ज करें, कम से कम 3 अक्षर।' },
+  mobile:{ en:'Mobile number', hi:'मोबाइल नंबर', type:'text', mono:true, mode:'numeric', ph:'98765 43210', phHi:'98765 43210',
+    re:/^\d{10}$/, strip:true, err:'Enter all 10 digits of the mobile number.', errHi:'मोबाइल नंबर के सभी 10 अंक दर्ज करें।',
+    hint:'Sign-in OTP is sent here.', hintHi:'साइन-इन ओटीपी इसी नंबर पर भेजा जाएगा।' },
+  email:{ en:'Official email', hi:'आधिकारिक ईमेल', type:'text', ph:'name@coalindia.in', phHi:'name@coalindia.in',
+    re:/^[^@\s]+@[^@\s]+\.[^@\s]+$/, err:'Enter the official email, e.g. name@coalindia.in.', errHi:'आधिकारिक ईमेल दर्ज करें, जैसे name@coalindia.in।' },
+  area:{ en:'Area', hi:'क्षेत्र', type:'select', ph:'Choose Area', phHi:'क्षेत्र चुनें', options:'areas',
+    err:'Choose the Area.', errHi:'क्षेत्र चुनें।' },
+  quarter:{ en:'Quarter number', hi:'क्वार्टर संख्या', type:'text', mono:true, ph:'C-245', phHi:'C-245',
+    re:/^[A-Za-z]{1,3}-?\d{1,4}$/, err:'Enter the quarter number as on the door plate, e.g. C-245.', errHi:'दरवाज़े की पट्टिका के अनुसार संख्या दर्ज करें, जैसे C-245।',
+    hint:'Must be vacant or already allotted to this person.', hintHi:'रिक्त हो या इसी व्यक्ति को आवंटित हो।' },
+  designation:{ en:'Designation', hi:'पदनाम', type:'select', ph:'Choose designation', phHi:'पदनाम चुनें', options:'designations',
+    err:'Choose the designation.', errHi:'पदनाम चुनें।' },
+  designationText:{ en:'Designation', hi:'पदनाम', type:'text', ph:'e.g. Overseer (Civil)', phHi:'जैसे ओवरसियर (सिविल)',
+    re:/^.{2,}$/, err:'Enter the designation.', errHi:'पदनाम दर्ज करें।' },
+  emailOptional:{ en:'Official email', hi:'आधिकारिक ईमेल', type:'text', optional:true, ph:'name@coalindia.in', phHi:'name@coalindia.in',
+    re:/^$|^[^@\s]+@[^@\s]+\.[^@\s]+$/, err:'Enter a valid email, or leave it blank.', errHi:'मान्य ईमेल दर्ज करें या खाली छोड़ें।' },
+  firm:{ en:'Contractor firm', hi:'ठेका फ़र्म', type:'select', ph:'Choose firm', phHi:'फ़र्म चुनें', options:'firms', span:true,
+    err:'Choose the contractor this person works for.', errHi:'यह व्यक्ति जिस ठेकेदार के लिए काम करता है, उसे चुनें।',
+    hint:'Only firms with an active agreement are listed.', hintHi:'केवल सक्रिय अनुबंध वाली फ़र्में दिखाई गई हैं।' },
+  staffId:{ en:'Contractor staff ID', hi:'ठेकेदार कर्मी क्रमांक', type:'text', mono:true, ph:'SCP-0142', phHi:'SCP-0142',
+    re:/^[A-Za-z]{2,4}-\d{3,5}$/, err:'Enter the staff ID issued by the firm, e.g. SCP-0142.', errHi:'फ़र्म द्वारा दिया गया क्रमांक दर्ज करें, जैसे SCP-0142।' },
+  occupant:{ en:'Occupant category', hi:'निवासी श्रेणी', type:'select', ph:'Choose category', phHi:'श्रेणी चुनें', options:'occupants',
+    err:'Choose why this person lives in a company quarter.', errHi:'यह व्यक्ति कंपनी क्वार्टर में किस आधार पर रहता है, चुनें।' },
+  sponsor:{ en:'Sponsoring department', hi:'प्रायोजक विभाग', type:'text', ph:'e.g. CISF Unit, NCL Nigahi', phHi:'जैसे सीआईएसएफ़ इकाई, निगाही',
+    re:/^.{3,}$/, err:'Enter the department that sponsored the quarter.', errHi:'क्वार्टर प्रायोजित करने वाला विभाग दर्ज करें।' },
+  colonies:{ en:'Colonies covered', hi:'आवंटित कॉलोनियाँ', type:'chips', options:'colonies', span:true,
+    err:'Pick at least one colony.', errHi:'कम से कम एक कॉलोनी चुनें।' },
+  scope:{ en:'Admin permissions', hi:'प्रशासनिक अनुमतियाँ', type:'chips', options:'scopes', span:true,
+    err:'Pick at least one permission.', errHi:'कम से कम एक अनुमति चुनें।' }
+};
+const OPTIONS = {
+  areas: AREA_LIST,
+  designations: [['MT (Civil)','प्रबंधन प्रशिक्षु (सिविल)'],['Asst. Manager (Civil)','सहायक प्रबंधक (सिविल)'],['Dy. Manager (Civil)','उप प्रबंधक (सिविल)'],['Manager (Civil)','प्रबंधक (सिविल)'],['Sr. Manager (Civil)','वरिष्ठ प्रबंधक (सिविल)'],['Chief Manager (Civil)','मुख्य प्रबंधक (सिविल)'],['GM (Civil)','महाप्रबंधक (सिविल)']],
+  firms: [['Shakti Constructions Pvt. Ltd.','शक्ति कंस्ट्रक्शंस प्रा. लि.'],['Vindhya Infra Services','विंध्य इंफ्रा सर्विसेज'],['Sai Ram Builders','साईं राम बिल्डर्स'],['Narmada Civil Works','नर्मदा सिविल वर्क्स'],['Bharat Constructions','भारत कंस्ट्रक्शंस']],
+  occupants: [['CISF personnel','सीआईएसएफ़ कर्मी'],['School staff (DAV / KV)','विद्यालय कर्मी (डीएवी / केवी)'],['Bank or post office staff','बैंक या डाकघर कर्मी'],['Central / state govt. staff','केंद्र / राज्य शासन कर्मी'],['Other, approved by Area GM','अन्य, क्षेत्र महाप्रबंधक द्वारा स्वीकृत']],
+  colonies: [['Sector 1','सेक्टर 1'],['Sector 2','सेक्टर 2'],['Sector 3','सेक्टर 3'],['Sector 4','सेक्टर 4'],['Guest houses','अतिथि गृह'],['Hostels','छात्रावास'],['Offices','कार्यालय']],
+  scopes: [['Users and roles','उपयोगकर्ता'],['Quarter master','क्वार्टर मास्टर'],['SLA rules','समय-सीमा नियम'],['Translations','अनुवाद'],['Audit log','ऑडिट लॉग']]
+};
+const ROLES = [
+  { key:'resNcl', en:'Resident · NCL employee', hi:'निवासी · एनसीएल कर्मचारी', dEn:'Lives in an allotted quarter', dHi:'आवंटित क्वार्टर में निवासी',
+    fields:['empId','name','mobile','area','quarter'], signEn:'Signs in with employee ID and OTP.', signHi:'कर्मचारी क्रमांक और ओटीपी से साइन इन।' },
+  { key:'resNon', en:'Resident · non-NCL', hi:'निवासी · गैर-एनसीएल', dEn:'CISF, school, bank staff', dHi:'सीआईएसएफ़, विद्यालय, बैंक कर्मी',
+    fields:['name','mobile','occupant','sponsor','area','quarter'], signEn:'Signs in with mobile number and OTP.', signHi:'मोबाइल नंबर और ओटीपी से साइन इन।' },
+  { key:'contractor', en:'Contractor supervisor', hi:'ठेकेदार पर्यवेक्षक', dEn:'Field staff of an awarded firm', dHi:'अनुबंधित फ़र्म के फ़ील्ड कर्मी',
+    fields:['firm','staffId','name','mobile','area','colonies'], signEn:'Signs in with mobile OTP. Access ends with the firm\'s agreement.', signHi:'मोबाइल ओटीपी से साइन इन। अनुबंध समाप्त होने पर पहुँच समाप्त।' },
+  { key:'incharge', en:'Colony In-charge', hi:'कॉलोनी प्रभारी', dEn:'Assigns and accepts work', dHi:'कार्य सौंपते व स्वीकार करते हैं',
+    fields:['empId','name','designation','mobile','email','area','colonies'], signEn:'Signs in with employee ID and OTP.', signHi:'कर्मचारी क्रमांक और ओटीपी से साइन इन।' },
+  { key:'overseer', en:'Colony Overseer', hi:'कॉलोनी पर्यवेक्षक', dEn:'Verifies contractor work', dHi:'ठेकेदार के कार्य का सत्यापन',
+    fields:['empId','name','designationText','mobile','emailOptional','area','colonies'], signEn:'Signs in with employee ID and OTP.', signHi:'कर्मचारी क्रमांक और ओटीपी से साइन इन।' },
+  { key:'areaIc', en:'Area Civil In-charge', hi:'क्षेत्र सिविल प्रभारी', dEn:'Area dashboards and scorecards', dHi:'क्षेत्र डैशबोर्ड व स्कोरकार्ड',
+    fields:['empId','name','designation','mobile','email','area'], signEn:'Signs in with employee ID and OTP.', signHi:'कर्मचारी क्रमांक और ओटीपी से साइन इन।' },
+  { key:'hq', en:'HQ Civil Department', hi:'मुख्यालय सिविल विभाग', dEn:'All-Areas view, meeting mode', dHi:'सभी क्षेत्र, बैठक मोड',
+    fields:['empId','name','designation','mobile','email'], signEn:'Signs in with employee ID and OTP.', signHi:'कर्मचारी क्रमांक और ओटीपी से साइन इन।' },
+  { key:'admin', en:'Administrator', hi:'प्रशासक', dEn:'Manages settings and users', dHi:'सेटिंग्स व उपयोगकर्ता प्रबंधन',
+    fields:['empId','name','mobile','email','scope'], signEn:'Signs in with employee ID and OTP. Every change is written to the audit log.', signHi:'कर्मचारी क्रमांक और ओटीपी से साइन इन। हर बदलाव ऑडिट लॉग में दर्ज।' }
+];
+const maskMobile = m => m.length === 10 ? `${m.slice(0,2)}••• ••${m.slice(7)}` : m;
+
+const STR = {
+  en: {
+    console:'Administration', role:'System administrator', crumb:'Administration',
+    nav:['Users and roles','Quarter master','Categories and SLA rules','Translations','Audit log','Allotment (coming soon)'],
+    titles:['Users and roles','Quarter master','Categories and SLA rules','Translations','Audit log'],
+    primary:['Add user','Import quarters','Save SLA rules','Publish translations','Export audit log'],
+    search:['Search name, employee ID or mobile','Search quarter number or occupant','Search category','Search key, English or Hindi','Search actor or complaint number'],
+    edit:'Edit', undo:'Undo',
+    userCols:['Name','Employee ID','Role','Area','Status',''],
+    userChips:['All roles','Officers','Contractor staff'],
+    qtrCols:['Quarter','Colony','Type','Occupant','Kind'],
+    qtrChips:['Quarters','Other buildings','Vacant'],
+    qtrFields:['Quarter number','Colony / sector','Quarter type','Occupant'],
+    estateTitle:'Estate fields · reserved for Allotment',
+    estateFields:['Allotment order no.','Allotted on','Licence fee (₹ / month)'],
+    estateNote:'These fields belong to the Allotment module and unlock when it ships. They are kept in the schema now so quarter records do not need migrating.',
+    saveQtr:'Save quarter',
+    slaCols:['Category','Deadline','Due-soon at','Escalate to','Penalty / day','Active'],
+    slaChips:['All categories','Active','Inactive'],
+    slaNote:'Deadline changes apply to complaints registered after you save. Open complaints keep the deadline they were registered with.',
+    transCols:['Key','English','Hindi','Status'],
+    transChips:['All strings','Missing Hindi','Edited this week'],
+    transNote:'A missing Hindi string falls back to English on screen — never the key. Changes go live for all users when you publish.',
+    stDone:'Translated', stMissing:'Missing', stEdited:'Edited',
+    auditCols:['When','Actor','Action','Detail','Source'],
+    auditChips:['All actions','Assignments','Settings changes'],
+    retention:'Retained for 2 years · entries older than 23 Sep 2024 are purged monthly',
+    exportCsv:'Export CSV',
+    addTitle:'Add user', addSub:'Choose the role first. Fields change to match it.',
+    roleQ:'Role', detailsQ:'Details', optional:'optional', cancel:'Cancel', create:'Add user',
+    fixErrors:'Some fields need attention. They are marked below.',
+    toasts:{ added:'User added. Sign-in SMS sent.', users:'User invited', quarters:'Import started', sla:'SLA rules saved', trans:'Translations published', audit:'Audit log exported', qtr:'Quarter saved' },
+    active:'Active', invited:'Invited', disabled:'Disabled',
+    kQtr:'Quarter', kOther:'Other building', vacant:'Vacant',
+    hrs:'h',
+    roleCards:[
+      ['Residents','NCL and non-NCL. Own quarter only.'],
+      ['Contractor staff','Assigned jobs in their Area.'],
+      ['Colony In-charge / Overseer','Work queue, assign, verify.'],
+      ['Area In-charge / HQ','Dashboards, scorecards, reports.']
+    ],
+    esc:['AE','AE','JE','JE','JE','JE','AE','JE']
+  },
+  hi: {
+    console:'प्रशासन', role:'सिस्टम प्रशासक', crumb:'प्रशासन',
+    nav:['उपयोगकर्ता और भूमिकाएँ','क्वार्टर मास्टर','श्रेणियाँ और समय-सीमा नियम','अनुवाद','ऑडिट लॉग','आवंटन (शीघ्र)'],
+    titles:['उपयोगकर्ता और भूमिकाएँ','क्वार्टर मास्टर','श्रेणियाँ और समय-सीमा नियम','अनुवाद','ऑडिट लॉग'],
+    primary:['उपयोगकर्ता जोड़ें','क्वार्टर आयात करें','नियम सहेजें','अनुवाद प्रकाशित करें','ऑडिट लॉग निर्यात करें'],
+    search:['नाम, कर्मचारी क्रमांक या मोबाइल खोजें','क्वार्टर संख्या या निवासी खोजें','श्रेणी खोजें','कुंजी, अंग्रेज़ी या हिंदी खोजें','कर्ता या शिकायत क्रमांक खोजें'],
+    edit:'संपादित करें', undo:'पूर्ववत करें',
+    userCols:['नाम','कर्मचारी क्रमांक','भूमिका','क्षेत्र','स्थिति',''],
+    userChips:['सभी भूमिकाएँ','अधिकारी','ठेकेदार कर्मी'],
+    qtrCols:['क्वार्टर','कॉलोनी','प्रकार','निवासी','श्रेणी'],
+    qtrChips:['क्वार्टर','अन्य भवन','रिक्त'],
+    qtrFields:['क्वार्टर संख्या','कॉलोनी / सेक्टर','क्वार्टर प्रकार','निवासी'],
+    estateTitle:'संपदा फ़ील्ड · आवंटन हेतु आरक्षित',
+    estateFields:['आवंटन आदेश सं.','आवंटन तिथि','लाइसेंस शुल्क (₹ / माह)'],
+    estateNote:'ये फ़ील्ड आवंटन मॉड्यूल के हैं और उसके आने पर खुलेंगे। इन्हें अभी से रखा गया है ताकि रिकॉर्ड का स्थानांतरण न करना पड़े।',
+    saveQtr:'क्वार्टर सहेजें',
+    slaCols:['श्रेणी','समय-सीमा','शीघ्र देय','आगे भेजें','दंड / दिन','सक्रिय'],
+    slaChips:['सभी श्रेणियाँ','सक्रिय','निष्क्रिय'],
+    slaNote:'समय-सीमा में बदलाव सहेजने के बाद दर्ज शिकायतों पर लागू होगा। लंबित शिकायतों की समय-सीमा वही रहेगी।',
+    transCols:['कुंजी','अंग्रेज़ी','हिंदी','स्थिति'],
+    transChips:['सभी','हिंदी अनुपलब्ध','इस सप्ताह संपादित'],
+    transNote:'हिंदी अनुपलब्ध होने पर स्क्रीन पर अंग्रेज़ी दिखेगी, कुंजी कभी नहीं। प्रकाशित करते ही सभी उपयोगकर्ताओं पर लागू।',
+    stDone:'अनूदित', stMissing:'अनुपलब्ध', stEdited:'संपादित',
+    auditCols:['कब','कर्ता','कार्रवाई','विवरण','स्रोत'],
+    auditChips:['सभी कार्रवाइयाँ','आवंटन','सेटिंग्स परिवर्तन'],
+    retention:'2 वर्ष तक सुरक्षित · 23 सित. 2024 से पुरानी प्रविष्टियाँ मासिक रूप से हटाई जाती हैं',
+    exportCsv:'सीएसवी निर्यात',
+    addTitle:'उपयोगकर्ता जोड़ें', addSub:'पहले भूमिका चुनें। फ़ील्ड उसी के अनुसार बदलेंगे।',
+    roleQ:'भूमिका', detailsQ:'विवरण', optional:'वैकल्पिक', cancel:'रद्द करें', create:'उपयोगकर्ता जोड़ें',
+    fixErrors:'कुछ फ़ील्ड में सुधार आवश्यक है। नीचे चिह्नित हैं।',
+    toasts:{ added:'उपयोगकर्ता जोड़ा गया। साइन-इन एसएमएस भेजा गया।', users:'उपयोगकर्ता आमंत्रित', quarters:'आयात शुरू', sla:'समय-सीमा नियम सहेजे गए', trans:'अनुवाद प्रकाशित', audit:'ऑडिट लॉग निर्यात', qtr:'क्वार्टर सहेजा गया' },
+    active:'सक्रिय', invited:'आमंत्रित', disabled:'निष्क्रिय',
+    kQtr:'क्वार्टर', kOther:'अन्य भवन', vacant:'रिक्त',
+    hrs:'घं.',
+    roleCards:[
+      ['निवासी','एनसीएल व गैर-एनसीएल। केवल अपना क्वार्टर।'],
+      ['ठेकेदार कर्मी','अपने क्षेत्र के सौंपे गए कार्य।'],
+      ['कॉलोनी प्रभारी / पर्यवेक्षक','कार्य सूची, आवंटन, सत्यापन।'],
+      ['क्षेत्र प्रभारी / मुख्यालय','डैशबोर्ड, स्कोरकार्ड, रिपोर्ट।']
+    ],
+    esc:['एई','एई','जेई','जेई','जेई','जेई','एई','जेई']
+  }
+};
+
+const USERS = [
+  ['R. K. Verma','90214578','98••• ••210','Resident · NCL employee','Nigahi','active'],
+  ['Sunita Devi','—','97••• ••884','Resident · non-NCL','Amlohri','active'],
+  ['A. Tiwari','90187344','94••• ••031','Colony In-charge (JE)','Nigahi','active'],
+  ['V. Singh','90199812','99••• ••457','Colony Overseer','Nigahi','active'],
+  ['M. Prasad','SCP-0142','88••• ••612','Contractor supervisor','Nigahi','active'],
+  ['N. Yadav','90176520','94••• ••208','Area Civil In-charge','Jayant','invited'],
+  ['S. Mishra','90102277','98••• ••775','HQ Civil Department','NCL HQ','active'],
+  ['R. Patel','BCN-0087','70••• ••319','Contractor supervisor','Jhingurda','disabled']
+];
+const USER_HI = { 'Colony In-charge':'कॉलोनी प्रभारी', 'Administrator':'प्रशासक', 'Resident · NCL employee':'निवासी · एनसीएल कर्मचारी','Resident · non-NCL':'निवासी · गैर-एनसीएल','Colony In-charge (JE)':'कॉलोनी प्रभारी (जेई)','Colony Overseer':'कॉलोनी पर्यवेक्षक','Contractor supervisor':'ठेकेदार पर्यवेक्षक','Area Civil In-charge':'क्षेत्र सिविल प्रभारी','HQ Civil Department':'मुख्यालय सिविल विभाग' };
+const AREA_HI = { Nigahi:'निगाही', Amlohri:'अमलोरी', Jayant:'जयंत', Jhingurda:'झिंगुरदा', 'NCL HQ':'एनसीएल मुख्यालय' };
+
+const QUARTERS = [
+  ['C-245','Nigahi Colony, Sector 4','Type III','R. K. Verma','qtr'],
+  ['C-246','Nigahi Colony, Sector 4','Type III','S. K. Pandey','qtr'],
+  ['B-12','Nigahi Colony, Sector 2','Type II','A. Khan','qtr'],
+  ['D-08','Nigahi Colony, Sector 2','Type IV','G. Sharma','qtr'],
+  ['E-56','Nigahi Colony, Sector 3','Type II','','qtr'],
+  ['GH-2','Nigahi Guest House','Guest house','','other'],
+  ['UO-1','Union Office, Sector 4','Office','','other'],
+  ['HS-1','Field Hostel, Sector 1','Hostel','','other']
+];
+
+const SLA = [
+  ['Plumbing','नल-जल कार्य','droplets',24,'500'],
+  ['Seepage & roofing','सीलन व छत','rain',72,'1,000'],
+  ['Masonry','चिनाई','brick',48,'750'],
+  ['Doors & windows','दरवाज़े व खिड़कियाँ','door',48,'500'],
+  ['Flooring','फ़र्श','floor',72,'500'],
+  ['Painting','रंग-रोगन','paint',120,'300'],
+  ['Drainage','जल निकासी','drain',24,'1,000'],
+  ['Boundary & gate','चहारदीवारी व गेट','fence',96,'300']
+];
+
+const STRINGS = [
+  ['home.reportCta','Report a problem','समस्या दर्ज करें','done'],
+  ['home.openTitle','My open complaints','मेरी लंबित शिकायतें','done'],
+  ['report.step1','What is the problem about?','समस्या किससे संबंधित है?','done'],
+  ['report.registerBtn','Register complaint','शिकायत दर्ज करें','done'],
+  ['verify.yesFixed','Yes, it is fixed','हाँ, ठीक हो गया','edited'],
+  ['verify.notFixed','Not fixed, reopen','','missing'],
+  ['toast.workVerified','Work verified','काम की पुष्टि हो गई','done'],
+  ['queue.assignNote','The contractor is notified immediately.','','missing'],
+  ['admin.estateNote','These fields unlock when Allotment ships.','','missing']
+];
+
+const AUDIT = [
+  // [day, month(0-based), hh, mm, ago-value, ago-unit, actor, role, action, detail, source]
+  [23,8,10,41,12,'min','A. Tiwari','je','assign','Assigned NGH/2609/0412 to Shakti Constructions','10.14.2.31'],
+  [23,8,10,12,41,'min','V. Singh','overseer','verify','Verified work on NGH/2609/0418, Qtr D-08','10.14.2.44'],
+  [23,8,9,58,55,'min','M. Prasad','contractor','update','Uploaded 2 after-photos, NGH/2609/0412','android'],
+  [23,8,9,20,1,'hr','P. Kushwaha','admin','settings','SLA for Drainage changed 48 h → 24 h','10.14.1.8'],
+  [23,8,8,47,2,'hr','V. Singh','overseer','flag','Flagged poor quality, NGH/2609/0402 returned for rework','10.14.2.44'],
+  [22,8,18,15,17,'hr','P. Kushwaha','admin','user','Disabled R. Patel (BCN-0087), contract ended','10.14.1.8'],
+  [22,8,16,2,19,'hr','R. K. Verma','resident','register','Registered complaint NGH/2609/0412','android'],
+  [22,8,11,30,23,'hr','P. Kushwaha','admin','settings','Published 14 Hindi translations','10.14.1.8'],
+  [21,8,15,44,2,'day','S. Mishra','hq','export','Downloaded monthly report, Nigahi, Aug 2026','10.14.0.12']
+];
+const DETAIL_HI = [
+  'NGH/2609/0412 शक्ति कंस्ट्रक्शंस को सौंपी गई',
+  'NGH/2609/0418, क्वा. डी-08 का कार्य सत्यापित',
+  'NGH/2609/0412 की 2 बाद की फ़ोटो अपलोड',
+  'जल निकासी की समय-सीमा 48 घं. → 24 घं.',
+  'खराब गुणवत्ता चिह्नित, NGH/2609/0402 पुनः कार्य हेतु लौटाई',
+  'आर. पटेल (BCN-0087) निष्क्रिय, अनुबंध समाप्त',
+  'शिकायत NGH/2609/0412 दर्ज',
+  '14 हिंदी अनुवाद प्रकाशित',
+  'मासिक रिपोर्ट डाउनलोड, निगाही, अग. 2026'
+];
+const ROLE = { je:['JE','जेई'], overseer:['Overseer','पर्यवेक्षक'], contractor:['Contractor','ठेकेदार'],
+  admin:['Admin','प्रशासक'], resident:['Resident','निवासी'], hq:['HQ','मुख्यालय'] };
+const SOURCE = { android:['Android app','एंड्रॉइड ऐप'] };
+const MON = { en:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+  hi:['जन.','फ़र.','मार्च','अप्रै.','मई','जून','जुल.','अग.','सित.','अक्तू.','नव.','दिस.'] };
+const fmtAbs = (a, hi) => {
+  const h12 = a[2] % 12 || 12, mm = String(a[3]).padStart(2,'0');
+  const ap = hi ? (a[2] < 12 ? 'पूर्वाह्न' : 'अपराह्न') : (a[2] < 12 ? 'AM' : 'PM');
+  return `${String(a[0]).padStart(2,'0')} ${MON[hi?'hi':'en'][a[1]]} 2026, ${String(h12).padStart(2,'0')}:${mm} ${ap}`;
+};
+const fmtRel = (n, u, hi) => {
+  if (hi) return `${n} ${ { min:'मिनट', hr:'घंटे', day:'दिन' }[u] } पहले`;
+  const w = { min:'min', hr: n === 1 ? 'hr' : 'hrs', day: n === 1 ? 'day' : 'days' }[u];
+  return `${n} ${w} ago`;
+};
+const ACTION = {
+  assign:['Assigned','आवंटित','info'], verify:['Verified','सत्यापित','ok'], update:['Work update','कार्य अद्यतन','plain'],
+  settings:['Settings','सेटिंग्स','warn'], flag:['Flagged','चिह्नित','bad'], user:['User change','उपयोगकर्ता','warn'],
+  register:['Registered','दर्ज','plain'], export:['Export','निर्यात','plain']
+};
+
+class Component extends DCLogic {
+  state = { lang:'en', tab:0, chip:0, query:'', sel:0, slaHours: SLA.map(s => s[3]), slaOn: SLA.map(() => true),
+            hiEdits: {}, toast:'', addOpen:false, addRole:0, form:{}, tried:false, added:[] };
+
+  componentDidMount() {
+    this.onKey = e => { if (e.key === 'Escape' && this.state.addOpen) this.setState({ addOpen:false }); };
+    window.addEventListener('keydown', this.onKey);
+  }
+
+  fieldError(k, v, hi) {
+    const d = FIELDS[k];
+    if (d.type === 'chips') return (v && v.length) ? '' : (hi ? d.errHi : d.err);
+    const s = (v || '').trim();
+    if (!s) return d.optional ? '' : (hi ? d.errHi : d.err);
+    if (d.re && !d.re.test(d.strip ? s.replace(/\s/g,'') : s)) return hi ? d.errHi : d.err;
+    return '';
+  }
+
+  submitAdd(hi) {
+    const role = ROLES[this.state.addRole], form = this.state.form;
+    const bad = role.fields.some(k => this.fieldError(k, form[k], hi));
+    if (bad) { this.setState({ tried:true }); return; }
+    const area = form.area ? AREA_LIST[+form.area][0] : 'NCL HQ';
+    const id = form.empId || form.staffId || '—';
+    const row = [form.name.trim(), id, maskMobile((form.mobile||'').replace(/\s/g,'')), role.en, area, 'invited'];
+    this.setState(s => ({ added:[row, ...s.added], addOpen:false, form:{}, tried:false, chip:0, query:'' }));
+    this.fire('added');
+  }
+
+  componentWillUnmount() { clearTimeout(this.tt); window.removeEventListener('keydown', this.onKey); }
+  fire(key) {
+    clearTimeout(this.tt);
+    this.setState({ toast:key });
+    this.tt = setTimeout(() => this.setState({ toast:'' }), 4000);
+  }
+
+  renderVals() {
+    const L = STR[this.state.lang];
+    const hi = this.state.lang === 'hi';
+    const font = hi ? "'IBM Plex Sans Devanagari', sans-serif" : "'IBM Plex Sans', sans-serif";
+    const tab = this.state.tab, key = TABS[tab];
+    const q = this.state.query.trim().toLowerCase();
+    const match = (...xs) => !q || xs.some(x => String(x).toLowerCase().includes(q));
+    const tone = t => ({ ok:[P.okT,P.ok], warn:[P.warnT,P.warn], bad:[P.badT,P.bad], info:[P.infoT,P.info], plain:[P.surface2,P.ink2] }[t]);
+
+    const chipSets = [L.userChips, L.qtrChips, L.slaChips, L.transChips, L.auditChips];
+
+    // users
+    const allUsers = [...this.state.added, ...USERS];
+    const users = allUsers.filter((u,i) => {
+      if (!match(u[0], u[1], u[3])) return false;
+      if (this.state.chip === 1) return !u[3].startsWith('Resident') && !u[3].startsWith('Contractor');
+      if (this.state.chip === 2) return u[3].startsWith('Contractor');
+      return true;
+    }).map(u => {
+      const st = { active:[L.active,'ok'], invited:[L.invited,'info'], disabled:[L.disabled,'plain'] }[u[5]];
+      const [bg,fg] = tone(st[1]);
+      return { name:u[0], id:u[1], mobile:u[2], role: hi ? (USER_HI[u[3]]||u[3]) : u[3],
+        area: hi ? (AREA_HI[u[4]]||u[4]) : u[4], status:st[0], bg, fg,
+        initials: u[0].split(/[ .]+/).filter(Boolean).slice(-2).map(s=>s[0]).join(''),
+        edit: () => {} };
+    });
+
+    // quarters
+    const qList = QUARTERS.map((r,i) => ({ r, i })).filter(({ r }) => {
+      if (!match(r[0], r[3])) return false;
+      if (this.state.chip === 0) return r[4] === 'qtr';
+      if (this.state.chip === 1) return r[4] === 'other';
+      return !r[3];
+    });
+    const quarters = qList.map(({ r, i }) => ({
+      no:r[0], colony:r[1], type:r[2],
+      occupant: r[3] || L.vacant, occColor: r[3] ? P.ink : P.ink3,
+      kind: r[4] === 'qtr' ? L.kQtr : L.kOther, kindColor: r[4] === 'qtr' ? P.ink2 : P.info,
+      bg: this.state.sel === i ? P.accentTint : 'transparent',
+      pick: () => this.setState({ sel:i })
+    }));
+    const sq = QUARTERS[this.state.sel] || QUARTERS[0];
+    const selQtr = { no:sq[0], colony:sq[1], areaName: hi ? 'निगाही' : 'Nigahi' };
+    const qtrFields = L.qtrFields.map((label,i) => ({ label, value: [sq[0], sq[1], sq[2], sq[3] || L.vacant][i] }));
+    const estateFields = L.estateFields.map(label => ({ label, value:'—' }));
+
+    // sla
+    const slaRows = SLA.map((s,i) => ({ s, i })).filter(({ s, i }) => {
+      if (!match(s[0], s[1])) return false;
+      if (this.state.chip === 1) return this.state.slaOn[i];
+      if (this.state.chip === 2) return !this.state.slaOn[i];
+      return true;
+    }).map(({ s, i }) => {
+      const h = this.state.slaHours[i], on = this.state.slaOn[i];
+      const setH = d => this.setState(st => { const a = [...st.slaHours]; a[i] = Math.max(12, Math.min(240, a[i] + d)); return { slaHours:a }; });
+      return { en:s[0], hi:s[1], path:I[s[2]], hours:`${h} ${L.hrs}`,
+        warnAt:`${Math.round(h * 0.25)} ${L.hrs}`, escalate: `${L.esc[i]} +${Math.round(h * 0.5)} ${L.hrs}`,
+        penalty:`₹${s[4]}`, dec: () => setH(-12), inc: () => setH(12),
+        trackBg: on ? P.accent : P.line2, knobLeft: on ? '21px' : '3px',
+        toggle: () => this.setState(st => { const a = [...st.slaOn]; a[i] = !a[i]; return { slaOn:a }; }) };
+    });
+
+    // translations
+    const strings = STRINGS.map((s,i) => ({ s, i })).filter(({ s, i }) => {
+      const hiVal = this.state.hiEdits[i] ?? s[2];
+      if (!match(s[0], s[1], hiVal)) return false;
+      if (this.state.chip === 1) return !hiVal;
+      if (this.state.chip === 2) return s[3] === 'edited' || this.state.hiEdits[i] !== undefined;
+      return true;
+    }).map(({ s, i }) => {
+      const hiVal = this.state.hiEdits[i] ?? s[2];
+      const status = !hiVal ? 'missing' : (this.state.hiEdits[i] !== undefined || s[3] === 'edited') ? 'edited' : 'done';
+      const [bg,fg] = tone(status === 'missing' ? 'warn' : status === 'edited' ? 'info' : 'ok');
+      return { key:s[0], en:s[1], hi:hiVal, fallback: `EN: ${s[1]}`,
+        border: status === 'missing' ? 'var(--warnT)' : P.line2,
+        rowBg: status === 'missing' ? '#FCF8F0' : 'transparent',
+        status: status === 'missing' ? L.stMissing : status === 'edited' ? L.stEdited : L.stDone,
+        stBg:bg, stFg:fg, stPath: status === 'missing' ? I.alert : status === 'edited' ? I.edit : I.check,
+        onEdit: e => { const v = e.target.value; this.setState(st => ({ hiEdits: { ...st.hiEdits, [i]: v } })); } };
+    });
+    const missingCount = STRINGS.filter((s,i) => !(this.state.hiEdits[i] ?? s[2])).length;
+
+    // audit
+    const audit = AUDIT.map((a, i) => ({ a, i })).filter(({ a, i }) => {
+      if (!match(a[6], a[9], DETAIL_HI[i])) return false;
+      if (this.state.chip === 1) return a[8] === 'assign';
+      if (this.state.chip === 2) return a[8] === 'settings' || a[8] === 'user';
+      return true;
+    }).map(({ a, i }) => {
+      const ac = ACTION[a[8]], [bg,fg] = tone(ac[2]);
+      const li = hi ? 1 : 0;
+      return { abs: fmtAbs(a, hi), rel: fmtRel(a[4], a[5], hi),
+        actor: `${a[6]} (${ROLE[a[7]][li]})`, action: ac[li],
+        detail: hi ? DETAIL_HI[i] : a[9],
+        ip: SOURCE[a[10]] ? SOURCE[a[10]][li] : a[10], bg, fg };
+    });
+
+    const counts = [users.length, quarters.length, slaRows.length, strings.length, audit.length];
+    const totals = [allUsers.length, QUARTERS.length, SLA.length, STRINGS.length, AUDIT.length];
+
+    return {
+      t: L, font,
+      setEn: () => this.setState({ lang:'en' }), setHi: () => this.setState({ lang:'hi' }),
+      enBg: !hi ? P.accent : 'transparent', enFg: !hi ? '#fff' : P.ink2,
+      hiBg: hi ? P.accent : 'transparent', hiFg: hi ? '#fff' : P.ink2,
+
+      navItems: L.nav.map((label,i) => ({
+        label, path: [I.users, I.home, I.clock, I.lang, I.log, I.lock][i],
+        disabled: i === 5, cursor: i === 5 ? 'not-allowed' : 'pointer',
+        bg: i === tab ? 'rgba(15,92,99,.35)' : 'transparent',
+        fg: i === 5 ? '#5A646B' : i === tab ? '#F2F4F5' : '#C7CDD1',
+        badge: i === 3 && missingCount ? String(missingCount) : '',
+        go: () => i < 5 && this.setState({ tab:i, chip:0, query:'' })
+      })),
+
+      pageTitle: L.titles[tab], primaryLabel: L.primary[tab],
+      primary: () => tab === 0 ? this.setState({ addOpen:true, tried:false }) : this.fire(key),
+      searchPh: L.search[tab], query: this.state.query,
+      onQuery: e => this.setState({ query: e.target.value }),
+      chips: chipSets[tab].map((label,i) => ({
+        label, pick: () => this.setState({ chip:i }),
+        bg: this.state.chip === i ? P.accentTint : P.surface,
+        border: this.state.chip === i ? P.accent : P.line2,
+        fg: this.state.chip === i ? P.accent : P.ink2
+      })),
+      countLabel: hi ? `${totals[tab]} में से ${counts[tab]}` : `${counts[tab]} of ${totals[tab]}`,
+
+      isUsers: tab === 0, isQuarters: tab === 1, isSla: tab === 2, isTrans: tab === 3, isAudit: tab === 4,
+      userCols: L.userCols, users,
+      roleCards: L.roleCards.map(([name,scope],i) => ({ name, scope, count: ['14,212','146','58','41'][i] })),
+      qtrCols: L.qtrCols, quarters, selQtr, qtrFields, estateFields,
+      saveQtr: () => this.fire('qtr'),
+      slaCols: L.slaCols, slaRows,
+      transCols: L.transCols, strings,
+      auditCols: L.auditCols, audit,
+
+      addOpen: this.state.addOpen,
+      closeAdd: () => this.setState({ addOpen:false }),
+      submitAdd: () => this.submitAdd(hi),
+      stopClick: e => e.stopPropagation(),
+      showFixBanner: this.state.tried && ROLES[this.state.addRole].fields.some(k => this.fieldError(k, this.state.form[k], hi)),
+      roleSign: hi ? ROLES[this.state.addRole].signHi : ROLES[this.state.addRole].signEn,
+      roleOptions: ROLES.map((r,i) => {
+        const on = this.state.addRole === i;
+        return { label: hi ? r.hi : r.en, desc: hi ? r.dHi : r.dEn,
+          pick: () => this.setState({ addRole:i, tried:false }),
+          bg: on ? P.accentTint : P.surface, border: on ? P.accent : P.line2,
+          dotBorder: on ? P.accent : P.line2, dot: on ? P.accent : 'transparent' };
+      }),
+      formFields: ROLES[this.state.addRole].fields.map(k => {
+        const d = FIELDS[k], v = this.state.form[k];
+        const err = this.state.tried ? this.fieldError(k, v, hi) : '';
+        const set = val => this.setState(s => ({ form: { ...s.form, [k]: val } }));
+        const hint = hi ? d.hintHi : d.hint;
+        const opts = d.options ? OPTIONS[d.options] : [];
+        const picked = Array.isArray(v) ? v : [];
+        return {
+          label: (hi ? d.hi : d.en) + (d.optional ? ` (${L.optional})` : ''),
+          isText: d.type === 'text', isSelect: d.type === 'select', isChips: d.type === 'chips',
+          value: typeof v === 'string' ? v : '',
+          ph: hi ? d.phHi : d.ph, mode: d.mode || 'text',
+          fontFam: d.mono ? "'IBM Plex Mono', monospace" : "'IBM Plex Sans','IBM Plex Sans Devanagari', sans-serif",
+          onInput: e => set(e.target.value),
+          options: opts.map((o,i) => ({ v: String(i), label: hi ? o[1] : o[0] })),
+          selColor: v === undefined || v === '' ? P.ink3 : P.ink,
+          chips: opts.map((o,i) => {
+            const on = picked.includes(i);
+            return { label: hi ? o[1] : o[0],
+              toggle: () => set(on ? picked.filter(x => x !== i) : [...picked, i]),
+              bg: on ? P.accentTint : P.surface, border: on ? P.accent : P.line2, fg: on ? P.accent : P.ink2,
+              tick: on ? 1 : 0 };
+          }),
+          border: err ? P.bad : P.line2,
+          hasError: !!err, error: err,
+          hasHint: !err && !!hint, hint,
+          span: d.span ? '1 / -1' : 'auto'
+        };
+      }),
+
+      toast: !!this.state.toast, toastText: (L.toasts || {})[this.state.toast] || '',
+      undo: () => this.setState({ toast:'' })
+    };
+  }
+}
+
+</script>
+</body>
+</html>

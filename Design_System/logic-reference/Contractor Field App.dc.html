@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./cp-shell.js"></script>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Devanagari:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:var(--surface2); }
+  * { box-sizing:border-box; }
+  a { color:#0F5C63; text-decoration:none; }
+  a:hover { color:#13757E; text-decoration:underline; }
+  @keyframes riseIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+</style>
+</helmet>
+<div style="--bg:#F7F8F8;--surface:#FFFFFF;--surface2:#EDEFF0;--ink:#14181B;--ink2:#5A646B;--ink3:#7B858C;--line:#DFE3E5;--line2:#C7CDD1;--accent:#0F5C63;--accentH:#13757E;--accentTint:#E2F0F0;--ok:#1F6F4A;--okT:#E7F1EC;--warn:#8A5A00;--warnT:#F6EEDD;--bad:#A32A21;--badT:#F7E9E7;--info:#2C5A8A;--infoT:#E7EEF5;font-family:'IBM Plex Sans','IBM Plex Sans Devanagari',system-ui,sans-serif;color:var(--ink);background:var(--surface2);min-height:100vh;padding:32px;display:flex;flex-direction:column;gap:22px;align-items:center">
+
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center;max-width:960px">
+    <div style="display:flex;flex-direction:column;gap:2px;margin-right:12px">
+      <span style="font-size:20px;font-weight:600;line-height:28px">Contractor supervisor</span>
+      <span style="font-size:13px;color:var(--ink2)">Field app · offline-first · 390 × 844</span>
+    </div>
+    <div style="display:flex;gap:4px;padding:3px;background:var(--surface);border:1px solid var(--line);border-radius:8px;flex-wrap:wrap">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <button onClick="{{ n.go }}" style="border:0;cursor:pointer;font:500 12px/1 'IBM Plex Sans';padding:9px 11px;border-radius:6px;background:{{ n.bg }};color:{{ n.fg }}">{{ n.label }}</button>
+      </sc-for>
+    </div>
+    <button onClick="{{ toggleOffline }}" style="border:1px solid {{ offBorder }};cursor:pointer;font:500 12px/1 'IBM Plex Sans';padding:10px 12px;border-radius:8px;background:{{ offBg }};color:{{ offFg }};min-height:40px">{{ offlineLabel }}</button>
+    <cp-theme-toggle></cp-theme-toggle>
+      <div style="display:flex;gap:4px;padding:3px;background:var(--surface);border:1px solid var(--line);border-radius:8px">
+      <button onClick="{{ setEn }}" style="border:0;cursor:pointer;font:500 12px/1 'IBM Plex Sans';padding:9px 12px;border-radius:6px;background:{{ enBg }};color:{{ enFg }}">EN</button>
+      <button onClick="{{ setHi }}" style="border:0;cursor:pointer;font:500 12px/1 'IBM Plex Sans Devanagari';padding:9px 12px;border-radius:6px;background:{{ hiBg }};color:{{ hiFg }}">हिं</button>
+    </div>
+  </div>
+
+  <div style="width:390px;height:844px;border-radius:26px;background:var(--bg);border:1px solid var(--line2);box-shadow:0 18px 44px rgba(20,24,27,.18);overflow:hidden;display:flex;flex-direction:column;position:relative">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px 6px;font-size:12px;font-weight:600;color:var(--ink);background:var(--surface);font-variant-numeric:tabular-nums">
+      <span>09:05</span>
+      <span style="display:flex;gap:8px;align-items:center;color:var(--ink2)">
+        <span style="font-size:11px;font-weight:500">{{ netLabel }}</span>
+        <span style="width:22px;height:11px;border:1px solid var(--ink2);border-radius:3px;display:inline-block;position:relative"><span style="position:absolute;inset:1.5px;right:9px;background:var(--ink2);border-radius:1px"></span></span>
+      </span>
+    </div>
+
+    <sc-if value="{{ offline }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:9px;padding:10px 20px;background:var(--warnT);color:var(--warn)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;flex:none"><path d="M2 3l19 18M7.5 8A5 5 0 0 1 17 9.2a3.5 3.5 0 0 1 1 6.6M14.5 18H7.5a3.5 3.5 0 0 1-.4-7"></path></svg>
+        <span style="flex:1;font-size:12px;font-weight:500;line-height:17px;font-family:{{ font }}">{{ t.offlineBanner }}</span>
+      </div>
+    </sc-if>
+
+    <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column">
+
+      <sc-if value="{{ isToday }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:18px;padding:0 0 24px">
+          <div style="padding:16px 20px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:flex-start;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1">
+                <span style="font-size:13px;color:var(--ink2);font-family:{{ font }}">{{ t.greeting }}</span>
+                <span style="font-size:18px;font-weight:600;line-height:24px">M. Prasad</span>
+                <span style="font-size:12px;color:var(--ink3);font-family:{{ font }}">{{ t.employer }}</span>
+              </div>
+              <button onClick="{{ toggleLang }}" style="border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);font:500 13px/1 'IBM Plex Sans Devanagari';padding:10px 12px;cursor:pointer;min-height:44px;flex:none">{{ langSwap }}</button>
+            </div>
+            <div style="display:flex;gap:8px">
+              <sc-for list="{{ dayStats }}" as="d" hint-placeholder-count="3">
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;padding:11px 12px;border-radius:8px;background:{{ d.bg }};min-width:0">
+                  <span style="font-size:21px;line-height:25px;font-weight:600;font-variant-numeric:tabular-nums;color:{{ d.fg }}">{{ d.value }}</span>
+                  <span style="font-size:11px;line-height:15px;color:{{ d.fg }};opacity:.9;font-family:{{ font }}">{{ d.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="padding:0 20px;display:flex;flex-direction:column;gap:18px">
+            <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:baseline;gap:10px">
+                  <span style="font-size:13px;font-weight:600;color:var(--ink2);font-family:{{ font }}">{{ g.colony }}</span>
+                  <span style="flex:1;height:1px;background:var(--line)"></span>
+                  <span style="font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums">{{ g.count }}</span>
+                </div>
+                <sc-for list="{{ g.jobs }}" as="j" hint-placeholder-count="3">
+                  <button onClick="{{ j.open }}" style="display:flex;flex-direction:column;gap:11px;padding:15px;border:1px solid {{ j.border }};border-left:3px solid {{ j.edge }};border-radius:8px;background:var(--surface);cursor:pointer;text-align:left;width:100%" style-hover="border-color:var(--line2)">
+                    <div style="display:flex;align-items:flex-start;gap:12px;width:100%">
+                      <span style="display:flex;width:36px;height:36px;border-radius:8px;background:var(--surface2);color:var(--ink2);align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px"><path d="{{ j.path }}"></path></svg></span>
+                      <span style="display:flex;flex-direction:column;gap:3px;min-width:0;flex:1">
+                        <span style="font-size:15px;font-weight:600;line-height:21px;color:var(--ink);font-family:{{ font }}">{{ j.title }}</span>
+                        <span style="font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums">{{ j.qtr }}</span>
+                      </span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;width:100%;flex-wrap:wrap">
+                      <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:4px;font-size:12px;font-weight:600;background:{{ j.bg }};color:{{ j.fg }};font-family:{{ font }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="{{ j.statusPath }}"></path></svg>{{ j.sla }}
+                      </span>
+                      <span style="font-size:12px;color:var(--ink3);margin-left:auto;font-family:{{ font }}">{{ j.stage }}</span>
+                    </div>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isJob }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column">
+          <div style="padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px">
+            <button onClick="{{ goToday }}" style="border:0;background:transparent;cursor:pointer;width:36px;height:36px;margin-left:-8px;display:flex;align-items:center;justify-content:center;color:var(--ink2);flex:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M15 5l-7 7 7 7"></path></svg></button>
+            <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+              <span style="font-size:15px;font-weight:600;line-height:20px;font-family:{{ font }}">{{ t.jobTitle }}</span>
+              <span style="font-family:'IBM Plex Mono';font-size:11px;color:var(--ink3)">NGH/2609/0412</span>
+            </div>
+          </div>
+          <div style="padding:20px;display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;align-items:center;gap:16px;padding:16px;border:1px solid var(--line);border-radius:8px;background:var(--surface)">
+              <div style="position:relative;width:78px;height:78px;flex:none;border-radius:50%;background:{{ ringGradient }}">
+                <div style="position:absolute;inset:8px;border-radius:50%;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1">
+                  <span style="font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;color:{{ ringColor }}">{{ ringTime }}</span>
+                  <span style="font-size:10px;color:var(--ink3);font-family:{{ font }}">{{ t.left }}</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                <span style="font-size:14px;font-weight:600;font-family:{{ font }}">{{ t.finishBy }}</span>
+                <span style="font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums">21 Sep 2026, 18:00 IST</span>
+                <span style="font-size:12px;color:var(--ink3);font-family:{{ font }}">{{ t.slaCategory }}</span>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--line);border-radius:8px;background:var(--surface)">
+              <span style="font-size:17px;font-weight:600;font-variant-numeric:tabular-nums">Qtr No. C-245, Nigahi</span>
+              <span style="font-size:13px;color:var(--ink2);line-height:20px;font-family:{{ font }}">{{ t.address }}</span>
+              <div style="display:flex;gap:10px;padding-top:4px">
+                <button style="flex:1;border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--accent);font:600 14px/1 'IBM Plex Sans';padding:12px;cursor:pointer;min-height:46px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:{{ font }}" style-hover="background:var(--surface2)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><path d="M3 11 21 3l-8 18-2-7-8-3Z"></path></svg>{{ t.directions }}
+                </button>
+                <button style="flex:1;border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--accent);font:600 14px/1 'IBM Plex Sans';padding:12px;cursor:pointer;min-height:46px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:{{ font }}" style-hover="background:var(--surface2)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><path d="M6.6 3h3l1.5 4-2 1.4a12 12 0 0 0 5.5 5.5l1.4-2 4 1.5v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4.6 5.2 2 2 0 0 1 6.6 3Z"></path></svg>{{ t.callResident }}
+                </button>
+              </div>
+              <span style="font-size:11px;color:var(--ink3);font-family:{{ font }}">{{ t.maskedNote }}</span>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <span style="font-size:15px;font-weight:600;font-family:{{ font }}">{{ t.residentSays }}</span>
+              <div style="padding:15px;border:1px solid var(--line);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;gap:12px">
+                <span style="font-size:14px;line-height:22px;font-family:{{ font }}">{{ t.problemText }}</span>
+                <div style="display:flex;gap:9px">
+                  <div style="width:82px;height:82px;border-radius:8px;border:1px solid var(--line2);background:repeating-linear-gradient(45deg,#E4E8EA 0 7px,#EDEFF0 7px 14px);display:flex;align-items:flex-end;padding:6px"><span style="font-family:'IBM Plex Mono';font-size:9px;color:var(--ink3)">leak photo</span></div>
+                  <div style="width:82px;height:82px;border-radius:8px;border:1px solid var(--line2);background:repeating-linear-gradient(45deg,#E4E8EA 0 7px,#EDEFF0 7px 14px);display:flex;align-items:flex-end;padding:6px"><span style="font-family:'IBM Plex Mono';font-size:9px;color:var(--ink3)">under sink</span></div>
+                </div>
+                <span style="font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums;font-family:{{ font }}">{{ t.reportedAt }}</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:auto;padding:14px 20px 20px;background:var(--surface);border-top:1px solid var(--line);position:sticky;bottom:0">
+            <button onClick="{{ goUpdate }}" style="width:100%;border:0;border-radius:8px;background:var(--accent);color:#fff;font:600 16px/1 'IBM Plex Sans';padding:15px;cursor:pointer;min-height:52px;font-family:{{ font }}">{{ t.startWork }}</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isUpdate }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;flex:1">
+          <div style="padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px">
+            <button onClick="{{ goJob }}" style="border:0;background:transparent;cursor:pointer;width:36px;height:36px;margin-left:-8px;display:flex;align-items:center;justify-content:center;color:var(--ink2);flex:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M15 5l-7 7 7 7"></path></svg></button>
+            <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+              <span style="font-size:15px;font-weight:600;line-height:20px;font-family:{{ font }}">{{ t.updateTitle }}</span>
+              <span style="font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums">C-245, Nigahi</span>
+            </div>
+          </div>
+          <div style="padding:20px;display:flex;flex-direction:column;gap:20px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <sc-for list="{{ photoSlots }}" as="p" hint-placeholder-count="2">
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:{{ p.labelColor }};font-family:{{ font }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;opacity:{{ p.tickOpacity }}"><path d="M4 12.5 9 17.5 20 6.5"></path></svg>{{ p.label }}
+                  </span>
+                  <button onClick="{{ p.capture }}" style="height:140px;border-radius:8px;border:1px {{ p.borderStyle }} {{ p.border }};background:{{ p.bg }};cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:{{ p.iconColor }};padding:8px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px"><path d="{{ p.iconPath }}"></path></svg>
+                    <span style="font-size:12px;font-weight:500;font-family:{{ font }}">{{ p.action }}</span>
+                  </button>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <span style="font-size:14px;font-weight:500;font-family:{{ font }}">{{ t.materials }}</span>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <sc-for list="{{ materials }}" as="m" hint-placeholder-count="5">
+                  <button onClick="{{ m.pick }}" style="padding:11px 13px;border:1px solid {{ m.border }};background:{{ m.bg }};border-radius:4px;font:500 13px/1 'IBM Plex Sans';color:{{ m.fg }};cursor:pointer;min-height:44px;font-family:{{ font }}">{{ m.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font-size:14px;font-weight:500;font-family:{{ font }}">{{ t.workNote }}</span>
+              <textarea readOnly="{{ true }}" style="font:400 15px/23px 'IBM Plex Sans','IBM Plex Sans Devanagari';padding:13px;border:1px solid var(--line2);border-radius:4px;background:var(--surface);color:var(--ink);min-height:84px;width:100%;resize:none" value="{{ t.sampleNote }}"></textarea>
+            </div>
+
+            <sc-if value="{{ offline }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:13px 15px;border-radius:8px;background:var(--warnT)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex:none;margin-top:2px;color:var(--warn)"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 7v5l3 2"></path></svg>
+                <span style="font-size:13px;line-height:20px;color:var(--ink);font-family:{{ font }}">{{ t.queueNote }}</span>
+              </div>
+            </sc-if>
+          </div>
+          <div style="margin-top:auto;padding:14px 20px 20px;background:var(--surface);border-top:1px solid var(--line);position:sticky;bottom:0;display:flex;flex-direction:column;gap:8px">
+            <button onClick="{{ markDone }}" disabled="{{ notReady }}" style="width:100%;border:0;border-radius:8px;background:{{ doneBg }};color:{{ doneFg }};font:600 16px/1 'IBM Plex Sans';padding:15px;cursor:{{ doneCursor }};min-height:52px;font-family:{{ font }}">{{ doneLabel }}</button>
+            <span style="font-size:11px;color:var(--ink3);text-align:center;font-family:{{ font }}">{{ doneHint }}</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isQueue }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column">
+          <div style="padding:16px 20px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:18px;font-weight:600;font-family:{{ font }}">{{ t.queueTitle }}</span>
+            <span style="font-size:13px;color:var(--ink2);line-height:20px;font-family:{{ font }}">{{ queueSub }}</span>
+          </div>
+          <div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ queued }}" as="q" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:12px;padding:14px 15px;border:1px solid var(--line);border-radius:8px;background:var(--surface)">
+                <span style="display:flex;width:32px;height:32px;border-radius:50%;background:{{ q.iconBg }};color:{{ q.iconFg }};align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="{{ q.path }}"></path></svg></span>
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1">
+                  <span style="font-size:14px;font-weight:500;line-height:20px;font-family:{{ font }}">{{ q.title }}</span>
+                  <span style="font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums;font-family:{{ font }}">{{ q.meta }}</span>
+                </div>
+                <span style="font-size:12px;font-weight:500;color:{{ q.iconFg }};flex:none;font-family:{{ font }}">{{ q.state }}</span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ offline }}" hint-placeholder-val="{{ false }}">
+              <button style="border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);font:600 14px/1 'IBM Plex Sans';padding:13px;cursor:pointer;min-height:48px;margin-top:4px;font-family:{{ font }}">{{ t.retryNow }}</button>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+
+    <div style="display:flex;border-top:1px solid var(--line);background:var(--surface);padding:6px 8px 12px">
+      <sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="3">
+        <button onClick="{{ tb.go }}" style="flex:1;border:0;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;min-height:52px;color:{{ tb.color }};position:relative">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ tb.sw }}" stroke-linecap="round" stroke-linejoin="round" style="width:21px;height:21px"><path d="{{ tb.path }}"></path></svg>
+          <span style="font-size:11px;font-weight:500;font-family:{{ font }}">{{ tb.label }}</span>
+          <sc-if value="{{ tb.badge }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;top:4px;right:calc(50% - 20px);min-width:17px;height:17px;border-radius:9px;background:var(--warn);color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0 4px;font-variant-numeric:tabular-nums">{{ tb.badge }}</span>
+          </sc-if>
+        </button>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:16px;right:16px;bottom:88px;display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:8px;background:#1D2328;color:#F2F4F5;box-shadow:0 12px 28px rgba(20,24,27,.3);animation:riseIn .2s ease-out">
+        <span style="display:flex;width:26px;height:26px;border-radius:50%;background:rgba(127,211,166,.18);color:#7FD3A6;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M4 12.5 9 17.5 20 6.5"></path></svg></span>
+        <span style="font-size:14px;font-weight:500;flex:1;line-height:20px;font-family:{{ font }}">{{ toastText }}</span>
+        <button onClick="{{ undo }}" style="border:0;background:transparent;color:#5FC4CA;font:600 13px/1 'IBM Plex Sans';cursor:pointer;padding:8px;flex:none;font-family:{{ font }}">{{ t.undo }}</button>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="max-width:620px;font-size:13px;line-height:20px;color:var(--ink2);text-align:center;text-wrap:pretty">Jobs are sorted by SLA urgency and grouped by colony. Toggle the network switch above to see the offline path: the banner appears, the complete button changes verb, and the update lands in the sync queue instead of failing.</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1000,&quot;height&quot;:1060}}">
+const P = {
+  surface:'var(--surface)', surface2:'var(--surface2)', ink:'var(--ink)', ink2:'var(--ink2)', ink3:'var(--ink3)',
+  line:'var(--line)', line2:'var(--line2)', accent:'var(--accent)', accentTint:'var(--accentTint)',
+  ok:'var(--ok)', okT:'var(--okT)', warn:'var(--warn)', warnT:'var(--warnT)', bad:'var(--bad)', badT:'var(--badT)',
+  info:'var(--info)', infoT:'var(--infoT)'
+};
+const I = {
+  droplets:'M12 3c3 3.5 5 6.4 5 8.7A5 5 0 0 1 7 11.7C7 9.4 9 6.5 12 3Z',
+  rain:'M7.5 14.5a3.5 3.5 0 0 1 .4-7 5 5 0 0 1 9.4 1.3 3.2 3.2 0 0 1-.8 6.3M8 18l-1 2.5M12 18l-1 2.5M16 18l-1 2.5',
+  brick:'M3 6h18v12H3zM3 12h18M8 6v6M16 6v6M12 12v6',
+  door:'M4 20h16M6 20V5a1 1 0 0 1 1.2-1l7-1.4A1 1 0 0 1 15.5 3.6V20M12 12.5v1',
+  drain:'M2 7c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 13c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 19c2-2 4-2 6 0s4 2 6 0 4-2 6 0',
+  paint:'M3 4h13v6H3zM16 7h4v4h-7v3M11 14h4v6h-4z',
+  clock:'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 7v5l3 2',
+  alert:'M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0ZM12 9v4M12 17h.01',
+  check:'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M8 12.5l2.5 2.5L16 9.5',
+  camera:'M4 8h3l1.5-2h7L17 8h3v11H4zM12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z',
+  imageDone:'M4 5h16v14H4zM8.5 10.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM4 16l5-4 4 3 3-2.5 4 3.5',
+  list:'M4 6h16M4 12h16M4 18h16',
+  sync:'M20 11a8 8 0 1 0-2.3 5.3M20 5v6h-6',
+  tick:'M4 12.5 9 17.5 20 6.5',
+  upload:'M12 19V7M7 11.5 12 6.5l5 5M5 21h14'
+};
+
+const STR = {
+  en: {
+    greeting:'Good morning', employer:'Shakti Constructions · Nigahi Area',
+    offlineBanner:'You are offline. Work updates are saved on this phone and sent automatically.',
+    dayStats:['Jobs today','Overdue','Done today'],
+    colonies:['Sector 4 · Nigahi Colony','Sector 2 · Nigahi Colony'],
+    jobTitle:'Kitchen tap leaking', left:'left', finishBy:'Finish by',
+    slaCategory:'Plumbing · 24-hour deadline',
+    address:'Type III quarter, Sector 4, near the water tank. Gate on the left side of the block.',
+    directions:'Directions', callResident:'Call', maskedNote:'The resident number is masked. Calls route through the portal.',
+    residentSays:'What the resident reported',
+    problemText:'Kitchen tap has been leaking since Tuesday; water is collecting under the sink cabinet.',
+    reportedAt:'Reported 19 Sep 2026, 08:14 AM · R. K. Verma',
+    startWork:'Start work', updateTitle:'Update work',
+    before:'Before photo', after:'After photo', retake:'Retake', capture:'Take photo',
+    materials:'Materials used', workNote:'Work note (optional)',
+    sampleNote:'Replaced tap washer and spindle. Checked for leaks; cabinet floor dried.',
+    queueNote:'You are offline. This update is saved on the phone and will be sent as soon as you have signal.',
+    markComplete:'Mark work complete', queueComplete:'Save and send later',
+    doneHintReady:'The resident is asked to confirm the fix.',
+    doneHintQueued:'Saved on this phone. The resident is asked once it syncs.',
+    doneHintBlocked:'Add the after photo to mark this complete.',
+    queueTitle:'Sync queue', queueOnline:'Everything is up to date.',
+    queueOffline:'3 updates are waiting. They will send automatically when you have signal.',
+    retryNow:'Try sending now', undo:'Undo',
+    toastDone:'Work marked complete', toastQueued:'Update saved. It will send when you are back online.',
+    tabToday:'Today', tabAll:'All jobs', tabQueue:'Sync',
+    mats:['Tap washer','Spindle','PVC elbow','Teflon tape','Cement'],
+    jobs1:[
+      ['Kitchen tap leaking','Qtr No. C-245','6 h left','With you','droplets','warn'],
+      ['Floor tiles cracked','Qtr No. C-108','1 d left','Not started','brick','ok']
+    ],
+    jobs2:[
+      ['Drain choked behind quarter','Qtr No. A-101','8 h over','Not started','drain','bad'],
+      ['Seepage on bedroom ceiling','Qtr No. B-12','1 d over','Not started','rain','bad'],
+      ['Bathroom door frame rotted','Qtr No. D-08','18 h left','Awaiting verification','door','warn']
+    ],
+    queued:[
+      ['After photos, Qtr B-44','Saved 08:52 AM · 2 photos','Queued','upload'],
+      ['Work complete, Qtr E-56','Saved 08:31 AM','Queued','upload'],
+      ['Before photo, Qtr A-101','Sent 07:58 AM','Sent','tick']
+    ]
+  },
+  hi: {
+    greeting:'सुप्रभात', employer:'शक्ति कंस्ट्रक्शंस · निगाही क्षेत्र',
+    offlineBanner:'आप ऑफ़लाइन हैं। कार्य अद्यतन इस फ़ोन में सुरक्षित हैं और स्वतः भेजे जाएँगे।',
+    dayStats:['आज के कार्य','विलंबित','आज पूर्ण'],
+    colonies:['सेक्टर 4 · निगाही कॉलोनी','सेक्टर 2 · निगाही कॉलोनी'],
+    jobTitle:'रसोई का नल टपक रहा है', left:'शेष', finishBy:'पूरा करें',
+    slaCategory:'नल-जल कार्य · 24 घंटे की समय-सीमा',
+    address:'टाइप III क्वार्टर, सेक्टर 4, पानी की टंकी के पास। ब्लॉक के बाईं ओर गेट।',
+    directions:'रास्ता', callResident:'कॉल', maskedNote:'निवासी का नंबर छिपा है। कॉल पोर्टल से होती है।',
+    residentSays:'निवासी ने क्या बताया',
+    problemText:'रसोई का नल मंगलवार से टपक रहा है; सिंक की अलमारी के नीचे पानी जमा हो रहा है।',
+    reportedAt:'दर्ज 19 सित. 2026, 08:14 · आर. के. वर्मा',
+    startWork:'काम शुरू करें', updateTitle:'कार्य अद्यतन',
+    before:'पहले की फ़ोटो', after:'बाद की फ़ोटो', retake:'दोबारा लें', capture:'फ़ोटो लें',
+    materials:'प्रयुक्त सामग्री', workNote:'कार्य टिप्पणी (वैकल्पिक)',
+    sampleNote:'नल का वॉशर और स्पिंडल बदला। रिसाव जाँचा; अलमारी का फ़र्श सुखाया।',
+    queueNote:'आप ऑफ़लाइन हैं। यह अद्यतन फ़ोन में सुरक्षित है और सिग्नल मिलते ही भेज दिया जाएगा।',
+    markComplete:'कार्य पूर्ण चिह्नित करें', queueComplete:'सुरक्षित करें, बाद में भेजें',
+    doneHintReady:'निवासी से पुष्टि माँगी जाएगी।',
+    doneHintQueued:'फ़ोन में सुरक्षित। सिंक होने पर निवासी से पुष्टि माँगी जाएगी।',
+    doneHintBlocked:'पूर्ण चिह्नित करने के लिए बाद की फ़ोटो जोड़ें।',
+    queueTitle:'सिंक कतार', queueOnline:'सब कुछ अद्यतन है।',
+    queueOffline:'3 अद्यतन प्रतीक्षा में हैं। सिग्नल मिलते ही स्वतः भेज दिए जाएँगे।',
+    retryNow:'अब भेजने का प्रयास करें', undo:'पूर्ववत करें',
+    toastDone:'कार्य पूर्ण चिह्नित', toastQueued:'अद्यतन सुरक्षित। ऑनलाइन होते ही भेज दिया जाएगा।',
+    tabToday:'आज', tabAll:'सभी कार्य', tabQueue:'सिंक',
+    mats:['नल वॉशर','स्पिंडल','पीवीसी एल्बो','टेफ़्लॉन टेप','सीमेंट'],
+    jobs1:[
+      ['रसोई का नल टपक रहा है','क्वा. सं. सी-245','6 घं. शेष','आपके पास','droplets','warn'],
+      ['फ़र्श की टाइलें चटकीं','क्वा. सं. सी-108','1 दिन शेष','शुरू नहीं','brick','ok']
+    ],
+    jobs2:[
+      ['क्वार्टर के पीछे नाली अवरुद्ध','क्वा. सं. ए-101','8 घं. अधिक','शुरू नहीं','drain','bad'],
+      ['शयनकक्ष की छत में सीलन','क्वा. सं. बी-12','1 दिन अधिक','शुरू नहीं','rain','bad'],
+      ['स्नानघर के दरवाज़े की चौखट सड़ी','क्वा. सं. डी-08','18 घं. शेष','सत्यापन शेष','door','warn']
+    ],
+    queued:[
+      ['बाद की फ़ोटो, क्वा. बी-44','सुरक्षित 08:52 · 2 फ़ोटो','कतार में','upload'],
+      ['कार्य पूर्ण, क्वा. ई-56','सुरक्षित 08:31','कतार में','upload'],
+      ['पहले की फ़ोटो, क्वा. ए-101','भेजा 07:58','भेजा गया','tick']
+    ]
+  }
+};
+
+class Component extends DCLogic {
+  state = { screen:'today', lang:'en', offline:false, beforeShot:true, afterShot:false,
+            materials:[0], toast:'', secs:6*3600+12*60 };
+
+  componentDidMount() {
+    this.tick = setInterval(() => this.setState(s => ({ secs: s.secs > 0 ? s.secs-1 : 24*3600 })), 1000);
+  }
+  componentWillUnmount() { clearInterval(this.tick); clearTimeout(this.tt); }
+
+  fire(key) {
+    clearTimeout(this.tt);
+    this.setState({ toast:key });
+    this.tt = setTimeout(() => this.setState({ toast:'' }), 4500);
+  }
+
+  renderVals() {
+    const L = STR[this.state.lang];
+    const hi = this.state.lang === 'hi';
+    const font = hi ? "'IBM Plex Sans Devanagari', sans-serif" : "'IBM Plex Sans', sans-serif";
+    const s = this.state.screen;
+    const off = this.state.offline;
+
+    const total = 24*3600, frac = Math.max(0, Math.min(1, this.state.secs/total));
+    const ringColor = frac > 0.25 ? P.ok : frac > 0.08 ? P.warn : P.bad;
+    const pad = v => String(v).padStart(2,'0');
+    const h = Math.floor(this.state.secs/3600), m = Math.floor((this.state.secs%3600)/60);
+
+    const tone = k => ({
+      warn:{ bg:P.warnT, fg:P.warn, path:I.clock, edge:P.warn },
+      bad:{ bg:P.badT, fg:P.bad, path:I.alert, edge:P.bad },
+      ok:{ bg:P.okT, fg:P.ok, path:I.check, edge:P.line }
+    }[k]);
+
+    const mkJobs = list => list.map(([title,qtr,sla,stage,icon,k]) => {
+      const tn = tone(k);
+      return { title, qtr, sla, stage, path:I[icon], bg:tn.bg, fg:tn.fg, statusPath:tn.path,
+        edge:tn.edge, border:P.line, open: () => this.setState({ screen:'job' }) };
+    });
+
+    const ready = this.state.afterShot;
+
+    return {
+      t: L, font,
+      isToday: s==='today', isJob: s==='job', isUpdate: s==='update', isQueue: s==='queue',
+      offline: off, netLabel: off ? (hi ? 'ऑफ़लाइन' : 'No signal') : '4G',
+
+      nav: [['today','Today'],['job','Job detail'],['update','Update work'],['queue','Sync queue']].map(([k,label]) => ({
+        label, go: () => this.setState({ screen:k }),
+        bg: s===k ? P.accent : 'transparent', fg: s===k ? '#fff' : P.ink2
+      })),
+      setEn: () => this.setState({ lang:'en' }), setHi: () => this.setState({ lang:'hi' }),
+      toggleLang: () => this.setState(st => ({ lang: st.lang==='en' ? 'hi' : 'en' })),
+      langSwap: hi ? 'EN' : 'हिं',
+      enBg: !hi ? P.accent : 'transparent', enFg: !hi ? '#fff' : P.ink2,
+      hiBg: hi ? P.accent : 'transparent', hiFg: hi ? '#fff' : P.ink2,
+      toggleOffline: () => this.setState(st => ({ offline: !st.offline })),
+      offlineLabel: off ? (hi ? 'नेटवर्क: बंद' : 'Network: off') : (hi ? 'नेटवर्क: चालू' : 'Network: on'),
+      offBg: off ? P.warnT : P.surface, offFg: off ? P.warn : P.ink2, offBorder: off ? 'var(--warnT)' : P.line2,
+
+      dayStats: [
+        { value:'5', label:L.dayStats[0], bg:P.surface2, fg:P.ink },
+        { value:'2', label:L.dayStats[1], bg:P.badT, fg:P.bad },
+        { value:'3', label:L.dayStats[2], bg:P.okT, fg:P.ok }
+      ],
+      groups: [
+        { colony:L.colonies[1], count:'3', jobs: mkJobs(L.jobs2) },
+        { colony:L.colonies[0], count:'2', jobs: mkJobs(L.jobs1) }
+      ],
+
+      goToday: () => this.setState({ screen:'today' }),
+      goJob: () => this.setState({ screen:'job' }),
+      goUpdate: () => this.setState({ screen:'update' }),
+
+      ringGradient: `conic-gradient(${ringColor} ${frac*360}deg, ${P.line} ${frac*360}deg)`,
+      ringColor, ringTime: `${h}:${pad(m)}`,
+
+      photoSlots: [
+        { key:'before', has:this.state.beforeShot, label:L.before },
+        { key:'after', has:this.state.afterShot, label:L.after }
+      ].map(p => ({
+        label: p.label,
+        labelColor: p.has ? P.ok : P.ink2,
+        tickOpacity: p.has ? 1 : 0,
+        action: p.has ? L.retake : L.capture,
+        iconPath: p.has ? I.imageDone : I.camera,
+        bg: p.has ? 'repeating-linear-gradient(45deg,#E4E8EA 0 7px,#EDEFF0 7px 14px)' : P.surface,
+        border: p.has ? P.line2 : P.line2,
+        borderStyle: p.has ? 'solid' : 'dashed',
+        iconColor: p.has ? P.ink3 : P.ink2,
+        capture: () => this.setState(st => p.key === 'before'
+          ? { beforeShot: !st.beforeShot } : { afterShot: !st.afterShot })
+      })),
+
+      materials: L.mats.map((label,i) => {
+        const on = this.state.materials.includes(i);
+        return { label,
+          pick: () => this.setState(st => ({
+            materials: st.materials.includes(i) ? st.materials.filter(x => x!==i) : [...st.materials, i]
+          })),
+          bg: on ? P.accentTint : P.surface, border: on ? P.accent : P.line2, fg: on ? P.accent : P.ink2 };
+      }),
+
+      notReady: !ready,
+      doneLabel: off ? L.queueComplete : L.markComplete,
+      doneBg: ready ? (off ? P.warn : P.accent) : P.surface2,
+      doneFg: ready ? '#fff' : P.ink3,
+      doneCursor: ready ? 'pointer' : 'not-allowed',
+      doneHint: !ready ? L.doneHintBlocked : off ? L.doneHintQueued : L.doneHintReady,
+      markDone: () => {
+        if (!ready) return;
+        this.setState({ screen: off ? 'queue' : 'today' });
+        this.fire(off ? 'toastQueued' : 'toastDone');
+      },
+
+      queueSub: off ? L.queueOffline : L.queueOnline,
+      queued: L.queued.map(([title,meta,state,kind]) => ({
+        title, meta, state, path: I[kind],
+        iconBg: kind === 'tick' ? P.okT : P.warnT,
+        iconFg: kind === 'tick' ? P.ok : P.warn
+      })),
+
+      tabs: [
+        { key:'today', label:L.tabToday, path:I.camera, badge:'' },
+        { key:'all', label:L.tabAll, path:I.list, badge:'' },
+        { key:'queue', label:L.tabQueue, path:I.sync, badge: off ? '2' : '' }
+      ].map(tb => {
+        const on = (tb.key==='today' && ['today','job','update'].includes(s)) || (tb.key==='queue' && s==='queue');
+        return { ...tb, go: () => this.setState({ screen: tb.key==='all' ? 'today' : tb.key }),
+          color: on ? P.accent : P.ink3, sw: on ? 2 : 1.75 };
+      }),
+
+      toast: !!this.state.toast, toastText: L[this.state.toast] || '',
+      undo: () => this.setState({ toast:'' })
+    };
+  }
+}
+
+</script>
+</body>
+</html>

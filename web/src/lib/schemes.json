@@ -1,0 +1,72 @@
+{
+  "teal": {
+    "name": "Colony teal",
+    "note": "Deep teal, cream and gold. The portal's own.",
+    "swatch": [
+      "#0F4C4C",
+      "#0F4C4C",
+      "#C9A96A",
+      "#F8F6EF"
+    ]
+  },
+  "ember": {
+    "name": "Coal and ember",
+    "note": "Charcoal and ember orange. NCL at a glance.",
+    "swatch": [
+      "#1F2328",
+      "#B54A1B",
+      "#E8B04A",
+      "#F6F5F3"
+    ]
+  },
+  "indigo": {
+    "name": "Civic indigo",
+    "note": "Indigo with saffron, close to India's government services.",
+    "swatch": [
+      "#24306E",
+      "#2E3C8C",
+      "#F2A23A",
+      "#F5F6FA"
+    ]
+  },
+  "laterite": {
+    "name": "Laterite and sal",
+    "note": "Brick-red soil and sal-forest green.",
+    "swatch": [
+      "#7A2E1E",
+      "#2F5A34",
+      "#C98A3A",
+      "#F4EFE6"
+    ]
+  },
+  "slate": {
+    "name": "Monsoon slate",
+    "note": "Slate blue and leaf green. Quiet for a long day.",
+    "swatch": [
+      "#22405E",
+      "#22405E",
+      "#6FBF8E",
+      "#F2F5F7"
+    ]
+  },
+  "contrast": {
+    "name": "Field contrast",
+    "note": "Black and safety yellow. Readable in sunlight.",
+    "swatch": [
+      "#111111",
+      "#111111",
+      "#FFD23F",
+      "#FFFFFF"
+    ]
+  },
+  "navy": {
+    "name": "Navy, tricolour accent",
+    "note": "Formal navy; saffron, white and green in the strip.",
+    "swatch": [
+      "#0B2D5B",
+      "#0B2D5B",
+      "#FF9933",
+      "#F7F8FA"
+    ]
+  }
+}

@@ -1,0 +1,250 @@
+@import "tailwindcss";
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+@import "./styles/tokens.css";
+@import "./styles/schemes.css";
+
+/* Tailwind reads its colours, radii and fonts from the generated token
+   variables, so light/dark is one attribute on <html> and nothing else. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-tint: var(--tint);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-ink: var(--text);
+  --color-ink-muted: var(--text-muted);
+  --color-primary: var(--primary);
+  --color-primary-btn: var(--primary-button);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-dark: var(--primary-dark);
+  --color-on-primary: var(--on-primary);
+  --color-sidebar: var(--sidebar);
+  --color-gold: var(--gold);
+  --color-gold-text: var(--gold-text);
+  --color-secondary: var(--secondary);
+  --color-row-hover: var(--row-hover);
+  --color-ok: var(--status-resolved);
+  --color-ok-bg: var(--status-resolved-bg);
+  --color-risk: var(--status-at-risk);
+  --color-risk-bg: var(--status-at-risk-bg);
+  --color-bad: var(--status-breached);
+  --color-bad-bg: var(--status-breached-bg);
+  --color-info: var(--status-info);
+  --color-info-bg: var(--status-info-bg);
+  --color-reopen: var(--status-reopened);
+  --color-reopen-bg: var(--status-reopened-bg);
+  --color-await: var(--status-awaiting);
+  --color-await-bg: var(--status-awaiting-bg);
+  --radius-input: 10px;
+  --radius-card: 14px;
+  --radius-card-lg: 16px;
+  --radius-dialog: 20px;
+  --radius-sheet: 24px;
+  --font-sans: 'Noto Sans', 'Noto Sans Devanagari', system-ui, sans-serif;
+  --font-quote: 'Playfair Display', Georgia, serif;
+  --font-quote-hi: 'Noto Serif Devanagari', 'Playfair Display', serif;
+  --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+/* Devanagari body at 1.6: room for matras above and below (F4) */
+:lang(hi) body, [lang="hi"] { line-height: 1.6; }
+.tnum { font-variant-numeric: tabular-nums; }
+/* Experiment (redesign skill): sentence-case labels instead of 11px
+   spaced capitals, which the handover used on every header and tile. */
+.label { font-size: 12.5px; font-weight: 500; letter-spacing: .005em; color: var(--text-muted); }
+/* headlines heavier and tighter; no lone word on the last line */
+h1, h2, h3 { letter-spacing: -0.022em; text-wrap: balance; }
+h1 { font-weight: 700; }
+p { text-wrap: pretty; }
+html { scroll-behavior: smooth; }
+/* one hover/press language for anything clickable that is not a button */
+.lift { transition: transform var(--base) var(--ease), box-shadow var(--base) var(--ease), border-color var(--base) var(--ease); }
+.lift:hover { transform: translateY(-1px); border-color: var(--border-strong);
+  box-shadow: 0 1px 2px rgba(10,51,51,.05), 0 8px 24px -12px rgba(10,51,51,.22); }
+.lift:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(10,51,51,.06); }
+.skip-link { position: absolute; left: 12px; top: -48px; z-index: 70; padding: 10px 16px; border-radius: 999px;
+  background: var(--primary-dark); color: #fff; font-weight: 600; transition: top var(--fast) var(--ease); }
+.skip-link:focus { top: 12px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Experiment (high-end-visual-design skill): paper grain on the landing
+   page, fixed and inert so it never repaints with scrolling, and heavy
+   fade-up reveals as blocks enter the viewport. */
+.grain { position: fixed; inset: 0; z-index: 45; pointer-events: none; opacity: .045; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+:root[data-theme="dark"] .grain { mix-blend-mode: screen; opacity: .035; }
+@media print { .grain, .ambient { display: none; } }
+/* V2 (F1): content is always visible; only its position settles */
+.reveal { transform: translateY(16px);
+  transition: opacity 900ms cubic-bezier(.32,.72,0,1), transform 900ms cubic-bezier(.32,.72,0,1), filter 900ms cubic-bezier(.32,.72,0,1); }
+.reveal.is-in { transform: none; }
+@media (prefers-reduced-motion: reduce) { .reveal { transform: none; } }
+
+/* ---------------------------------------------------------------
+   Experiment: ambience across the portal. Presentation only - no screen
+   changes what it shows or does. Everything below is switched off by the
+   reduced-motion rule further down.
+   --------------------------------------------------------------- */
+/* slow light behind the working screens, drifting on a 40 s loop */
+/* z-index -1: behind the page, so it never joins the stacking of panels and dialogs */
+.ambient { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.ambient::before, .ambient::after { content: ''; position: absolute; width: 60vmax; height: 60vmax; border-radius: 50%;
+  filter: blur(80px); opacity: .55; will-change: transform; }
+.ambient::before { background: radial-gradient(circle, rgba(143,211,203,.35), transparent 65%); top: -25vmax; right: -15vmax;
+  animation: drift-a 40s ease-in-out infinite alternate; }
+.ambient::after { background: radial-gradient(circle, rgba(201,169,106,.22), transparent 65%); bottom: -30vmax; left: 10vmax;
+  animation: drift-b 46s ease-in-out infinite alternate; }
+:root[data-theme="dark"] .ambient::before { opacity: .25; }
+:root[data-theme="dark"] .ambient::after { opacity: .18; }
+@keyframes drift-a { to { transform: translate(-12vmax, 10vmax) scale(1.12); } }
+@keyframes drift-b { to { transform: translate(14vmax, -8vmax) scale(.92); } }
+
+/* page content arrives in turn */
+main > * { animation: rise 640ms cubic-bezier(.32,.72,0,1) backwards; }
+main > *:nth-child(2) { animation-delay: 60ms; } main > *:nth-child(3) { animation-delay: 120ms; }
+main > *:nth-child(4) { animation-delay: 180ms; } main > *:nth-child(5) { animation-delay: 240ms; }
+main > *:nth-child(n+6) { animation-delay: 300ms; }
+.kpi-tile { animation: rise 640ms cubic-bezier(.32,.72,0,1) backwards; }
+.kpi-tile:nth-child(2) { animation-delay: 70ms; } .kpi-tile:nth-child(3) { animation-delay: 140ms; } .kpi-tile:nth-child(n+4) { animation-delay: 210ms; }
+/* V2 (F1): was opacity 0 + blur, which left pages blank when frames were throttled */
+@keyframes rise { from { transform: translateY(8px); } to { transform: none; } }
+
+/* page title drifts back as the page scrolls (scroll-driven, no script) */
+@supports (animation-timeline: scroll()) {
+  .parallax-head { animation: head-drift linear both; animation-timeline: scroll(root); animation-range: 0 320px; }
+  @keyframes head-drift { to { transform: translateY(18px); opacity: .55; } }
+}
+
+
+/* light sweeping across a filled button on hover */
+.sheen { position: relative; overflow: hidden; isolation: isolate; }
+.sheen::before { content: ''; position: absolute; inset: 0; z-index: -1; transform: translateX(-120%) skewX(-18deg);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent); transition: transform 900ms cubic-bezier(.32,.72,0,1); }
+.sheen:hover::before { transform: translateX(120%) skewX(-18deg); }
+
+/* the sidebar: a faint lamp at the top, and the active item glows */
+.sidebar-glow { background-image: radial-gradient(120% 40% at 0% 0%, rgba(201,169,106,.16), transparent 60%),
+  radial-gradient(90% 30% at 100% 100%, rgba(143,211,203,.10), transparent 70%); }
+.nav-active { box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 8px 24px -12px rgba(201,169,106,.45); }
+
+/* landing page: the live card, the colony scene, the viewfinder, the marquee */
+.glass-card { background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(22px) saturate(1.4);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 0 0 1px rgba(255,255,255,.18), 0 40px 80px -30px rgba(0,0,0,.6); }
+.anim-chip { display: inline-flex; animation: chip-in 520ms cubic-bezier(.32,.72,0,1) backwards; }
+div.anim-chip { display: flex; }
+@keyframes chip-in { from { transform: translateY(4px) scale(.98); } }
+.float-slow { animation: float 9s ease-in-out infinite alternate; }
+@keyframes float { from { transform: translateY(-6px) rotate(-.6deg); } to { transform: translateY(8px) rotate(.6deg); } }
+.twinkle { animation: twinkle 3.6s ease-in-out infinite alternate; }
+@keyframes twinkle { from { opacity: .25; } to { opacity: 1; } }
+.window-on { animation: lamp 9s steps(1) infinite; }
+@keyframes lamp { 0%, 88% { opacity: 1; } 90% { opacity: .55; } 92%, 100% { opacity: 1; } }
+.sky-svg rect, .sky-svg circle, .sky-svg path, .sky-svg stop { transition: fill 1.4s ease, stop-color 1.4s ease, opacity 1.4s ease; }
+.focus-pulse { animation: focus 2.6s cubic-bezier(.32,.72,0,1) infinite; }
+@keyframes focus { 0% { transform: scale(1.5); opacity: 0; } 30% { transform: scale(1); opacity: 1; } 100% { transform: scale(1); opacity: .6; } }
+.rec-blink { animation: rec 1.4s steps(1) infinite; }
+@keyframes rec { 50% { opacity: .2; } }
+.marquee-mask { -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+.marquee { display: flex; width: max-content; animation: marquee 60s linear infinite; }
+.marquee:hover { animation-play-state: paused; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+/* a soft fill, not a stroke: variable outlines can overlap inside, and a stroke draws the seams */
+.outline-text { color: color-mix(in srgb, var(--primary) 9%, transparent); transition: color .6s; }
+.outline-text:hover { color: var(--primary); }
+
+
+/* density: compact tables for officers who scan many rows a day */
+[data-density=compact] main table { font-size: 12.5px; }
+[data-density=compact] main tbody tr { height: 38px; }
+[data-density=compact] main td, [data-density=compact] main th { padding-left: 12px; padding-right: 12px; }
+[data-density=compact] main thead th { padding-top: 8px; padding-bottom: 8px; }
+[data-density=compact] .kpi-tile { padding: 14px 16px; }
+[data-density=comfortable] main tbody tr { height: 60px; }
+
+/* A breach: calm and unmistakable. A still red rule and a fine hatch that
+   reads without colour too — no pulse, no shouting; the officer has work to do. */
+.breach { box-shadow: inset 3px 0 0 var(--status-breached);
+  background-image: repeating-linear-gradient(135deg, color-mix(in srgb, var(--status-breached) 9%, transparent) 0 1px, transparent 1px 7px); }
+tr.breach:hover { background-color: color-mix(in srgb, var(--status-breached) 5%, var(--surface)); }
+
+/* the closing flourish */
+.flourish { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; pointer-events: none;
+  background: radial-gradient(circle at center, rgba(10,51,51,.18), transparent 60%); animation: fl-in 260ms ease both; }
+.flourish.out { animation: fl-out 380ms ease both; }
+.flourish-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 26px 34px 22px; border-radius: 28px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(18px); color: var(--status-resolved);
+  box-shadow: 0 30px 70px -24px rgba(10,51,51,.45), inset 0 1px 0 rgba(255,255,255,.5);
+  animation: fl-pop 520ms cubic-bezier(.32,.72,0,1) both; }
+.flourish-mark { position: relative; }
+.flourish-ring { stroke-dasharray: 158; stroke-dashoffset: 158; animation: fl-draw 620ms cubic-bezier(.32,.72,0,1) 80ms forwards; }
+.flourish-tick { stroke-dasharray: 40; stroke-dashoffset: 40; animation: fl-draw 380ms cubic-bezier(.32,.72,0,1) 520ms forwards; }
+.flourish-sparks i { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: var(--gold);
+  opacity: 0; animation: fl-spark 700ms cubic-bezier(.32,.72,0,1) calc(640ms + var(--d)) forwards; }
+.flourish-text { font-weight: 650; font-size: 17px; color: var(--text); letter-spacing: -0.01em; }
+.flourish-sub { font-size: 12.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+@keyframes fl-in { from { opacity: 0; } } @keyframes fl-out { to { opacity: 0; transform: scale(.98); } }
+@keyframes fl-pop { from { opacity: 0; transform: translateY(10px) scale(.94); } }
+@keyframes fl-draw { to { stroke-dashoffset: 0; } }
+@keyframes fl-spark { 0% { opacity: 1; transform: rotate(var(--a)) translateY(0); } 100% { opacity: 0; transform: rotate(var(--a)) translateY(-46px) scale(.4); } }
+@media (prefers-reduced-motion: reduce) { .flourish-ring, .flourish-tick { stroke-dashoffset: 0; } }
+
+.wall-spot { animation: spot-in 700ms cubic-bezier(.32,.72,0,1) backwards; }
+@keyframes spot-in { from { transform: translateY(10px); } }
+
+.living-hero { background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--tint) 90%, transparent), var(--surface) 70%);
+  box-shadow: 0 0 0 1px var(--border), 0 24px 50px -30px rgba(10,51,51,.35); }
+.swipe-panes::-webkit-scrollbar { display: none; }
+/* the inspection photograph opens from the middle, like a shutter */
+.reveal-photo { animation: shutter 1100ms cubic-bezier(.32,.72,0,1) 150ms both; }
+@keyframes shutter { from { clip-path: inset(10% 10% 10% 10% round 24px); } to { clip-path: inset(0 0 0 0 round 0); filter: none; } }
+/* shared-element morph between the list card and the complaint page */
+::view-transition-group(*) { animation-duration: 440ms; animation-timing-function: cubic-bezier(.32,.72,0,1); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 260ms; }
+
+/* text size (G1): the portal is laid out in px, so the whole page zooms */
+html[data-text="sm"] { zoom: .92; }
+html[data-text="lg"] { zoom: 1.12; }
+.gov-strip a { color: inherit; }
+
+/* brand loader (fresh brick): the courses are laid, then the new brick slides home */
+.brick-loader .course { transform-box: fill-box; transform-origin: bottom; animation: lay 1.8s cubic-bezier(.32,.72,0,1) infinite; }
+@keyframes lay { 0% { transform: translateY(-6px); } 25%, 100% { transform: none; } }
+.brick-loader .fresh { animation: home 1.8s cubic-bezier(.32,.72,0,1) infinite; }
+@keyframes home { 0%, 40% { transform: translateX(18px); } 70%, 100% { transform: none; } }
+/* navy scheme: the tricolour runs along the government strip */
+:root[data-scheme="navy"] .gov-strip { border-bottom: 3px solid; border-image: linear-gradient(90deg, #FF9933 0 33.3%, #FFFFFF 33.3% 66.6%, #138808 66.6% 100%) 1; }
+
+/* motion — all of it off under reduced motion */
+@keyframes fade-up { from { transform: translateY(10px); } to { transform: none; } }
+@keyframes hero-settle { from { transform: scale(1.06); } to { transform: scale(1); } }
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes shimmer { from { background-position: -200px 0; } to { background-position: 200px 0; } }
+.anim-fade-up { animation: fade-up 480ms var(--ease) both; }
+.anim-sheet { animation: sheet-up var(--sheet) var(--ease) both; }
+.skeleton { background: linear-gradient(90deg, var(--muted) 0, var(--tint) 60px, var(--muted) 120px);
+  background-size: 400px 100%; animation: shimmer 1.2s linear infinite; border-radius: 10px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* Printing a job card: the sheet alone, black on white. */
+@media print {
+  aside, header, nav, .no-print { display: none !important; }
+  body, main { background: #fff !important; padding: 0 !important; }
+  .print-sheet { border: 0 !important; padding: 0 !important; color: #000 !important; }
+  .print-2col { grid-template-columns: 1fr 1fr !important; }
+  @page { size: A4; margin: 14mm; }
+}

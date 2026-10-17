@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;family=Playfair+Display:ital,wght@0,600;1,500&amp;family=Noto+Sans+Devanagari:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Poppins','Noto Sans Devanagari',system-ui,sans-serif;background:var(--bg,#F8F6EF);color:var(--tx,#1C2B2B);-webkit-font-smoothing:antialiased}
+a{color:var(--pr,#0F4C4C);text-decoration:none;font-weight:600}a:hover{text-decoration:underline}
+*{box-sizing:border-box}
+</style>
+</helmet>
+<div style="min-height:100vh;background:var(--bg,#F8F6EF);color:var(--tx,#1C2B2B);font-family:'Poppins','Noto Sans Devanagari',system-ui,sans-serif">
+
+<sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Landing">
+  <header style="position:sticky;top:0;z-index:5;background:var(--sf,#FFFFFF);border-bottom:1px solid var(--bd,#EAE8E0);box-shadow:0 1px 4px rgba(0,0,0,.04)">
+    <div style="max-width:1200px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:12px">
+        {{ logo40 }}
+        <div style="line-height:1.15">
+          <div style="font-weight:700;font-size:14px;letter-spacing:.04em;color:var(--pr,#0F4C4C)">CIVIL COLONY</div>
+          <div style="font-weight:600;font-size:10px;letter-spacing:.14em;color:#B08F4E">MAINTENANCE PORTAL</div>
+        </div>
+      </div>
+      <nav style="display:flex;gap:20px;flex:1;flex-wrap:wrap;font-size:14px;font-weight:500">
+        <a href="#how" style="color:var(--tm,#617074);font-weight:500">{{ t.navHow }}</a>
+        <a href="#roles" style="color:var(--tm,#617074);font-weight:500">{{ t.navRoles }}</a>
+        <a href="#areas" style="color:var(--tm,#617074);font-weight:500">{{ t.navAreas }}</a>
+        <a href="#help" style="color:var(--tm,#617074);font-weight:500">{{ t.navHelp }}</a>
+      </nav>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;border:1.5px solid var(--bd2,#DDD9CC);border-radius:999px;padding:2px">
+          <button onClick="{{ setEn }}" style="border:0;border-radius:999px;padding:6px 12px;font:600 12px Poppins;cursor:pointer;background:{{ enBg }};color:{{ enFg }}">EN</button>
+          <button onClick="{{ setHi }}" style="border:0;border-radius:999px;padding:6px 12px;font:600 12px 'Noto Sans Devanagari';cursor:pointer;background:{{ hiBg }};color:{{ hiFg }}">हिं</button>
+        </div>
+        <button onClick="{{ toggleDark }}" aria-label="Toggle dark mode" style="width:40px;height:40px;border-radius:999px;border:1.5px solid var(--bd2,#DDD9CC);background:transparent;color:var(--tm,#617074);display:flex;align-items:center;justify-content:center;cursor:pointer">{{ themeIcon }}</button>
+        <button onClick="{{ goLogin }}" style="border:0;border-radius:999px;background:var(--prb,#0F4C4C);color:#FFFFFF;padding:10px 20px;font:600 14px Poppins;cursor:pointer;min-height:44px">{{ t.signIn }}</button>
+      </div>
+    </div>
+  </header>
+
+  <section style="position:relative;overflow:hidden">
+    <div style="max-width:1200px;margin:0 auto;padding:64px 24px 120px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:48px;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div style="font-size:12px;font-weight:600;letter-spacing:.14em;color:#B08F4E">{{ t.eyebrow }}</div>
+        <h1 style="margin:0;font-size:clamp(34px,4.4vw,52px);line-height:1.12;font-weight:700;color:var(--pr,#0F4C4C);text-wrap:balance">{{ t.heroTitle }}</h1>
+        <p style="margin:0;font-size:17px;line-height:1.65;color:var(--tm,#617074);max-width:56ch;text-wrap:pretty">{{ t.heroBody }}</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
+          <button onClick="{{ goLogin }}" style="border:0;border-radius:999px;background:var(--prb,#0F4C4C);color:#FFFFFF;padding:14px 26px;font:600 15px Poppins;cursor:pointer;display:flex;gap:8px;align-items:center">{{ ic.plus }}{{ t.ctaReport }}</button>
+          <button onClick="{{ goLogin }}" style="border-radius:999px;background:var(--sf,#FFFFFF);color:var(--pr,#0F4C4C);border:1.5px solid var(--bd2,#DDD9CC);padding:14px 26px;font:600 15px Poppins;cursor:pointer">{{ t.ctaOfficer }}</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--tm,#617074)">{{ ic.phone }}<span>{{ t.helpline }}</span></div>
+      </div>
+      <div style="position:relative;border-radius:24px;overflow:hidden;aspect-ratio:5/4;border:1px solid var(--bd,#EAE8E0);background:repeating-linear-gradient(135deg,var(--mu,#EFEDE4) 0 12px,var(--sf,#FFFFFF) 12px 24px)">
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:500 12px ui-monospace,Menlo,monospace;color:var(--tm,#617074)">colony photograph · NCL quarters, Singrauli</div>
+        <div style="position:absolute;left:20px;bottom:20px;right:20px;background:var(--sf,#FFFFFF);border-radius:16px;border:1px solid var(--bd,#EAE8E0);box-shadow:0 12px 32px rgba(15,76,76,.14);padding:16px;display:flex;gap:14px;align-items:center">
+          <div style="width:52px;height:52px;flex:none;border-radius:999px;background:conic-gradient(#2E7D32 0 72%,var(--mu,#EFEDE4) 72% 100%);display:flex;align-items:center;justify-content:center"><div style="width:40px;height:40px;border-radius:999px;background:var(--sf,#FFFFFF);display:flex;align-items:center;justify-content:center;font:700 11px Poppins;color:#2E7D32;font-variant-numeric:tabular-nums">18h</div></div>
+          <div style="min-width:0;flex:1">
+            <div style="font-weight:600;font-size:14px">{{ t.cardTitle }}</div>
+            <div style="font-size:12px;color:var(--tm,#617074)">{{ t.cardSub }}</div>
+          </div>
+          <span style="border-radius:999px;background:#E8F5EC;color:#1E6B34;padding:4px 10px;font-size:12px;font-weight:600;white-space:nowrap">{{ t.onTime }}</span>
+        </div>
+      </div>
+    </div>
+    <svg viewBox="0 0 1440 120" preserveAspectRatio="none" style="position:absolute;left:0;right:0;bottom:0;width:100%;height:90px;display:block"><path d="M0 70 C 360 10, 900 120, 1440 40 L1440 120 L0 120Z" fill="#0F4C4C" opacity=".95"></path><path d="M0 95 C 420 50, 980 130, 1440 80 L1440 120 L0 120Z" fill="#0A3333"></path></svg>
+  </section>
+
+  <section style="background:#0A3333;color:#FFFFFF">
+    <div style="max-width:1200px;margin:0 auto;padding:28px 24px 44px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:24px">
+      <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="font-size:30px;font-weight:700;color:#DFC28E;font-variant-numeric:tabular-nums">{{ s.v }}</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.78)">{{ s.l }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="how" style="max-width:1200px;margin:0 auto;padding:72px 24px 24px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.12em;color:var(--tm,#617074);margin-bottom:8px">{{ t.howLabel }}</div>
+    <h2 style="margin:0 0 28px;font-size:28px;font-weight:700;color:var(--pr,#0F4C4C)">{{ t.howTitle }}</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px">
+      <sc-for list="{{ steps }}" as="st" hint-placeholder-count="4">
+        <div style="background:var(--sf,#FFFFFF);border:1px solid var(--bd,#EAE8E0);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="width:44px;height:44px;border-radius:12px;background:var(--tint,#E8F4F4);color:var(--pr,#0F4C4C);display:flex;align-items:center;justify-content:center">{{ st.icon }}</div>
+            <span style="font:600 12px ui-monospace,Menlo,monospace;color:#B08F4E">{{ st.n }}</span>
+          </div>
+          <div style="font-weight:600;font-size:16px">{{ st.title }}</div>
+          <div style="font-size:14px;line-height:1.6;color:var(--tm,#617074)">{{ st.body }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="roles" style="max-width:1200px;margin:0 auto;padding:56px 24px 24px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.12em;color:var(--tm,#617074);margin-bottom:8px">{{ t.rolesLabel }}</div>
+    <h2 style="margin:0 0 28px;font-size:28px;font-weight:700;color:var(--pr,#0F4C4C)">{{ t.rolesTitle }}</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1px;background:var(--bd,#EAE8E0);border:1px solid var(--bd,#EAE8E0);border-radius:16px;overflow:hidden">
+      <sc-for list="{{ roles }}" as="r" hint-placeholder-count="6">
+        <div style="background:var(--sf,#FFFFFF);padding:22px;display:flex;gap:14px">
+          <div style="width:40px;height:40px;flex:none;border-radius:999px;background:var(--tint,#E8F4F4);color:var(--pr,#0F4C4C);display:flex;align-items:center;justify-content:center">{{ r.icon }}</div>
+          <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+            <div style="font-weight:600;font-size:15px">{{ r.name }}</div>
+            <div style="font-size:13px;line-height:1.55;color:var(--tm,#617074)">{{ r.job }}</div>
+            <div style="font-size:12px;color:#B08F4E;font-weight:500">{{ r.where }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="areas" style="max-width:1200px;margin:0 auto;padding:56px 24px 24px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.12em;color:var(--tm,#617074);margin-bottom:8px">{{ t.areasLabel }}</div>
+    <h2 style="margin:0 0 24px;font-size:28px;font-weight:700;color:var(--pr,#0F4C4C)">{{ t.areasTitle }}</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      <sc-for list="{{ areas }}" as="a" hint-placeholder-count="13">
+        <div style="display:flex;align-items:center;gap:8px;background:var(--sf,#FFFFFF);border:1px solid var(--bd,#EAE8E0);border-radius:999px;padding:8px 14px 8px 8px">
+          <span style="font:600 11px ui-monospace,Menlo,monospace;background:var(--tint,#E8F4F4);color:var(--pr,#0F4C4C);border-radius:999px;padding:4px 8px">{{ a.code }}</span>
+          <span style="font-size:14px;font-weight:500">{{ a.name }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <p style="margin:18px 0 0;font-size:14px;color:var(--tm,#617074);max-width:70ch;line-height:1.6">{{ t.otherBldg }}</p>
+  </section>
+
+  <section id="help" style="max-width:1200px;margin:0 auto;padding:56px 24px 72px">
+    <div style="background:var(--prb,#0F4C4C);border-radius:24px;padding:40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:24px;align-items:center;color:#FFFFFF">
+      <div>
+        <div style="font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:26px;line-height:1.35;color:#FFFFFF">{{ t.quote }}</div>
+        <div style="margin-top:10px;font-size:14px;color:rgba(255,255,255,.8)">{{ t.quoteSub }}</div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end">
+        <button onClick="{{ goLogin }}" style="border:0;border-radius:999px;background:#C9A96A;color:#0A3333;padding:14px 26px;font:600 15px Poppins;cursor:pointer">{{ t.signIn }}</button>
+        <div style="border:1.5px solid rgba(255,255,255,.35);border-radius:999px;padding:13px 22px;font-size:14px;display:flex;gap:8px;align-items:center">{{ ic.phone }}07805-224000</div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="border-top:1px solid var(--bd,#EAE8E0);background:var(--sf,#FFFFFF)">
+    <div style="max-width:1200px;margin:0 auto;padding:20px 24px;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;font-size:12px;color:var(--tm,#617074)">
+      <span>{{ t.footer }}</span><span>Singrauli, Madhya Pradesh · v4.0</span>
+    </div>
+  </footer>
+</div>
+</sc-if>
+
+<sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Login" style="min-height:100vh;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))">
+  <aside style="position:relative;overflow:hidden;background:linear-gradient(160deg,#0F4C4C,#0A3333);color:#FFFFFF;padding:40px 48px;display:flex;flex-direction:column;gap:32px;min-height:340px">
+    <button onClick="{{ goLanding }}" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:12px">
+      {{ logo48 }}
+      <div style="line-height:1.2">
+        <div style="font-weight:700;font-size:14px;letter-spacing:.06em">CIVIL COLONY</div>
+        <div style="font-weight:600;font-size:11px;letter-spacing:.14em;color:#DFC28E">MAINTENANCE PORTAL</div>
+      </div>
+    </button>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:24px">
+      <div style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(28px,3vw,38px);line-height:1.3;font-weight:600;max-width:16ch">{{ t.loginQuote }}</div>
+      <div style="display:flex;gap:32px;flex-wrap:wrap">
+        <sc-for list="{{ loginStats }}" as="s" hint-placeholder-count="3">
+          <div><div style="font-size:24px;font-weight:700;color:#DFC28E;font-variant-numeric:tabular-nums">{{ s.v }}</div><div style="font-size:12px;color:rgba(255,255,255,.78)">{{ s.l }}</div></div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="font-size:12px;color:rgba(255,255,255,.7)">{{ t.footer }}</div>
+    <svg viewBox="0 0 400 200" style="position:absolute;right:-60px;bottom:-40px;width:360px;opacity:.08"><circle cx="200" cy="200" r="180" fill="none" stroke="#FFFFFF" stroke-width="2"></circle><circle cx="200" cy="200" r="130" fill="none" stroke="#FFFFFF" stroke-width="2"></circle></svg>
+  </aside>
+
+  <main style="display:flex;align-items:center;justify-content:center;padding:40px 24px">
+    <div style="width:100%;max-width:440px;display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <div style="display:flex;border:1.5px solid var(--bd2,#DDD9CC);border-radius:999px;padding:2px">
+          <button onClick="{{ setEn }}" style="border:0;border-radius:999px;padding:6px 12px;font:600 12px Poppins;cursor:pointer;background:{{ enBg }};color:{{ enFg }}">EN</button>
+          <button onClick="{{ setHi }}" style="border:0;border-radius:999px;padding:6px 12px;font:600 12px 'Noto Sans Devanagari';cursor:pointer;background:{{ hiBg }};color:{{ hiFg }}">हिं</button>
+        </div>
+        <button onClick="{{ toggleDark }}" aria-label="Toggle dark mode" style="width:40px;height:40px;border-radius:999px;border:1.5px solid var(--bd2,#DDD9CC);background:transparent;color:var(--tm,#617074);display:flex;align-items:center;justify-content:center;cursor:pointer">{{ themeIcon }}</button>
+      </div>
+      <div>
+        <h1 style="margin:0;font-size:28px;font-weight:700;color:var(--pr,#0F4C4C)">{{ t.welcome }}</h1>
+        <p style="margin:4px 0 0;font-size:14px;color:var(--tm,#617074)">{{ t.welcomeSub }}</p>
+      </div>
+
+      <div role="tablist" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;background:var(--mu,#EFEDE4);border-radius:14px;padding:4px">
+        <sc-for list="{{ roleTabs }}" as="rt" hint-placeholder-count="6">
+          <button role="tab" onClick="{{ rt.pick }}" style="border:0;border-radius:10px;padding:9px 6px;min-height:44px;font:{{ rt.weight }} 12px Poppins,'Noto Sans Devanagari';cursor:pointer;background:{{ rt.bg }};color:{{ rt.fg }};box-shadow:{{ rt.sh }};line-height:1.25">{{ rt.label }}</button>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ isResident }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <sc-for list="{{ resTypes }}" as="r" hint-placeholder-count="2">
+            <label onClick="{{ r.pick }}" style="flex:1;min-width:170px;display:flex;gap:10px;align-items:center;border:1.5px solid {{ r.bd }};background:{{ r.bg }};border-radius:12px;padding:12px;cursor:pointer;min-height:44px">
+              <span style="width:18px;height:18px;flex:none;border-radius:999px;border:2px solid {{ r.dot }};display:flex;align-items:center;justify-content:center"><span style="width:8px;height:8px;border-radius:999px;background:{{ r.fill }}"></span></span>
+              <span style="font-size:13px;font-weight:500">{{ r.label }}</span>
+            </label>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;gap:18px;border-bottom:1px solid var(--bd,#EAE8E0)">
+        <sc-for list="{{ methods }}" as="m" hint-placeholder-count="2">
+          <button onClick="{{ m.pick }}" style="all:unset;cursor:pointer;padding:8px 0;font-size:13px;font-weight:600;color:{{ m.fg }};border-bottom:2px solid {{ m.bd }};margin-bottom:-1px">{{ m.label }}</button>
+        </sc-for>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="font-size:12px;font-weight:600;color:var(--tm,#617074)">{{ idLabel }}</label>
+        <div style="display:flex;align-items:center;gap:10px;background:var(--sf,#FFFFFF);border:1.5px solid {{ idBorder }};border-radius:12px;padding:0 14px;min-height:48px;color:var(--tl,#7A8B8E)">
+          {{ idIcon }}
+          <input value="{{ idVal }}" onChange="{{ onId }}" placeholder="{{ idPh }}" style="flex:1;border:0;outline:0;background:transparent;font:400 15px Poppins;color:var(--tx,#1C2B2B);min-width:0">
+        </div>
+      </div>
+
+      <sc-if value="{{ showSecret }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between"><label style="font-size:12px;font-weight:600;color:var(--tm,#617074)">{{ secretLabel }}</label><a href="#" style="font-size:12px">{{ secretLink }}</a></div>
+          <div style="display:flex;align-items:center;gap:10px;background:var(--sf,#FFFFFF);border:1.5px solid var(--bd2,#DDD9CC);border-radius:12px;padding:0 14px;min-height:48px;color:var(--tl,#7A8B8E)">
+            {{ ic.lock }}
+            <input type="{{ secretType }}" placeholder="{{ secretPh }}" style="flex:1;border:0;outline:0;background:transparent;font:400 15px Poppins;color:var(--tx,#1C2B2B);letter-spacing:{{ secretLs }};min-width:0">
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ hasError }}" hint-placeholder-val="{{ false }}">
+        <div role="alert" style="display:flex;gap:10px;align-items:flex-start;background:#FDEDEC;border:1px solid #F5C6C1;color:#A93226;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.5">{{ ic.alert }}<span>{{ errorText }}</span></div>
+      </sc-if>
+
+      <button onClick="{{ submit }}" style="border:0;border-radius:999px;background:var(--prb,#0F4C4C);color:#FFFFFF;min-height:50px;font:600 15px Poppins,'Noto Sans Devanagari';cursor:pointer">{{ submitLabel }}</button>
+
+      <p style="margin:0;text-align:center;font-size:13px;color:var(--tm,#617074)">{{ t.newUser }} <a href="#">{{ t.requestAccess }}</a></p>
+      <div style="background:var(--mu,#EFEDE4);border-radius:12px;padding:12px 14px;font-size:12px;line-height:1.55;color:var(--tm,#617074)"><strong style="color:var(--tx,#1C2B2B)">{{ t.disclaimerH }}</strong> {{ t.disclaimer }}</div>
+    </div>
+  </main>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startPage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;landing&quot;,&quot;login&quot;],&quot;default&quot;:&quot;landing&quot;,&quot;tsType&quot;:&quot;'landing'|'login'&quot;}}">
+class Component extends DCLogic {
+  state = { page: this.props.startPage ?? 'landing', lang: 'en', dark: false, role: 'resident', resType: 'ncl', method: 'id', idVal: '', otpSent: false, err: false };
+  componentDidMount() { this.applyTheme(); }
+  componentDidUpdate() { this.applyTheme(); }
+  applyTheme() {
+    const d = this.state.dark, r = document.documentElement.style;
+    const v = d ? { bg:'#0E1A1A', sf:'#152424', bd:'#22393A', bd2:'#2E4A4B', tx:'#E7EDEA', tm:'#A4B4B3', tl:'#8FA2A1', pr:'#8FD3CB', prb:'#1A6B6B', mu:'#1B2E2E', tint:'#1D3838' }
+      : { bg:'#F8F6EF', sf:'#FFFFFF', bd:'#EAE8E0', bd2:'#DDD9CC', tx:'#1C2B2B', tm:'#617074', tl:'#7A8B8E', pr:'#0F4C4C', prb:'#0F4C4C', mu:'#EFEDE4', tint:'#E8F4F4' };
+    Object.entries(v).forEach(([k, x]) => r.setProperty('--' + k, x));
+  }
+  icon(p, s = 18) {
+    return React.createElement('svg', { width: s, height: s, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true },
+      p.split('|').map((d, i) => React.createElement('path', { key: i, d })));
+  }
+  logo(size) {
+    const e = React.createElement;
+    return e('svg', { width: size, height: size, viewBox: '0 0 56 56', 'aria-label': 'Civil Colony Maintenance Portal' },
+      e('circle', { cx: 28, cy: 28, r: 26, stroke: '#C9A96A', strokeWidth: 2.5, fill: '#FFFFFF' }),
+      e('polygon', { points: '28,12 42,24 14,24', fill: '#0F4C4C' }),
+      e('rect', { x: 17, y: 23, width: 22, height: 16, rx: 1, fill: '#0F4C4C' }),
+      e('rect', { x: 20, y: 26, width: 5, height: 5, rx: .5, fill: '#E74C3C' }), e('rect', { x: 27, y: 26, width: 5, height: 5, rx: .5, fill: '#F39C12' }),
+      e('rect', { x: 20, y: 32.5, width: 5, height: 5, rx: .5, fill: '#3498DB' }), e('rect', { x: 27, y: 32.5, width: 5, height: 5, rx: .5, fill: '#2ECC71' }),
+      e('path', { d: 'M36 36 Q44 28 44 20 Q36 20 30 30 Q30 38 36 36Z', fill: '#2E7D32', opacity: .85 }));
+  }
+  renderVals() {
+    const s = this.state, hi = s.lang === 'hi', P = {
+      plus:'M12 5v14|M5 12h14', phone:'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z',
+      lock:'M5 11h14v10H5z|M8 11V7a4 4 0 0 1 8 0v4', user:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2|M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z', mobile:'M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z|M12 18h.01',
+      alert:'M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z|M12 9v4|M12 17h.01',
+      sun:'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z|M12 2v2|M12 20v2|M4.9 4.9l1.4 1.4|M17.7 17.7l1.4 1.4|M2 12h2|M20 12h2|M4.9 19.1l1.4-1.4|M17.7 6.3l1.4-1.4', moon:'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z',
+      report:'M3 12a9 9 0 1 0 3-6.7L3 8|M3 3v5h5|M12 7v5|M12 16h.01', assign:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2|M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z|M19 8v6|M22 11h-6',
+      wrench:'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9l-3.8 3.8z', check:'M9 11l3 3L22 4|M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11',
+      home:'M3 10l9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10', hard:'M2 18h20|M4 18v-3a8 8 0 0 1 16 0v3|M10 7V5h4v2', shield:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z|M9 12l2 2 4-4',
+      chart:'M18 20V10|M12 20V4|M6 20v-6', building:'M3 21h18|M5 21V7l7-4 7 4v14|M9 10h.01|M15 10h.01|M9 14h.01|M15 14h.01', gear:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z|M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z'
+    };
+    const ic = {}; Object.keys(P).forEach(k => ic[k] = this.icon(P[k]));
+    const T = hi ? {
+      navHow:'कैसे काम करता है', navRoles:'किसके लिए', navAreas:'क्षेत्र', navHelp:'सहायता', signIn:'साइन इन करें',
+      eyebrow:'नॉर्दर्न कोलफ़ील्ड्स लिमिटेड · सिविल विभाग', heroTitle:'हर क्वार्टर की शिकायत, समय पर ठीक।',
+      heroBody:'13 क्षेत्रों के लगभग 15,000 क्वार्टरों के लिए सिविल रखरखाव पोर्टल। निवासी एक मिनट में समस्या दर्ज करें, सिविल विभाग ठेकेदार नियुक्त करे, और हर काम की SLA पर निगरानी हो।',
+      ctaReport:'समस्या दर्ज करें', ctaOfficer:'अधिकारी लॉगिन', helpline:'24 घंटे हेल्पलाइन 07805-224000',
+      cardTitle:'क्वा. नं. C-245, निगाही · नल रिसाव', cardSub:'ठेकेदार आज 3:00 बजे तक पहुँचेगा', onTime:'समय पर',
+      howLabel:'प्रक्रिया', howTitle:'दर्ज करने से पुष्टि तक, चार चरण', rolesLabel:'भूमिकाएँ', rolesTitle:'हर भूमिका के लिए अपना होम पेज',
+      areasLabel:'कवरेज', areasTitle:'13 क्षेत्र, एक पोर्टल', otherBldg:'हॉस्टल, गेस्ट हाउस, यूनियन कार्यालय और प्रशासनिक भवन सीधे सिविल विभाग के नियंत्रण में "अन्य भवन" टैब में दर्ज होते हैं।',
+      quote:'सुव्यवस्थित कॉलोनी, सशक्त समुदाय।', quoteSub:'किसी सहायता के लिए अपने क्षेत्र के सिविल कॉलोनी प्रभारी से संपर्क करें।',
+      footer:'नॉर्दर्न कोलफ़ील्ड्स लिमिटेड · कोल इंडिया लिमिटेड की सहायक कंपनी',
+      loginQuote:'सुव्यवस्थित कॉलोनी, सशक्त समुदाय।', welcome:'फिर से स्वागत है', welcomeSub:'अपनी भूमिका चुनें और साइन इन करें',
+      newUser:'नए उपयोगकर्ता?', requestAccess:'पहुँच का अनुरोध करें', disclaimerH:'सूचना:', disclaimer:'यह पोर्टल केवल अधिकृत उपयोगकर्ताओं के लिए है। अनधिकृत उपयोग पर अनुशासनात्मक कार्रवाई हो सकती है।'
+    } : {
+      navHow:'How it works', navRoles:'Who it’s for', navAreas:'Areas', navHelp:'Help', signIn:'Sign in',
+      eyebrow:'NORTHERN COALFIELDS LIMITED · CIVIL DEPARTMENT', heroTitle:'Every quarter complaint, fixed right and on time.',
+      heroBody:'The civil maintenance portal for about 15,000 company quarters across 13 Areas. Residents report a problem in under a minute, the civil department assigns the contractor, and every job is tracked against its SLA until the resident confirms the fix.',
+      ctaReport:'Report a problem', ctaOfficer:'Officer sign in', helpline:'24-hour helpline 07805-224000',
+      cardTitle:'Qtr No. C-245, Nigahi · Tap leakage', cardSub:'Contractor arriving by 3:00 PM today', onTime:'On time',
+      howLabel:'THE PROCESS', howTitle:'From report to resident sign-off, in four steps', rolesLabel:'ROLES', rolesTitle:'Each role gets a home built around its daily task',
+      areasLabel:'COVERAGE', areasTitle:'13 Areas, one portal', otherBldg:'Hostels, guest houses, union offices and administrative buildings have no permanent residents. They are listed under a separate Other buildings tab and managed directly by the civil department.',
+      quote:'Well maintained colonies, stronger communities.', quoteSub:'Need help signing in? Contact the Civil Colony Incharge of your Area.',
+      footer:'Northern Coalfields Limited · A subsidiary of Coal India Limited',
+      loginQuote:'Well maintained colonies, stronger communities.', welcome:'Welcome back', welcomeSub:'Choose your role and sign in',
+      newUser:'New user?', requestAccess:'Request access', disclaimerH:'Disclaimer:', disclaimer:'This portal is for authorised users only. Unauthorised access is prohibited and may lead to disciplinary action.'
+    };
+    const areas = [['AML','Amlohri','अमलोरी'],['NGH','Nigahi','निगाही'],['JNT','Jayant','जयंत'],['DCH','Dudhichua','दुधीचुआ'],['KHD','Khadia','खड़िया'],['KSL','Krishnashila','कृष्णशिला'],['BINA','Bina','बीना'],['KKR','Kakri','ककरी'],['JRD','Jhingurda','झिंगुरदा'],['BLB','Block-B','ब्लॉक-बी'],['CWS','Central Workshop','सेंट्रल वर्कशॉप'],['NSC','Nehru Shatabdi Chikitsalaya','नेहरू शताब्दी चिकित्सालय'],['NCL HQ','NCL HQ Colony','एनसीएल मुख्यालय कॉलोनी']]
+      .map(a => ({ code: a[0], name: hi ? a[2] : a[1] }));
+    const roleDefs = [
+      ['resident', hi?'निवासी':'Resident', ic.home, hi?'एक मिनट में समस्या दर्ज करें, देखें कौन और कब आएगा, फिर सुधार की पुष्टि करें।':'Report a problem in under a minute, see who is coming and when, then confirm or reopen the fix.', hi?'मोबाइल':'Mobile app'],
+      ['contractor', hi?'ठेकेदार पर्यवेक्षक':'Contractor supervisor', ic.hard, hi?'SLA के अनुसार आज के काम, क्वार्टर का रास्ता, पहले/बाद की फ़ोटो।':'Today’s jobs sorted by SLA, directions to the quarter, before and after photos, works offline.', hi?'मोबाइल':'Mobile app'],
+      ['incharge', hi?'सिविल कॉलोनी प्रभारी':'Civil Colony Incharge', ic.assign, hi?'ठेकेदार नियुक्त करें, सत्यापित काम स्वीकारें, खराब काम दोबारा सौंपें।':'Assign jobs to the Area’s contractors, accept verified work, reassign flagged work.', hi?'वेब और मोबाइल':'Web and mobile'],
+      ['overseer', hi?'सिविल कॉलोनी ओवरसियर':'Civil Colony Overseer', ic.shield, hi?'पूरा हुआ काम मौके पर जाँचें और खराब गुणवत्ता चिह्नित करें।':'Inspect completed work on site and flag poor quality before it is accepted.', hi?'वेब और मोबाइल':'Web and mobile'],
+      ['area', hi?'क्षेत्र सिविल प्रभारी / मुख्यालय':'Area In-charge and HQ', ic.chart, hi?'ठेकेदार स्कोरकार्ड, SLA अनुपालन, कटौती और 13 क्षेत्रों की तुलना।':'Contractor scorecard, SLA compliance, deductions due and a 13-Area comparison.', hi?'वेब':'Web'],
+      ['admin', hi?'प्रशासक':'Administrator', ic.gear, hi?'उपयोगकर्ता, क्वार्टर मास्टर, श्रेणियाँ, SLA नियम और अनुवाद।':'Users and roles, quarter master, categories, SLA rules and translations.', hi?'वेब':'Web']
+    ];
+    const set = o => () => this.setState(o);
+    const isRes = s.role === 'resident', otp = s.method === 'otp';
+    const nonNcl = isRes && s.resType === 'non';
+    const methods = nonNcl ? [['otp', hi?'मोबाइल OTP':'Mobile OTP']] : [['id', hi?'कर्मचारी आईडी':'Employee ID'], ['otp', hi?'मोबाइल OTP':'Mobile OTP']];
+    const useOtp = otp || nonNcl;
+    const active = (on) => ({ bg: on ? 'var(--sf,#FFFFFF)' : 'transparent', fg: on ? 'var(--pr,#0F4C4C)' : 'var(--tm,#617074)', sh: on ? '0 1px 3px rgba(0,0,0,.08)' : 'none', weight: on ? 600 : 500 });
+    const idLabel = useOtp ? (hi?'पंजीकृत मोबाइल नंबर':'Registered mobile number') : (s.role === 'contractor' ? (hi?'ठेकेदार कर्मचारी आईडी':'Contractor staff ID') : (hi?'कर्मचारी आईडी':'Employee ID'));
+    return {
+      isLanding: s.page === 'landing', isLogin: s.page === 'login', t: T, ic,
+      logo40: this.logo(40), logo48: this.logo(48),
+      themeIcon: this.icon(s.dark ? P.sun : P.moon),
+      goLogin: set({ page: 'login' }), goLanding: set({ page: 'landing' }),
+      setEn: set({ lang: 'en' }), setHi: set({ lang: 'hi' }), toggleDark: () => this.setState(x => ({ dark: !x.dark })),
+      enBg: hi ? 'transparent' : 'var(--prb,#0F4C4C)', enFg: hi ? 'var(--tm,#617074)' : '#FFFFFF',
+      hiBg: hi ? 'var(--prb,#0F4C4C)' : 'transparent', hiFg: hi ? '#FFFFFF' : 'var(--tm,#617074)',
+      stats: [{ v:'15,000', l: hi?'कंपनी क्वार्टर':'Company quarters' }, { v:'13', l: hi?'क्षेत्र / परियोजनाएँ':'Areas and projects' }, { v:'91.4%', l: hi?'इस माह SLA अनुपालन':'SLA compliance this month' }, { v:'4.3 / 5', l: hi?'निवासी संतुष्टि':'Resident satisfaction' }],
+      loginStats: [{ v:'15,000', l: hi?'क्वार्टर':'Quarters' }, { v:'13', l: hi?'क्षेत्र':'Areas' }, { v:'91.4%', l: hi?'SLA अनुपालन':'SLA compliance' }],
+      steps: [
+        { n:'01', icon: ic.report, title: hi?'निवासी दर्ज करता है':'Resident reports', body: hi?'श्रेणी आइकन चुनें, फ़ोटो जोड़ें, सुविधाजनक समय चुनें।':'Pick a category icon, add photos and a convenient visit time.' },
+        { n:'02', icon: ic.assign, title: hi?'प्रभारी नियुक्त करता है':'Incharge assigns', body: hi?'कॉलोनी प्रभारी क्षेत्र के पंजीकृत ठेकेदार को काम सौंपता है; SLA घड़ी शुरू।':'The Civil Colony Incharge assigns a registered Area contractor and the SLA clock starts.' },
+        { n:'03', icon: ic.wrench, title: hi?'ठेकेदार ठीक करता है':'Contractor fixes', body: hi?'पहले और बाद की फ़ोटो, प्रयुक्त सामग्री, फिर काम पूरा चिह्नित।':'Before and after photos, materials used, then marked complete.' },
+        { n:'04', icon: ic.check, title: hi?'जाँच और पुष्टि':'Verified and confirmed', body: hi?'ओवरसियर गुणवत्ता जाँचता है, निवासी पुष्टि कर रेटिंग देता है।':'The overseer checks quality, then the resident confirms and rates the work.' }
+      ],
+      roles: roleDefs.map(r => ({ name: r[1], icon: r[2], job: r[3], where: r[4] })),
+      areas,
+      roleTabs: roleDefs.map(r => Object.assign({ label: r[1], pick: set({ role: r[0], err: false, otpSent: false, method: r[0] === 'contractor' ? 'otp' : this.state.method }) }, active(s.role === r[0]))),
+      isResident: isRes,
+      resTypes: [['ncl', hi?'एनसीएल कर्मचारी':'NCL employee'], ['non', hi?'गैर-एनसीएल निवासी':'Non-NCL resident']].map(r => {
+        const on = s.resType === r[0];
+        return { label: r[1], pick: set({ resType: r[0], method: r[0] === 'non' ? 'otp' : s.method, err: false }), bd: on ? 'var(--pr,#0F4C4C)' : 'var(--bd2,#DDD9CC)', bg: on ? 'var(--tint,#E8F4F4)' : 'var(--sf,#FFFFFF)', dot: on ? 'var(--pr,#0F4C4C)' : 'var(--bd2,#DDD9CC)', fill: on ? 'var(--pr,#0F4C4C)' : 'transparent' };
+      }),
+      methods: methods.map(m => { const on = (useOtp ? 'otp' : 'id') === m[0]; return { label: m[1], pick: set({ method: m[0], otpSent: false, err: false }), fg: on ? 'var(--pr,#0F4C4C)' : 'var(--tm,#617074)', bd: on ? '#C9A96A' : 'transparent' }; }),
+      idLabel, idPh: useOtp ? '98765 43210' : (s.role === 'contractor' ? 'CTR/AML/0412' : 'NCL/EMP/2024/XXXX'),
+      idIcon: useOtp ? ic.mobile : ic.user, idVal: s.idVal, onId: e => this.setState({ idVal: e.target.value, err: false }),
+      idBorder: s.err ? '#C0392B' : 'var(--bd2,#DDD9CC)',
+      showSecret: !useOtp || s.otpSent,
+      secretLabel: useOtp ? (hi?'6 अंकों का OTP':'6-digit OTP') : (hi?'पासवर्ड':'Password'),
+      secretLink: useOtp ? (hi?'OTP दोबारा भेजें (0:28)':'Resend OTP in 0:28') : (hi?'पासवर्ड भूल गए?':'Forgot password?'),
+      secretType: useOtp ? 'text' : 'password', secretPh: useOtp ? '• • • • • •' : (hi?'अपना पासवर्ड दर्ज करें':'Enter your password'), secretLs: useOtp ? '.4em' : 'normal',
+      hasError: s.err,
+      errorText: useOtp ? (hi?'यह मोबाइल नंबर पंजीकृत नहीं है। अपने क्षेत्र कार्यालय में दर्ज नंबर डालें।':'This mobile number is not registered. Enter the number recorded with your Area civil office.') : (hi?'कर्मचारी आईडी दर्ज करें, जैसे NCL/EMP/2018/0142।':'Enter your employee ID in the format NCL/EMP/2018/0142.'),
+      submitLabel: useOtp && !s.otpSent ? (hi?'OTP भेजें':'Send OTP') : (hi?'साइन इन करें':'Sign in'),
+      submit: () => {
+        if (!s.idVal.trim()) return this.setState({ err: true });
+        if (useOtp && !s.otpSent) return this.setState({ otpSent: true, err: false });
+        const map = { resident:'v4 Mobile Apps.dc.html', contractor:'v4 Mobile Apps.dc.html' };
+        window.location.href = map[s.role] || 'v4 Web Portal.dc.html';
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

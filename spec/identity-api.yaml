@@ -1,0 +1,1433 @@
+openapi: 3.0.3
+info:
+  title: NCL Identity & Premises Service
+  version: "1.0.0"
+  description: |
+    Shared service: device credentials, premises master, org hierarchy, scope.
+
+    Consumed by the Colony Maintenance service and, later, by the E&M service.
+    Nothing in this API is specific to civil maintenance.
+
+    AUTHENTICATION MODEL
+    There is no password login for residents or custodians. An approved
+    installation of the application is the credential. The device holds a
+    hardware-bound keypair (Android Keystore / iOS Secure Enclave); the
+    server holds only the public key.
+
+    Session flow:
+      1. POST /auth/challenge      -> server returns a one-time nonce
+      2. device signs the nonce with its private key
+      3. POST /auth/token          -> access token (15 min) + refresh credential
+
+    Accountable roles (Overseer, Incharge, Staff Officer, Contractor
+    Supervisor) additionally unlock the app with a local PIN or biometric.
+    That unlock is enforced on the device and asserted in the token request;
+    it is not a server round trip.
+
+servers:
+  - url: https://portal.nclcil.in/identity/v1
+
+tags:
+  - name: auth
+  - name: passkeys
+  - name: registration
+  - name: devices
+  - name: premises
+  - name: masters
+
+paths:
+
+  /auth/otp/request:
+    post:
+      tags: [auth]
+      summary: Send an OTP to a handset during registration
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mobile]
+              properties:
+                mobile:
+                  type: string
+                  pattern: '^[6-9][0-9]{9}$'
+      responses:
+        '202':
+          description: OTP dispatched
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sent: { type: boolean }
+                  expires_in_minutes: { type: integer }
+                  dev_code: { type: string, description: 'Outside production only, as there is no SMS gateway yet' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/otp/verify:
+    post:
+      tags: [auth]
+      summary: Verify OTP and obtain a short-lived registration ticket
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mobile, code]
+              properties:
+                mobile: { type: string }
+                code:   { type: string }
+      responses:
+        '200':
+          description: Verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  registration_token: { type: string }
+                  expires_at: { type: string, format: date-time }
+        '400': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+
+  /auth/challenge:
+    post:
+      tags: [auth]
+      summary: Obtain a one-time nonce for signature authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [public_key]
+              properties:
+                public_key: { type: string, description: base64 SPKI }
+      responses:
+        '200':
+          description: Nonce issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nonce: { type: string }
+                  expires_at: { type: string, format: date-time }
+        '404': { $ref: '#/components/responses/Problem' }
+
+  /auth/token:
+    post:
+      tags: [auth]
+      summary: Exchange a signed nonce for an access token
+      description: |
+        The access token carries role, scope_path and premises_id as claims.
+        Those claims are the ONLY source of authorisation context; the
+        maintenance service sets its database session variables from them.
+        A client can never assert its own scope or premises.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [public_key, nonce, signature]
+              properties:
+                public_key: { type: string }
+                nonce:      { type: string }
+                signature:  { type: string, description: base64 ES256 over the nonce }
+                second_factor_satisfied:
+                  type: boolean
+                  description: |
+                    Device asserts that PIN or biometric unlock succeeded.
+                    Required true for accountable roles; the server refuses
+                    to issue a token without it.
+                role:          { $ref: '#/components/schemas/Role' }
+                assignment_id: { type: string, format: uuid, description: The role assignment to act in }
+      responses:
+        '200':
+          description: |
+            Authenticated. With one role (or a role/assignment named) the
+            access token is returned; with several, a person_token and the
+            list of roles, and the client calls /auth/select-role.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403':
+          description: Device pending approval, rejected, or revoked
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Renew an access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        '200':
+          description: Renewed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '401':
+          description: |
+            Refresh rejected. A revoked device fails here, which is why
+            revocation takes effect within one access-token lifetime.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /me:
+    get:
+      tags: [auth]
+      summary: Identity and binding of the calling device
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Me' }
+
+  /me/homes:
+    get:
+      tags: [registration]
+      summary: The homes the caller has asked for or holds (resident's quarter, custodian's building)
+      responses:
+        '200':
+          description: Newest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/HomeRequest' } }
+    post:
+      tags: [registration]
+      summary: Ask for a home, being already signed in
+      description: |
+        For someone whose phone is already approved — a contractor supervisor
+        of one Area living in another, an official whose quarter is in another
+        colony. No new phone and no new OTP: the occupant role is asked for,
+        and the Incharge or Area administrator of that colony's Area checks the
+        quarter and approves the role alone. Only RESIDENT or CUSTODIAN; one
+        request waiting at a time.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [colony_id, identifier]
+              properties:
+                colony_id:  { type: string, format: uuid }
+                role:       { type: string, enum: [RESIDENT, CUSTODIAN], default: RESIDENT }
+                identifier: { type: string, description: The quarter number or the building }
+                sector:     { type: string, nullable: true }
+                no_sector:  { type: boolean, nullable: true }
+      responses:
+        '201':
+          description: Waiting for approval
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HomeRequest' }
+        '401': { description: Not signed in }
+        '409':
+          description: A request is already waiting, or it is already one of the caller's homes
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '422':
+          description: An official role, no quarter, or an unknown colony
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /home-requests:
+    get:
+      tags: [registration]
+      summary: Homes asked for in the caller's Area by people already registered (Incharge, Area administrators)
+      responses:
+        '200':
+          description: Oldest first; empty for anyone else
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/HomeRequest' } }
+
+  /home-requests/{id}/approve:
+    post:
+      tags: [registration]
+      summary: Approve a home — the role only; the person's phone is approved already
+      parameters: [{ in: path, name: id, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                corrected_identifier: { type: string, nullable: true }
+                corrected_sector:     { type: string, nullable: true }
+                quarter_type:         { type: string, nullable: true, description: 'A, B, C, D or MQ; required for a quarter' }
+      responses:
+        '200':
+          description: Approved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:        { type: string, format: uuid }
+                  role:      { type: string }
+                  premises:  { type: object, properties: { id: { type: string, format: uuid }, identifier: { type: string } } }
+                  corrected: { type: boolean }
+        '403': { description: "Not a request the caller can act on, or the caller's own" }
+        '422': { description: "No quarter type, or no such building" }
+
+  /home-requests/{id}/reject:
+    post:
+      tags: [registration]
+      summary: Refuse a home, with a reason the person sees
+      parameters: [{ in: path, name: id, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [reason], properties: { reason: { type: string } } }
+      responses:
+        '200':
+          description: Refused
+          content:
+            application/json:
+              schema: { type: object, properties: { ok: { type: boolean } } }
+        '403': { description: Not a request the caller can act on }
+        '422': { description: No reason }
+
+  /registrations:
+    post:
+      tags: [registration]
+      summary: Submit a device registration
+      description: |
+        Creates a PENDING device. Colony is chosen from a fixed list; sector
+        and premises identifier are free text and are corrected by the
+        Civil Maintenance Incharge at approval. This correction step is how
+        the premises master is digitised.
+
+        The mobile number recorded is the one proved by OTP (the token),
+        never one sent in the body. GM_CIVIL and ADMINISTRATOR cannot be
+        registered: they are provisioned. Resident and custodian
+        registrations are approved by the Incharge; officer and contractor
+        registrations by the Administrator.
+      security: []
+      parameters:
+        - in: header
+          name: X-Registration-Token
+          required: true
+          description: The registration_token from /auth/otp/verify
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegistrationRequest' }
+      responses:
+        '201':
+          description: Registration pending verification
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Registration' }
+        '409':
+          description: A registration for this premises is already pending
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '422':
+          description: Mobile not verified, a required field missing, or a role that cannot be registered
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+    get:
+      tags: [registration]
+      summary: Registration queue — the registrations the caller may act on
+      description: |
+        The Incharge sees resident and custodian registrations; the
+        Administrator sees all, including officer and contractor ones.
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [PENDING, ACTIVE, REJECTED, REVOKED] }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Scoped to the caller's area by row-level security
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Registration' }
+                  total: { type: integer }
+
+  /registrations/{id}/approve:
+    post:
+      tags: [registration]
+      summary: Approve a registration, correcting the submitted details
+      description: |
+        The Incharge may edit sector and identifier before approving. If the
+        premises does not yet exist in the master it is created here — this
+        is the mechanism by which 15,000 premises become digitised records.
+        quarter_type is required when premises_type is QUARTER.
+
+        Officer and contractor registrations are approved by the
+        Administrator only (403 for anyone else). They are scoped to the
+        Area and bound to no premises; the body is ignored.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                corrected_sector:     { type: string, nullable: true }
+                corrected_identifier: { type: string }
+                premises_type:        { $ref: '#/components/schemas/PremisesType' }
+                quarter_type:
+                  type: string
+                  nullable: true
+                  enum: [A, B, C, D, MQ]
+                occupancy_model:      { $ref: '#/components/schemas/OccupancyModel' }
+      responses:
+        '200':
+          description: Device activated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Registration' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: Premises already has the maximum number of active devices
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /registrations/{id}/reject:
+    post:
+      tags: [registration]
+      summary: Reject a registration
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 3 }
+      responses:
+        '200': { description: Rejected }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /registrations/{id}/refer-site-check:
+    post:
+      tags: [registration]
+      summary: Refer a registration to the Civil Overseer for field confirmation
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { description: Referred }
+
+  /devices:
+    get:
+      tags: [devices]
+      summary: List devices within the caller's scope
+      parameters:
+        - in: query
+          name: premises_id
+          schema: { type: string, format: uuid }
+        - in: query
+          name: contract_id
+          schema: { type: string, format: uuid }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: person_id
+          description: One person's phones (People and roles)
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Device' }
+
+  /devices/{id}/revoke:
+    post:
+      tags: [devices]
+      summary: Revoke a device
+      description: |
+        Takes effect within one access-token lifetime (15 minutes), because
+        refresh is refused immediately while the issued access token remains
+        valid until expiry. Reason is mandatory and is written to the audit
+        log in the same transaction as the revocation.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 3 }
+      responses:
+        '200': { description: Revoked }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /devices/revoke-bulk:
+    post:
+      tags: [devices]
+      summary: Revoke many devices at once
+      description: |
+        Used on transfer of an official, change of contractor, or contract
+        expiry. Exactly one selector must be supplied.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                premises_id: { type: string, format: uuid }
+                contract_id: { type: string, format: uuid }
+                role:        { $ref: '#/components/schemas/Role' }
+                reason:      { type: string, minLength: 3 }
+      responses:
+        '200':
+          description: Revoked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  revoked_count: { type: integer }
+
+  /premises/{id}:
+    get:
+      tags: [premises]
+      summary: Premises record
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Premises' }
+        '404': { $ref: '#/components/responses/Problem' }
+
+  /auth/password:
+    post:
+      tags: [auth]
+      summary: Sign in on the web with Employee ID and password
+      description: |
+        Web only, for NCL employees (a Non-NCL resident has no Employee ID
+        and uses the app). Five wrong passwords lock the account for 15
+        minutes. A session signed in this way cannot accept an inspection:
+        that needs the app (device-key session).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employee_id, password]
+              properties:
+                employee_id:   { type: string, pattern: '^[0-9]{8}$', description: NCL Employee ID of 8 digits }
+                password:      { type: string, format: password }
+                role:          { $ref: '#/components/schemas/Role' }
+                assignment_id: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Signed in; same shape as /auth/token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '401': { $ref: '#/components/responses/Problem' }
+
+  /auth/contractor:
+    post:
+      tags: [auth]
+      summary: Contractor staff sign in on the web with the mobile number and an OTP
+      description: |
+        User's decision 2026-10-16. The contractor firm or a contractor supervisor
+        proves the mobile with /auth/otp/verify, then signs in here, every time.
+        Only someone whose phone is approved in the app; only into a role of the
+        kind asked; the OTP's proof is spent, so one OTP signs in once. The
+        session (amr otp) reaches no other kind of role and cannot start work,
+        claim completion or send photographs - those stay in the app.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [registration_token, kind]
+              properties:
+                registration_token: { type: string, description: From /auth/otp/verify }
+                kind:               { type: string, enum: [CONTRACTOR, CONTRACTOR_SUPERVISOR] }
+                assignment_id:      { type: string, format: uuid }
+      responses:
+        '200':
+          description: Signed in; same shape as /auth/token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+
+  /auth/password/set:
+    post:
+      tags: [auth]
+      summary: Set or reset the web password with an OTP to the mobile on record
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employee_id, registration_token, password]
+              properties:
+                employee_id:        { type: string, pattern: '^[0-9]{8}$' }
+                registration_token: { type: string, description: From /auth/otp/verify for the mobile on record }
+                password:           { type: string, format: password, minLength: 10 }
+      responses:
+        '200': { description: Password set }
+        '422': { $ref: '#/components/responses/Problem' }
+
+  /auth/select-role:
+    post:
+      tags: [auth]
+      summary: Choose the role to act in, after signing in
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [person_token]
+              properties:
+                person_token:            { type: string }
+                assignment_id:           { type: string, format: uuid }
+                role:                    { $ref: '#/components/schemas/Role' }
+                second_factor_satisfied: { type: boolean }
+      responses:
+        '200':
+          description: Access token for the chosen role
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '403': { $ref: '#/components/responses/Problem' }
+
+  /auth/switch-role:
+    post:
+      tags: [auth]
+      summary: Switch to another of one's own roles without signing in again
+      description: |
+        The same person and sign-in method; only roles assigned to the
+        caller. An accountable role needs the PIN/biometric unlock again.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assignment_id]
+              properties:
+                assignment_id:           { type: string, format: uuid }
+                second_factor_satisfied: { type: boolean }
+      responses:
+        '200':
+          description: Access token for the chosen role
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+        '403': { $ref: '#/components/responses/Problem' }
+
+  /roles:
+    get:
+      tags: [roles]
+      summary: The roles, their rank, and which the caller may assign
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    role:        { $ref: '#/components/schemas/Role' }
+                    level:       { type: integer }
+                    hq:          { type: boolean }
+                    accountable: { type: boolean }
+                    occupant:    { type: boolean }
+                    assignable:  { type: boolean }
+
+  /persons:
+    get:
+      tags: [roles]
+      summary: People in the caller's Area with their roles (Area administrators)
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [roles]
+      summary: Enter a person (Area HR / System Administrator)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, mobile]
+              properties:
+                name:              { type: string }
+                personnel_no:      { type: string, pattern: '^[0-9]{8}$', description: Employee ID of 8 digits - required for NCL employees }
+                mobile:            { type: string, pattern: '^[6-9][0-9]{9}$' }
+                designation:       { type: string }
+                email:             { type: string, format: email }
+                resident_category: { type: string, enum: [NCL, NON_NCL] }
+      responses:
+        '201': { description: Created }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+
+  /persons/{id}:
+    put:
+      tags: [roles]
+      summary: Correct a person's details — a reason is compulsory and audit-logged
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:       { type: string }
+                name:         { type: string }
+                personnel_no: { type: string, pattern: '^[0-9]{8}$' }
+                mobile:       { type: string }
+                designation:  { type: string }
+                email:        { type: string }
+      responses:
+        '200': { description: Changed }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+
+  /assignments:
+    post:
+      tags: [roles]
+      summary: Assign a role — Area administrators, within their Area, below their own rank
+      description: |
+        Never to oneself. The HQ portal administrator assigns the Area
+        administrators and the HQ roles. A resident or custodian role binds
+        a quarter or a building. Every assignment is audit-logged.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [person_id, role, reason]
+              properties:
+                person_id:   { type: string, format: uuid }
+                role:        { $ref: '#/components/schemas/Role' }
+                scope_path:  { type: string, example: ncl.jayant, description: "The Area (GET /masters/areas), required for a role below HQ unless the assigner is in one Area; occupant roles take the premises' own" }
+                premises_id: { type: string, format: uuid }
+                contract_id: { type: string, format: uuid }
+                designation: { type: string }
+                acting:      { type: boolean }
+                valid_from:  { type: string, format: date }
+                valid_to:    { type: string, format: date }
+                reason:      { type: string }
+      responses:
+        '201': { description: Assigned }
+        '403': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+
+  /assignments/{id}:
+    put:
+      tags: [roles]
+      summary: Change an assignment's end date, designation or contract — reason compulsory
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:      { type: string }
+                valid_to:    { type: string, format: date, nullable: true }
+                designation: { type: string }
+                contract_id: { type: string, format: uuid }
+      responses:
+        '200': { description: Changed }
+        '403': { $ref: '#/components/responses/Problem' }
+
+  /assignments/{id}/revoke:
+    post:
+      tags: [roles]
+      summary: End a role — reason compulsory, audit-logged
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+      responses:
+        '200': { description: Revoked }
+        '403': { $ref: '#/components/responses/Problem' }
+
+  /supervisors:
+    post:
+      tags: [roles]
+      summary: The Civil Incharge appoints a contractor supervisor on a work order — reason compulsory
+      description: |
+        Decision 2026-09-30. Finds the person by mobile or enters them
+        (Non-NCL), and gives them the Contractor Supervisor role on a live
+        work order of the caller's Area. The database refuses the Incharge
+        any other role, any other Area, and a supervisor on no work order.
+        A mobile belonging to someone outside the caller's Area is refused.
+        The Incharge may then approve that person's phone and end the role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, mobile, contract_id, reason]
+              properties:
+                name:        { type: string }
+                mobile:      { type: string, pattern: '^[6-9][0-9]{9}$' }
+                designation: { type: string }
+                contract_id: { type: string, format: uuid }
+                reason:      { type: string }
+      responses:
+        '201': { description: Appointed }
+        '403': { $ref: '#/components/responses/Problem' }
+        '409': { description: The mobile belongs to someone outside the caller's Area }
+        '422': { $ref: '#/components/responses/Problem' }
+
+  /audit:
+    get:
+      tags: [roles]
+      summary: The audit trail of people, devices and roles in the caller's Area
+      responses:
+        '200': { description: OK }
+
+  /masters/buildings:
+    get:
+      tags: [masters]
+      summary: Buildings in a colony, for a custodian registering
+      security: []
+      parameters:
+        - in: query
+          name: colony_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: The colony's non-residential buildings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: string, format: uuid }
+                    identifier: { type: string }
+                    premises_type: { $ref: '#/components/schemas/PremisesType' }
+
+  /auth/passkey/options:
+    post:
+      tags: [passkeys]
+      summary: Start signing in with a passkey (WebAuthn request options)
+      description: Single-use challenge, five minutes. User verification (fingerprint, face or PIN) is required.
+      security: []
+      responses:
+        '200':
+          description: PublicKeyCredentialRequestOptionsJSON under "options"
+          content:
+            application/json:
+              schema: { type: object, properties: { options: { type: object } } }
+
+  /auth/passkey:
+    post:
+      tags: [passkeys]
+      summary: Sign in on the web with a passkey
+      description: |
+        NCL employees only. The result is as for /auth/password; the session's amr is "passkey", so it
+        cannot accept an inspection (that needs the app). Refused (401) for an unknown or removed passkey,
+        a used or expired challenge, a wrong site, no user verification, or a signature counter that
+        goes backwards (a copied key). Every attempt is in the sign-in log.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [response]
+              properties:
+                response:      { type: object, description: AuthenticationResponseJSON }
+                role:          { $ref: '#/components/schemas/Role' }
+                assignment_id: { type: string, format: uuid }
+      responses:
+        '200': { description: Signed in; same shape as /auth/password }
+        '401': { description: 'Refused, with the reason in "error"' }
+
+  /passkeys:
+    get:
+      tags: [passkeys]
+      summary: The caller's own passkeys, removed ones included, newest first
+      responses:
+        '200':
+          description: Passkeys
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Passkey' }
+    post:
+      tags: [passkeys]
+      summary: Add a passkey from the browser's registration response
+      description: The challenge must be the latest issued to the caller by /passkeys/options, unused and under five minutes old.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [response, name]
+              properties:
+                response: { type: object, description: RegistrationResponseJSON }
+                name:     { type: string, minLength: 1, maxLength: 60 }
+      responses:
+        '201':
+          description: Added
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Passkey' }
+        '409': { description: 'Already registered, or the limit reached' }
+        '422': { description: 'No name, verification failed, or the challenge is missing, used or expired' }
+
+  /passkeys/options:
+    post:
+      tags: [passkeys]
+      summary: Start adding a passkey — the web password is asked for again
+      description: |
+        So that an unattended signed-in screen cannot be used to plant a lasting credential. A wrong
+        password counts towards the sign-in lockout. At most five live passkeys (setting
+        passkeys_max_per_person).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties: { password: { type: string, format: password } }
+      responses:
+        '200':
+          description: PublicKeyCredentialCreationOptionsJSON under "options"
+          content:
+            application/json:
+              schema: { type: object, properties: { options: { type: object } } }
+        '403': { description: 'Not an NCL employee, or the password is wrong' }
+        '409': { description: Limit reached }
+        '422': { description: No web password set }
+        '423': { description: Locked after too many wrong passwords }
+
+  /passkeys/{id}/revoke:
+    post:
+      tags: [passkeys]
+      summary: Remove a passkey — the owner, or an Area administrator for a person in their Area
+      description: Reason compulsory. The passkey stays listed as removed; sign-in and refresh of its sessions are refused from then on.
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties: { reason: { type: string } }
+      responses:
+        '200':
+          description: Removed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Passkey' }
+        '404': { description: Not one the caller may manage }
+        '409': { description: Already removed }
+        '422': { description: No reason }
+
+  /persons/{id}/passkeys:
+    get:
+      tags: [passkeys]
+      summary: A person's passkeys (Area administrators), for a lost or stolen phone
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200':
+          description: Passkeys
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Passkey' }
+        '403': { description: Not an Area administrator }
+        '404': { description: A person outside the caller's Area }
+
+  /premises:
+    post:
+      tags: [premises]
+      summary: Add a quarter or building to the premises master (Area HR office, Incharge)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [colony_id, identifier]
+              properties:
+                colony_id:       { type: string, format: uuid }
+                identifier:      { type: string }
+                premises_type:   { $ref: '#/components/schemas/PremisesType' }
+                quarter_type:    { type: string, enum: [A, B, C, D, MQ], nullable: true }
+                occupancy_model: { $ref: '#/components/schemas/OccupancyModel' }
+      responses:
+        '201': { description: Created }
+        '403': { $ref: '#/components/responses/Problem' }
+    get:
+      tags: [premises]
+      summary: Search premises within scope
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: colony_id
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Premises' }
+                  total: { type: integer }
+
+  /masters/colonies:
+    get:
+      tags: [masters]
+      summary: Colony list for the registration dropdown
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:      { type: string, format: uuid }
+                    name:    { type: string }
+                    area:    { type: string }
+                    has_sectors: { type: boolean }
+
+  /masters/areas:
+    get:
+      tags: [masters]
+      summary: The thirteen Areas, with the scope a role in each is held at
+      description: |
+        A role below HQ is held in one Area; the HQ portal administrator
+        chooses it from this list when assigning one.
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:          { type: string, format: uuid }
+                    code:        { type: string }
+                    ticket_code: { type: string, description: "The code in every ticket number, e.g. JNT" }
+                    name:        { type: string }
+                    scope_path:  { type: string }
+
+  /masters/sectors:
+    get:
+      tags: [masters]
+      summary: Verified sectors for a colony
+      description: |
+        Empty until enough registrations have been verified. Once populated,
+        the client may offer these as a dropdown instead of free text —
+        the planned migration from free text to selection.
+      security: []
+      parameters:
+        - in: query
+          name: colony_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:   { type: string, format: uuid }
+                    name: { type: string }
+
+components:
+
+  securitySchemes:
+    deviceToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Id:
+      in: path
+      name: id
+      required: true
+      schema: { type: string, format: uuid }
+    Page:
+      in: query
+      name: page
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      in: query
+      name: page_size
+      schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+
+  responses:
+    Problem:
+      description: Error
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: |
+        The caller's role or scope does not permit this action.
+
+        IMPORTANT: row-level security makes an out-of-scope write a silent
+        zero-row update rather than a database error. The service MUST
+        detect a zero-row result and return 403 here. Returning 200 would
+        tell the user an action succeeded when nothing changed.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    TooManyRequests:
+      description: Rate limited
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    HomeRequest:
+      type: object
+      description: A home asked for by someone already registered, or held
+      properties:
+        id:                { type: string, format: uuid }
+        role:              { type: string, enum: [RESIDENT, CUSTODIAN] }
+        status:            { type: string, enum: [PENDING, ACTIVE, REJECTED, REVOKED] }
+        identifier:        { type: string, nullable: true }
+        sector:            { type: string, nullable: true }
+        colony:            { type: string, nullable: true }
+        colony_id:         { type: string, format: uuid, nullable: true }
+        area:              { type: string, nullable: true }
+        premises:          { type: string, nullable: true, description: The quarter or building as approved }
+        rejected_reason:   { type: string, nullable: true }
+        created_at:        { type: string, format: date-time }
+        approved_at:       { type: string, format: date-time, nullable: true }
+        name:              { type: string, description: The person (approver's list only) }
+        mobile:            { type: string, nullable: true }
+        resident_category: { type: string, nullable: true }
+        existing_roles:    { type: string, nullable: true, description: Their roles in the approver's Area only }
+        already_claimed:   { type: boolean }
+    Passkey:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        created_at: { type: string, format: date-time }
+        last_used_at: { type: string, format: date-time, nullable: true }
+        transports: { type: array, items: { type: string }, nullable: true }
+        removed_at: { type: string, format: date-time, nullable: true }
+        removal_reason: { type: string, nullable: true }
+
+    Problem:
+      type: object
+      description: RFC 9457 problem detail
+      properties:
+        type:     { type: string }
+        title:    { type: string }
+        status:   { type: integer }
+        detail:   { type: string }
+        instance: { type: string }
+        error:    { type: string, description: "The refusal in plain words, where the answer is not a full problem document" }
+        detail_hi:
+          type: string
+          description: Hindi rendering, so clients need no error dictionary
+
+    Role:
+      type: string
+      enum:
+        - RESIDENT
+        - CUSTODIAN
+        - CONTRACTOR
+        - CONTRACTOR_SUPERVISOR
+        - CIVIL_OVERSEER
+        - MAINTENANCE_INCHARGE
+        - STAFF_OFFICER_CIVIL
+        - AREA_HR_ADMIN
+        - AREA_SYS_ADMIN
+        - GM_CIVIL
+        - HQ_EXECUTIVE
+        - ADMINISTRATOR
+
+    PremisesType:
+      type: string
+      enum: [QUARTER, GUEST_HOUSE, HOSTEL, UNION_OFFICE, ADMIN_BUILDING,
+             CLUB, DISPENSARY, SCHOOL, OTHER]
+
+    OccupancyModel:
+      type: string
+      enum: [RESIDENT_BOUND, CUSTODIAN_BOUND, DEPARTMENT_ONLY]
+
+    TokenResponse:
+      type: object
+      properties:
+        token:         { type: string, description: Access token for one role }
+        person_token:  { type: string, description: Returned instead of token when the person holds several roles }
+        assignments:
+          type: array
+          description: The person's roles in force
+          items:
+            type: object
+            properties:
+              id:          { type: string, format: uuid }
+              role:        { $ref: '#/components/schemas/Role' }
+              scope_path:  { type: string }
+              premises:    { type: string, nullable: true, description: 'The quarter or building, for an occupant role' }
+              colony:      { type: string, nullable: true }
+              area:        { type: string, nullable: true }
+              designation: { type: string, nullable: true }
+              acting:      { type: boolean }
+              accountable: { type: boolean, description: 'An official role: the app asks for the PIN or biometric before using it' }
+              level:       { type: integer }
+              premises_id: { type: string, format: uuid, nullable: true }
+              contract_id: { type: string, format: uuid, nullable: true }
+              valid_to:    { type: string, format: date, nullable: true }
+        actor_id:      { type: string, format: uuid, description: The role assignment acted in }
+        person_id:     { type: string, format: uuid }
+        access_token:  { type: string }
+        refresh_token: { type: string }
+        expires_in:    { type: integer, example: 900 }
+        role:          { $ref: '#/components/schemas/Role' }
+        scope_path:    { type: string, example: ncl.jayant.colony1 }
+        premises_id:
+          type: string
+          format: uuid
+          nullable: true
+        requires_second_factor: { type: boolean }
+
+    Me:
+      type: object
+      description: The person signed in and the role in use
+      properties:
+        person_id:   { type: string, format: uuid }
+        person_name: { type: string, nullable: true }
+        personnel_no: { type: string, nullable: true, description: NCL Employee ID }
+        designation: { type: string, nullable: true }
+        resident_category: { type: string, nullable: true, enum: [NCL, NON_NCL] }
+        mobile:      { type: string, nullable: true }
+        has_password: { type: boolean }
+        actor_id:    { type: string, format: uuid, description: The role assignment in use }
+        role:        { $ref: '#/components/schemas/Role' }
+        scope_path:  { type: string }
+        auth_method: { type: string, description: "device, password or passkey" }
+        device_id:   { type: string, format: uuid, nullable: true }
+        premises_id: { type: string, format: uuid, nullable: true }
+        identifier:  { type: string, nullable: true, description: "The quarter or building of an occupant role" }
+        premises_type: { type: string, nullable: true }
+        quarter_type: { type: string, nullable: true }
+        colony:      { type: string, nullable: true }
+        area:        { type: string, nullable: true }
+        ticket_code: { type: string, nullable: true }
+        roles:
+          type: array
+          description: The person's roles in force
+          items:
+            type: object
+            properties:
+              id:          { type: string, format: uuid }
+              role:        { $ref: '#/components/schemas/Role' }
+              scope_path:  { type: string }
+              designation: { type: string, nullable: true }
+              acting:      { type: boolean }
+              valid_to:    { type: string, format: date, nullable: true }
+              identifier:  { type: string, nullable: true }
+              premises_type: { type: string, nullable: true }
+              quarter_type: { type: string, nullable: true }
+              colony:      { type: string, nullable: true }
+              area:        { type: string, nullable: true }
+              ticket_code: { type: string, nullable: true }
+        requires_second_factor: { type: boolean }
+        resident_page: { type: string, description: "available, none, or a note that no quarter is recorded yet" }
+
+    RegistrationRequest:
+      type: object
+      required: [public_key, platform, colony_id]
+      properties:
+        public_key: { type: string }
+        platform:   { type: string, enum: [android, ios, web] }
+        personnel_no: { type: string, nullable: true, pattern: '^[0-9]{8}$' }
+        name:       { type: string }
+        colony_id:  { type: string, format: uuid }
+        no_sector:
+          type: boolean
+          default: false
+          description: True where the colony has no sectors; sector is then ignored
+        sector:     { type: string, nullable: true }
+        identifier: { type: string, description: 'Quarter number or building name; required with a role' }
+        premises_type: { $ref: '#/components/schemas/PremisesType' }
+        role:
+          type: string
+          nullable: true
+          description: |
+            Only an occupant role can be asked for here. Officials and contractor
+            staff register the phone with no role: their roles come from the Area
+            HR office (or, for a supervisor, the Civil Incharge).
+          enum: [RESIDENT, CUSTODIAN]
+        resident_category:
+          type: string
+          enum: [NCL, NON_NCL]
+          description: Defaults to NCL when an Employee ID is given, NON_NCL otherwise
+        email:      { type: string, format: email, nullable: true }
+
+    Registration:
+      type: object
+      properties:
+        id:         { type: string, format: uuid }
+        status:     { type: string, enum: [PENDING, ACTIVE, REJECTED, REVOKED] }
+        name:       { type: string, description: "The person the phone belongs to — found by the proved mobile, so not always the name typed" }
+        existing_person: { type: boolean, description: "The mobile already belonged to someone; the phone joined that person" }
+        role:       { $ref: '#/components/schemas/Role' }
+        submitted:
+          type: object
+          properties:
+            colony:     { type: string }
+            sector:     { type: string, nullable: true }
+            identifier: { type: string }
+        premises:
+          allOf: [{ $ref: '#/components/schemas/Premises' }]
+          nullable: true
+        submitted_at: { type: string, format: date-time }
+        decided_at:   { type: string, format: date-time, nullable: true }
+        reason:       { type: string, nullable: true }
+
+    Device:
+      type: object
+      properties:
+        id:         { type: string, format: uuid }
+        platform:   { type: string }
+        role:       { $ref: '#/components/schemas/Role' }
+        scope_path: { type: string }
+        premises_id: { type: string, format: uuid, nullable: true }
+        person_name: { type: string, nullable: true }
+        status:     { type: string }
+        last_seen_at: { type: string, format: date-time, nullable: true }
+        revocation_reason: { type: string, nullable: true }
+        person_id:    { type: string, format: uuid }
+        personnel_no: { type: string, nullable: true }
+        roles:        { type: string, nullable: true, description: "The owner's roles in force, comma-separated" }
+        created_at:   { type: string, format: date-time, description: When the phone was registered }
+        approved_at:  { type: string, format: date-time, nullable: true }
+        revoked_at:   { type: string, format: date-time, nullable: true }
+
+    Premises:
+      type: object
+      properties:
+        id:              { type: string, format: uuid }
+        identifier:      { type: string }
+        premises_type:   { $ref: '#/components/schemas/PremisesType' }
+        quarter_type:    { type: string, nullable: true }
+        occupancy_model: { $ref: '#/components/schemas/OccupancyModel' }
+        area:            { type: string }
+        colony:          { type: string }
+        sector:          { type: string, nullable: true }
+        scope_path:      { type: string }
+        verified:        { type: boolean }
+
+security:
+  - deviceToken: []

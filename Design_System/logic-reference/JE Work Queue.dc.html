@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./cp-shell.js"></script>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Devanagari:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:var(--bg); }
+  * { box-sizing:border-box; }
+  a { color:#0F5C63; text-decoration:none; }
+  a:hover { color:#13757E; text-decoration:underline; }
+  @keyframes riseIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+</style>
+</helmet>
+<div style="--bg:#F7F8F8;--surface:#FFFFFF;--surface2:#EDEFF0;--ink:#14181B;--ink2:#5A646B;--ink3:#7B858C;--line:#DFE3E5;--line2:#C7CDD1;--accent:#0F5C63;--accentH:#13757E;--accentTint:#E2F0F0;--ok:#1F6F4A;--okT:#E7F1EC;--warn:#8A5A00;--warnT:#F6EEDD;--bad:#A32A21;--badT:#F7E9E7;--info:#2C5A8A;--infoT:#E7EEF5;font-family:'IBM Plex Sans','IBM Plex Sans Devanagari',system-ui,sans-serif;color:var(--ink);background:var(--bg);min-height:100vh;display:grid;grid-template-columns:248px minmax(0,1fr);position:relative">
+
+  <aside style="background:#14181B;color:#C7CDD1;display:flex;flex-direction:column;gap:4px;padding:18px 12px;min-height:100vh">
+    <div style="display:flex;align-items:center;gap:11px;padding:6px 10px 20px">
+      <span aria-label="Civil Portal" style="width:32px;height:32px;border-radius:7px;background:#161C21;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)"><svg viewBox="0 0 100 100" style="width:86%;height:86%"><polygon points="50.0,12.0 50.0,12.0 71.6,30.0 28.4,30.0" fill="#B9C2C8"></polygon><polygon points="24.8,33.0 75.2,33.0 86.0,42.0 86.0,50.0 14.0,50.0 14.0,42.0" fill="#86919A"></polygon><polygon points="14.0,53.0 86.0,53.0 86.0,68.0 14.0,68.0" fill="#34C7B0"></polygon><polygon points="14.0,71.0 86.0,71.0 86.0,86.0 14.0,86.0" fill="#5C6770"></polygon></svg></span>
+      <span style="display:flex;flex-direction:column;line-height:1.25;min-width:0">
+        <span style="font-size:14px;font-weight:600;color:#F2F4F5">Civil Portal</span>
+        <span style="font-size:11px;color:#7B858C;font-family:{{ font }}">{{ t.areaName }}</span>
+      </span>
+    </div>
+    <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="7">
+      <button onClick="{{ n.go }}" disabled="{{ n.disabled }}" style="display:flex;align-items:center;gap:11px;border:0;border-radius:8px;background:{{ n.bg }};color:{{ n.fg }};font:500 14px/1 'IBM Plex Sans';padding:11px 10px;cursor:{{ n.cursor }};text-align:left;min-height:42px;width:100%;font-family:{{ font }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex:none"><path d="{{ n.path }}"></path></svg>
+        <span style="flex:1;min-width:0">{{ n.label }}</span>
+        <sc-if value="{{ n.badge }}" hint-placeholder-val="{{ false }}">
+          <span style="font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;padding:2px 7px;border-radius:10px;background:rgba(163,42,33,.24);color:#F0A090">{{ n.badge }}</span>
+        </sc-if>
+      </button>
+    </sc-for>
+    <div style="margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px 10px;border-top:1px solid #2E363C">
+      <span style="width:32px;height:32px;border-radius:50%;background:#2E363C;color:#C7CDD1;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex:none">AT</span>
+      <span style="display:flex;flex-direction:column;line-height:1.3;min-width:0">
+        <span style="font-size:13px;font-weight:500;color:#F2F4F5">A. Tiwari</span>
+        <span style="font-size:11px;color:#7B858C;font-family:{{ font }}">{{ roleLabel }}</span>
+      </span>
+    </div>
+  </aside>
+
+  <main style="display:flex;flex-direction:column;min-width:0">
+    <header style="position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 28px;background:var(--surface);border-bottom:1px solid var(--line)">
+      <div style="display:flex;flex-direction:column;gap:2px;margin-right:auto;min-width:0">
+        <span style="font-size:12px;color:var(--ink3);font-family:{{ font }}">{{ t.crumb }}</span>
+        <span style="font-size:20px;font-weight:600;line-height:26px;font-family:{{ font }}">{{ t.pageTitle }}</span>
+      </div>
+      <div style="display:flex;gap:4px;padding:3px;background:var(--surface2);border-radius:8px">
+        <button onClick="{{ setIncharge }}" style="border:0;cursor:pointer;font:500 13px/1 'IBM Plex Sans';padding:9px 12px;border-radius:6px;background:{{ inBg }};color:{{ inFg }};font-family:{{ font }}">{{ t.roleIncharge }}</button>
+        <button onClick="{{ setOverseer }}" style="border:0;cursor:pointer;font:500 13px/1 'IBM Plex Sans';padding:9px 12px;border-radius:6px;background:{{ ovBg }};color:{{ ovFg }};font-family:{{ font }}">{{ t.roleOverseer }}</button>
+      </div>
+      <cp-command-trigger></cp-command-trigger>
+      <cp-theme-toggle compact=""></cp-theme-toggle>
+      <div style="display:flex;gap:4px;padding:3px;background:var(--surface2);border-radius:8px">
+        <button onClick="{{ setEn }}" style="border:0;cursor:pointer;font:500 13px/1 'IBM Plex Sans';padding:9px 12px;border-radius:6px;background:{{ enBg }};color:{{ enFg }}">EN</button>
+        <button onClick="{{ setHi }}" style="border:0;cursor:pointer;font:500 13px/1 'IBM Plex Sans Devanagari';padding:9px 12px;border-radius:6px;background:{{ hiBg }};color:{{ hiFg }}">हिं</button>
+      </div>
+    </header>
+
+    <div style="padding:24px 28px 56px;display:flex;flex-direction:column;gap:22px;min-width:0">
+
+      <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+        <sc-for list="{{ buckets }}" as="b" hint-placeholder-count="4">
+          <button onClick="{{ b.pick }}" style="display:flex;flex-direction:column;gap:8px;padding:15px 17px;border:1px solid {{ b.border }};border-radius:8px;background:{{ b.bg }};cursor:pointer;text-align:left;animation:riseIn .28s ease-out both;animation-delay:{{ b.delay }}">
+            <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;color:{{ b.labelColor }};line-height:16px;font-family:{{ font }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex:none"><path d="{{ b.path }}"></path></svg>{{ b.label }}
+            </span>
+            <span style="font-size:28px;line-height:32px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-0.015em;color:{{ b.valueColor }}">{{ b.value }}</span>
+          </button>
+        </sc-for>
+      </section>
+
+      <section style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid var(--line2);border-radius:8px;background:var(--surface);min-height:42px;flex:1;min-width:220px;max-width:340px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex:none;color:var(--ink3)"><path d="M11 11m-7 0a7 7 0 1 0 14 0a7 7 0 1 0-14 0M20 20l-4-4"></path></svg>
+          <input placeholder="{{ t.searchPh }}" style="font:400 14px/1.4 'IBM Plex Sans','IBM Plex Sans Devanagari';border:0;outline:0;background:transparent;color:var(--ink);flex:1;padding:10px 0;min-width:0">
+        </div>
+        <sc-for list="{{ dropdowns }}" as="d" hint-placeholder-count="3">
+          <button style="display:flex;align-items:center;gap:8px;border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);font:500 13px/1 'IBM Plex Sans';padding:11px 13px;cursor:pointer;min-height:42px;font-family:{{ font }}" style-hover="background:var(--surface2)">
+            {{ d }}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--ink3)"><path d="M6 9l6 6 6-6"></path></svg>
+          </button>
+        </sc-for>
+        <span style="margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink3);font-family:{{ font }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M4 5h16l-6 7v6l-4 2v-8L4 5Z"></path></svg>{{ t.savedView }}
+        </span>
+      </section>
+
+      <sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 16px;border-radius:8px;background:#1D2328;color:#F2F4F5;animation:riseIn .18s ease-out">
+          <span style="font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;font-family:{{ font }}">{{ selectionLabel }}</span>
+          <button onClick="{{ clearSelection }}" style="border:0;background:transparent;color:#A3ABB1;font:500 13px/1 'IBM Plex Sans';cursor:pointer;padding:8px;font-family:{{ font }}">{{ t.clear }}</button>
+          <sc-if value="{{ isOverseer }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ flagPoor }}" style="margin-left:auto;border:1px solid rgba(240,128,118,.5);border-radius:8px;background:transparent;color:#F0A090;font:600 14px/1 'IBM Plex Sans';padding:11px 16px;cursor:pointer;min-height:42px;font-family:{{ font }}">{{ t.flagPoor }}</button>
+          </sc-if>
+          <button onClick="{{ primaryBulk }}" style="border:0;border-radius:8px;background:#3FA7AE;color:#0B2124;font:600 14px/1 'IBM Plex Sans';padding:11px 16px;cursor:pointer;min-height:42px;font-family:{{ font }};margin-left:{{ primaryMargin }}">{{ primaryBulkLabel }}</button>
+        </div>
+      </sc-if>
+
+      <section style="border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow-x:auto">
+        <div style="display:grid;min-width:1020px;grid-template-columns:40px 104px minmax(0,1.7fr) minmax(0,1fr) 128px 136px 120px;gap:14px;padding:11px 16px;background:var(--surface2);border-bottom:1px solid var(--line);font-size:12px;font-weight:600;color:var(--ink2);position:sticky;top:0">
+          <span></span>
+          <sc-for list="{{ columns }}" as="col" hint-placeholder-count="6"><span style="font-family:{{ font }}">{{ col }}</span></sc-for>
+        </div>
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+          <div style="display:grid;min-width:1020px;grid-template-columns:40px 104px minmax(0,1.7fr) minmax(0,1fr) 128px 136px 120px;gap:14px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px;align-items:center;background:{{ r.rowBg }}" style-hover="background:var(--accentTint)">
+            <button onClick="{{ r.toggle }}" style="width:20px;height:20px;border-radius:4px;border:1.5px solid {{ r.boxBorder }};background:{{ r.boxBg }};cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;color:#fff">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;opacity:{{ r.checkOpacity }}"><path d="M4 12.5 9 17.5 20 6.5"></path></svg>
+            </button>
+            <span style="font-family:'IBM Plex Mono';font-size:12px;color:var(--ink2)">{{ r.ref }}</span>
+            <span style="display:flex;align-items:center;gap:9px;min-width:0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex:none;color:var(--ink3)"><path d="{{ r.path }}"></path></svg>
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ r.title }}</span>
+            </span>
+            <span style="font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.qtr }}</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:4px;font-size:12px;font-weight:500;justify-self:start;background:{{ r.bg }};color:{{ r.fg }};font-family:{{ font }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex:none"><path d="{{ r.statusPath }}"></path></svg>{{ r.sla }}
+            </span>
+            <span style="font-size:13px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ r.stage }}</span>
+            <button onClick="{{ r.action }}" style="border:1px solid {{ r.actionBorder }};border-radius:8px;background:{{ r.actionBg }};color:{{ r.actionFg }};font:600 13px/1 'IBM Plex Sans';padding:9px 11px;cursor:pointer;min-height:38px;justify-self:start;font-family:{{ font }}">{{ r.actionLabel }}</button>
+          </div>
+        </sc-for>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;flex-wrap:wrap">
+          <span style="font-size:12px;color:var(--ink3);margin-right:auto;font-variant-numeric:tabular-nums;font-family:{{ font }}">{{ t.showing }}</span>
+          <button style="border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);font:500 13px/1 'IBM Plex Sans';padding:10px 13px;cursor:pointer;min-height:40px;font-family:{{ font }}" style-hover="background:var(--surface2)">{{ t.exportCsv }}</button>
+        </div>
+      </section>
+
+      <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+          <h2 style="margin:0;font-size:17px;line-height:23px;font-weight:600;font-family:{{ font }}">{{ t.summaryTitle }}</h2>
+          <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden">
+            <sc-for list="{{ summary }}" as="s" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-bottom:1px solid var(--line)">
+                <span style="font-size:13px;color:var(--ink2);flex:1;min-width:0;font-family:{{ font }}">{{ s.k }}</span>
+                <span style="font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;color:{{ s.color }}">{{ s.v }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+          <h2 style="margin:0;font-size:17px;line-height:23px;font-weight:600;font-family:{{ font }}">{{ t.contractorLoad }}</h2>
+          <div style="padding:17px 19px;border:1px solid var(--line);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;gap:15px">
+            <sc-for list="{{ load }}" as="l" hint-placeholder-count="3">
+              <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+                <div style="display:flex;align-items:baseline;gap:10px">
+                  <span style="font-size:13px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ l.name }}</span>
+                  <span style="font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums;font-family:{{ font }}">{{ l.meta }}</span>
+                </div>
+                <div style="height:6px;border-radius:3px;background:var(--surface2);overflow:hidden"><div style="height:100%;border-radius:3px;background:{{ l.color }};width:{{ l.pct }}%"></div></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <sc-if value="{{ assignOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:32px;animation:fadeIn .16s ease-out">
+      <div style="width:min(640px,100%);max-height:86vh;overflow-y:auto;border-radius:14px;background:var(--surface);box-shadow:0 16px 40px rgba(20,24,27,.30);display:flex;flex-direction:column;animation:riseIn .2s ease-out">
+        <div style="display:flex;align-items:flex-start;gap:14px;padding:22px 24px 16px;border-bottom:1px solid var(--line)">
+          <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0">
+            <span style="font-size:19px;font-weight:600;line-height:25px;font-family:{{ font }}">{{ t.assignTitle }}</span>
+            <span style="font-size:13px;color:var(--ink2);font-family:{{ font }}">{{ assignSubtitle }}</span>
+          </div>
+          <button onClick="{{ closeAssign }}" style="border:0;background:transparent;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--ink2);margin:-6px -8px 0 0;flex:none" style-hover="color:var(--ink)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+          </button>
+        </div>
+        <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+          <span style="font-size:13px;font-weight:500;font-family:{{ font }}">{{ t.registeredIn }}</span>
+          <sc-for list="{{ contractors }}" as="c" hint-placeholder-count="3">
+            <button onClick="{{ c.pick }}" style="display:flex;align-items:flex-start;gap:14px;text-align:left;padding:15px 16px;border:1px solid {{ c.border }};background:{{ c.bg }};border-radius:8px;cursor:pointer;width:100%">
+              <span style="width:20px;height:20px;border-radius:50%;border:2px solid {{ c.dotBorder }};display:flex;align-items:center;justify-content:center;flex:none;margin-top:2px"><span style="width:10px;height:10px;border-radius:50%;background:{{ c.dot }}"></span></span>
+              <span style="display:flex;flex-direction:column;gap:7px;min-width:0;flex:1">
+                <span style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+                  <span style="font-size:15px;font-weight:600;color:var(--ink);font-family:{{ font }}">{{ c.name }}</span>
+                  <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;background:{{ c.tagBg }};color:{{ c.tagFg }};font-family:{{ font }}">{{ c.tag }}</span>
+                </span>
+                <span style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink2);font-variant-numeric:tabular-nums;font-family:{{ font }}">
+                  <span>{{ c.sla }}</span><span>{{ c.avg }}</span><span>{{ c.open }}</span>
+                </span>
+              </span>
+            </button>
+          </sc-for>
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:13px 15px;border-radius:8px;background:var(--infoT)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex:none;margin-top:2px;color:var(--info)"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 11v5M12 8h.01"></path></svg>
+            <span style="font-size:13px;line-height:20px;color:var(--ink);font-family:{{ font }}">{{ t.assignNote }}</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:16px 24px;border-top:1px solid var(--line);background:var(--bg);border-radius:0 0 14px 14px">
+          <button onClick="{{ closeAssign }}" style="margin-left:auto;border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);font:500 14px/1 'IBM Plex Sans';padding:12px 16px;cursor:pointer;min-height:44px;font-family:{{ font }}">{{ t.cancel }}</button>
+          <button onClick="{{ confirmAssign }}" style="border:0;border-radius:8px;background:var(--accent);color:#fff;font:600 14px/1 'IBM Plex Sans';padding:12px 18px;cursor:pointer;min-height:44px;font-family:{{ font }}" style-hover="background:var(--accentH)">{{ t.assignConfirm }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;right:28px;bottom:28px;z-index:50;display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:8px;background:#1D2328;color:#F2F4F5;box-shadow:0 12px 28px rgba(20,24,27,.30);animation:riseIn .2s ease-out;max-width:420px">
+      <span style="display:flex;width:26px;height:26px;border-radius:50%;background:rgba(127,211,166,.18);color:#7FD3A6;align-items:center;justify-content:center;flex:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M4 12.5 9 17.5 20 6.5"></path></svg>
+      </span>
+      <span style="font-size:14px;font-weight:500;flex:1;font-family:{{ font }}">{{ toastText }}</span>
+      <button onClick="{{ undo }}" style="border:0;background:transparent;color:#5FC4CA;font:600 13px/1 'IBM Plex Sans';cursor:pointer;padding:8px;font-family:{{ font }}">{{ t.undo }}</button>
+    </div>
+  </sc-if>
+</div>
+
+<cp-command-palette></cp-command-palette>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1180}}">
+const P = {
+  surface:'var(--surface)', surface2:'var(--surface2)', ink:'var(--ink)', ink2:'var(--ink2)', ink3:'var(--ink3)',
+  line:'var(--line)', line2:'var(--line2)', accent:'var(--accent)', accentTint:'var(--accentTint)',
+  ok:'var(--ok)', okT:'var(--okT)', warn:'var(--warn)', warnT:'var(--warnT)', bad:'var(--bad)', badT:'var(--badT)',
+  info:'var(--info)', infoT:'var(--infoT)'
+};
+const I = {
+  gauge:'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 12l4-3',
+  inbox:'M4 13h4l1.5 3h5L16 13h4M4 13 6.5 5h11L20 13v6H4v-6Z',
+  users:'M13 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M8 6.5m-3.5 0a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M17 13.5a4 4 0 0 1 4 4V20M15 3.3a3.5 3.5 0 0 1 0 6.4',
+  map:'M9 4 3 6.5v14L9 18l6 2.5 6-2.5v-14L15 6.5 9 4ZM9 4v14M15 6.5v14',
+  report:'M6 3h8l4 4v14H6zM14 3v4h4M9 13h6M9 17h6',
+  settings:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7.5 19.4l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 14.6a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7.5l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.1V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.5 1.4l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z',
+  lock:'M6 10.5h12V21H6zM8.5 10.5V7a3.5 3.5 0 0 1 7 0v3.5',
+  droplets:'M12 3c3 3.5 5 6.4 5 8.7A5 5 0 0 1 7 11.7C7 9.4 9 6.5 12 3Z',
+  rain:'M7.5 14.5a3.5 3.5 0 0 1 .4-7 5 5 0 0 1 9.4 1.3 3.2 3.2 0 0 1-.8 6.3M8 18l-1 2.5M12 18l-1 2.5M16 18l-1 2.5',
+  brick:'M3 6h18v12H3zM3 12h18M8 6v6M16 6v6M12 12v6',
+  door:'M4 20h16M6 20V5a1 1 0 0 1 1.2-1l7-1.4A1 1 0 0 1 15.5 3.6V20M12 12.5v1',
+  paint:'M3 4h13v6H3zM16 7h4v4h-7v3M11 14h4v6h-4z',
+  drain:'M2 7c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 13c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 19c2-2 4-2 6 0s4 2 6 0 4-2 6 0',
+  clock:'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 7v5l3 2',
+  alert:'M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0ZM12 9v4M12 17h.01',
+  check:'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M8 12.5l2.5 2.5L16 9.5',
+  userCheck:'M13 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M8 6.5m-3.5 0a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M16 13l2 2 4-4',
+  inboxOpen:'M4 13h4l1.5 3h5L16 13h4M4 13 6.5 5h11L20 13v6H4v-6Z'
+};
+
+const STR = {
+  en: {
+    areaName:'Nigahi Area', crumb:'Nigahi / Work queue', pageTitle:'Work queue',
+    nav:['Dashboard','Work queue','Contractors','Colony map','Reports','Allotment (coming soon)','Settings'],
+    roleIncharge:'Colony In-charge', roleOverseer:'Colony Overseer',
+    buckets:['Open, not assigned','Due soon','Overdue','Awaiting verification'],
+    searchPh:'Search quarter, complaint no. or resident',
+    dropdowns:['Colony: all','Category: all','Contractor: all'], savedView:'Saved view · My colonies',
+    columns:['Complaint','Problem','Quarter','SLA','Stage','Action'],
+    showing:'Showing 8 of 148 complaints', exportCsv:'Export CSV',
+    clear:'Clear', assignSelected:'Assign to contractor',
+    verifySelected:'Verify work', flagPoor:'Flag poor quality',
+    toastFlagged:'Work flagged for rework',
+    summaryTitle:'Today in Nigahi', contractorLoad:'Contractor load this week',
+    assignTitle:'Assign to contractor', registeredIn:'Contractors registered in Nigahi Area',
+    assignNote:'The contractor is notified immediately and the SLA clock keeps running from the time the resident registered the complaint.',
+    cancel:'Cancel', assignConfirm:'Assign work', undo:'Undo',
+    actAssign:'Assign', actVerify:'Verify', actReview:'Review',
+    toastAssigned:'Work assigned to Shakti Constructions', toastVerified:'Work verified',
+    summary:[['Registered today','14'],['Assigned today','11'],['Completed today','9'],['Breached today','2'],['Awaiting your verification','6']],
+    load:[['Shakti Constructions','62 open · 4,180 qtrs'],['Vindhya Infra','31 open · 2,240 qtrs'],['Sai Ram Builders','18 open · 1,110 qtrs']],
+    rows:[
+      ['NGH/0388','Seepage on bedroom ceiling','B-12, Sector 2','1 d over','Not assigned','assign'],
+      ['NGH/0402','Drain choked behind quarter','A-101, Sector 1','8 h over','With contractor','review'],
+      ['NGH/0415','Plaster falling in stairwell','E-56, Sector 3','11 h left','Not assigned','assign'],
+      ['NGH/0412','Kitchen tap leaking','C-245, Sector 4','6 h left','With contractor','review'],
+      ['NGH/0418','Bathroom door frame rotted','D-08, Sector 2','18 h left','Work completed','verify'],
+      ['NGH/0423','Wall paint peeling, Union Office','UO-1, Sector 4','1 d left','Work completed','verify'],
+      ['NGH/0421','Window panes broken, Guest House','GH-2, Sector 1','2 d left','Not assigned','assign'],
+      ['NGH/0426','Floor tiles cracked','B-44, Sector 2','2 d left','With contractor','review']
+    ],
+    contractors:[
+      ['Shakti Constructions Pvt. Ltd.','Comprehensive','SLA 92.4%','Avg. 31 h','62 open'],
+      ['Vindhya Infra Services','Comprehensive','SLA 88.1%','Avg. 39 h','31 open'],
+      ['Sai Ram Builders','Specialist · masonry','SLA 94.7%','Avg. 27 h','18 open']
+    ]
+  },
+  hi: {
+    areaName:'निगाही क्षेत्र', crumb:'निगाही / कार्य सूची', pageTitle:'कार्य सूची',
+    nav:['डैशबोर्ड','कार्य सूची','ठेकेदार','कॉलोनी मानचित्र','रिपोर्ट','आवंटन (शीघ्र)','सेटिंग्स'],
+    roleIncharge:'कॉलोनी प्रभारी', roleOverseer:'कॉलोनी पर्यवेक्षक',
+    buckets:['लंबित, अनावंटित','शीघ्र देय','विलंबित','सत्यापन शेष'],
+    searchPh:'क्वार्टर, शिकायत क्रमांक या निवासी खोजें',
+    dropdowns:['कॉलोनी: सभी','श्रेणी: सभी','ठेकेदार: सभी'], savedView:'सहेजा दृश्य · मेरी कॉलोनियाँ',
+    columns:['शिकायत','समस्या','क्वार्टर','समय-सीमा','चरण','कार्रवाई'],
+    showing:'148 में से 8 शिकायतें', exportCsv:'सीएसवी निर्यात',
+    clear:'हटाएँ', assignSelected:'ठेकेदार को सौंपें',
+    verifySelected:'कार्य सत्यापित करें', flagPoor:'खराब गुणवत्ता चिह्नित करें',
+    toastFlagged:'कार्य पुनः कराने हेतु चिह्नित',
+    summaryTitle:'आज निगाही में', contractorLoad:'इस सप्ताह ठेकेदार भार',
+    assignTitle:'ठेकेदार को सौंपें', registeredIn:'निगाही क्षेत्र में पंजीकृत ठेकेदार',
+    assignNote:'ठेकेदार को तुरंत सूचना जाती है और समय-सीमा की गणना निवासी द्वारा शिकायत दर्ज करने के समय से ही चलती रहती है।',
+    cancel:'रद्द करें', assignConfirm:'कार्य सौंपें', undo:'पूर्ववत करें',
+    actAssign:'सौंपें', actVerify:'सत्यापन', actReview:'देखें',
+    toastAssigned:'कार्य शक्ति कंस्ट्रक्शंस को सौंपा गया', toastVerified:'कार्य सत्यापित',
+    summary:[['आज दर्ज','14'],['आज सौंपे गए','11'],['आज पूर्ण','9'],['आज समय-सीमा चूकी','2'],['आपके सत्यापन हेतु','6']],
+    load:[['शक्ति कंस्ट्रक्शंस','62 लंबित · 4,180 क्वा.'],['विंध्य इंफ्रा','31 लंबित · 2,240 क्वा.'],['साईं राम बिल्डर्स','18 लंबित · 1,110 क्वा.']],
+    rows:[
+      ['NGH/0388','शयनकक्ष की छत में सीलन','बी-12, सेक्टर 2','1 दिन अधिक','अनावंटित','assign'],
+      ['NGH/0402','क्वार्टर के पीछे नाली अवरुद्ध','ए-101, सेक्टर 1','8 घं. अधिक','ठेकेदार के पास','review'],
+      ['NGH/0415','सीढ़ी घर में पलस्तर गिर रहा है','ई-56, सेक्टर 3','11 घं. शेष','अनावंटित','assign'],
+      ['NGH/0412','रसोई का नल टपक रहा है','सी-245, सेक्टर 4','6 घं. शेष','ठेकेदार के पास','review'],
+      ['NGH/0418','स्नानघर के दरवाज़े की चौखट सड़ी','डी-08, सेक्टर 2','18 घं. शेष','कार्य पूर्ण','verify'],
+      ['NGH/0423','संघ कार्यालय का रंग उखड़ा','यूओ-1, सेक्टर 4','1 दिन शेष','कार्य पूर्ण','verify'],
+      ['NGH/0421','अतिथि गृह की खिड़कियाँ टूटीं','जीएच-2, सेक्टर 1','2 दिन शेष','अनावंटित','assign'],
+      ['NGH/0426','फ़र्श की टाइलें चटकीं','बी-44, सेक्टर 2','2 दिन शेष','ठेकेदार के पास','review']
+    ],
+    contractors:[
+      ['शक्ति कंस्ट्रक्शंस प्रा. लि.','व्यापक','समय-सीमा 92.4%','औसत 31 घं.','62 लंबित'],
+      ['विंध्य इंफ्रा सर्विसेज','व्यापक','समय-सीमा 88.1%','औसत 39 घं.','31 लंबित'],
+      ['साईं राम बिल्डर्स','विशेषज्ञ · चिनाई','समय-सीमा 94.7%','औसत 27 घं.','18 लंबित']
+    ]
+  }
+};
+
+const ROW_ICONS = [I.rain, I.drain, I.brick, I.droplets, I.door, I.paint, I.door, I.brick];
+const LOAD_PCT = [78, 52, 34];
+
+class Component extends DCLogic {
+  state = { lang:'en', role:'incharge', selected:[], assignOpen:false, contractor:0, toast:'' };
+
+  componentWillUnmount() { clearTimeout(this.tt); }
+
+  fire(key) {
+    clearTimeout(this.tt);
+    this.setState({ toast: key });
+    this.tt = setTimeout(() => this.setState({ toast:'' }), 4000);
+  }
+
+  renderVals() {
+    const L = STR[this.state.lang];
+    const hi = this.state.lang === 'hi';
+    const font = hi ? "'IBM Plex Sans Devanagari', sans-serif" : "'IBM Plex Sans', sans-serif";
+    const incharge = this.state.role === 'incharge';
+    const sel = this.state.selected;
+
+    const slaStyle = s => {
+      if (s.includes('over') || s.includes('अधिक')) return { bg:P.badT, fg:P.bad, path:I.alert };
+      if (/^(6|8|11|18) h|^(6|8|11|18) घं/.test(s)) return { bg:P.warnT, fg:P.warn, path:I.clock };
+      return { bg:P.okT, fg:P.ok, path:I.check };
+    };
+
+    const actionFor = kind => {
+      if (kind === 'assign') return incharge
+        ? { label:L.actAssign, bg:P.accent, fg:'#fff', border:P.accent }
+        : { label:L.actReview, bg:P.surface, fg:P.ink, border:P.line2 };
+      if (kind === 'verify') return { label:L.actVerify, bg:P.surface, fg:P.ink, border:P.line2 };
+      return { label:L.actReview, bg:P.surface, fg:P.ink2, border:P.line2 };
+    };
+
+    return {
+      t: L, font,
+      roleLabel: incharge ? (hi ? 'कॉलोनी प्रभारी, जेई' : 'Colony In-charge, JE') : (hi ? 'कॉलोनी पर्यवेक्षक' : 'Colony Overseer'),
+      setEn: () => this.setState({ lang:'en' }), setHi: () => this.setState({ lang:'hi' }),
+      enBg: !hi ? P.accent : 'transparent', enFg: !hi ? '#fff' : P.ink2,
+      hiBg: hi ? P.accent : 'transparent', hiFg: hi ? '#fff' : P.ink2,
+      setIncharge: () => this.setState({ role:'incharge', selected:[] }),
+      setOverseer: () => this.setState({ role:'overseer', selected:[], assignOpen:false }),
+      inBg: incharge ? P.surface : 'transparent', inFg: incharge ? P.ink : P.ink2,
+      ovBg: !incharge ? P.surface : 'transparent', ovFg: !incharge ? P.ink : P.ink2,
+
+      navItems: L.nav.map((label,i) => ({
+        label, path: [I.gauge,I.inbox,I.users,I.map,I.report,I.lock,I.settings][i],
+        disabled: i === 5, cursor: i === 5 ? 'not-allowed' : 'pointer',
+        bg: i === 1 ? 'rgba(15,92,99,.35)' : 'transparent',
+        fg: i === 5 ? '#5A646B' : i === 1 ? '#F2F4F5' : '#C7CDD1',
+        badge: i === 1 ? '23' : '', go: () => {}
+      })),
+
+      buckets: [
+        { label:L.buckets[0], value:'23', path:I.inboxOpen, tone:'plain', delay:'0ms' },
+        { label:L.buckets[1], value:'17', path:I.clock, tone:'warn', delay:'60ms' },
+        { label:L.buckets[2], value:'9', path:I.alert, tone:'bad', delay:'120ms' },
+        { label:L.buckets[3], value:'6', path:I.userCheck, tone:'info', delay:'180ms' }
+      ].map(b => {
+        const map = {
+          plain:{ bg:P.surface, border:P.line, labelColor:P.ink2, valueColor:P.ink },
+          warn:{ bg:P.warnT, border:'var(--warnT)', labelColor:P.warn, valueColor:P.warn },
+          bad:{ bg:P.badT, border:'var(--badT)', labelColor:P.bad, valueColor:P.bad },
+          info:{ bg:P.infoT, border:'var(--infoT)', labelColor:P.info, valueColor:P.info }
+        }[b.tone];
+        return { ...b, ...map, pick: () => {} };
+      }),
+
+      dropdowns: L.dropdowns,
+      columns: L.columns,
+
+      rows: L.rows.map(([ref,title,qtr,sla,stage,kind],i) => {
+        const st = slaStyle(sla);
+        const on = sel.includes(i);
+        const act = actionFor(kind);
+        return {
+          ref, title, qtr, sla, stage, path: ROW_ICONS[i],
+          bg: st.bg, fg: st.fg, statusPath: st.path,
+          rowBg: on ? P.accentTint : 'transparent',
+          boxBorder: on ? P.accent : P.line2, boxBg: on ? P.accent : P.surface,
+          checkOpacity: on ? 1 : 0,
+          toggle: () => this.setState(s => ({
+            selected: s.selected.includes(i) ? s.selected.filter(x => x !== i) : [...s.selected, i]
+          })),
+          actionLabel: act.label, actionBg: act.bg, actionFg: act.fg, actionBorder: act.border,
+          action: () => {
+            if (kind === 'assign' && incharge) this.setState({ assignOpen:true, selected:[i] });
+            else if (kind === 'verify') this.fire('toastVerified');
+          }
+        };
+      }),
+
+      hasSelection: sel.length > 0,
+      isOverseer: !incharge,
+      primaryMargin: incharge ? 'auto' : '0',
+      primaryBulkLabel: incharge ? L.assignSelected : L.verifySelected,
+      primaryBulk: () => {
+        if (incharge) this.setState({ assignOpen:true });
+        else { this.setState({ selected:[] }); this.fire('toastVerified'); }
+      },
+      flagPoor: () => { this.setState({ selected:[] }); this.fire('toastFlagged'); },
+      selectionLabel: hi ? `${sel.length} शिकायतें चयनित` : `${sel.length} complaint${sel.length === 1 ? '' : 's'} selected`,
+      clearSelection: () => this.setState({ selected:[] }),
+      openAssign: () => this.setState({ assignOpen:true }),
+      closeAssign: () => this.setState({ assignOpen:false }),
+      assignOpen: this.state.assignOpen,
+      assignSubtitle: sel.length === 1 && L.rows[sel[0]]
+        ? `${L.rows[sel[0]][0]} · ${L.rows[sel[0]][2]}`
+        : (hi ? `${sel.length} शिकायतें` : `${sel.length} complaints`),
+      confirmAssign: () => { this.setState({ assignOpen:false, selected:[] }); this.fire('toastAssigned'); },
+
+      contractors: L.contractors.map(([name,tag,sla,avg,open],i) => {
+        const on = this.state.contractor === i;
+        return {
+          name, tag, sla, avg, open,
+          pick: () => this.setState({ contractor:i }),
+          bg: on ? P.accentTint : P.surface, border: on ? P.accent : P.line2,
+          dotBorder: on ? P.accent : P.line2, dot: on ? P.accent : 'transparent',
+          tagBg: i === 2 ? P.infoT : P.okT, tagFg: i === 2 ? P.info : P.ok
+        };
+      }),
+
+      summary: L.summary.map(([k,v],i) => ({ k, v, color: i === 3 ? P.bad : i === 4 ? P.info : P.ink })),
+      load: L.load.map(([name,meta],i) => ({
+        name, meta, pct: LOAD_PCT[i],
+        color: LOAD_PCT[i] > 70 ? P.warn : P.accent
+      })),
+
+      toast: !!this.state.toast, toastText: L[this.state.toast] || '',
+      undo: () => this.setState({ toast:'' })
+    };
+  }
+}
+
+</script>
+</body>
+</html>

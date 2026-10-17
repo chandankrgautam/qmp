@@ -1,0 +1,110 @@
+/* GENERATED from tokens/tokens.json by tokens/build-tokens.mjs. Do not edit. */
+:root {
+  --primary-dark: #0A3333;
+  --secondary: #2E7D32;
+  --gold: #C9A96A;
+  --gold-hover: #BF9C58;
+  --gold-text: #B08F4E;
+  --em-slot: #7A4B1F;
+  --scrim: rgba(10,51,51,0.5);
+  --radius-xs: 6px;
+  --radius-input: 10px;
+  --radius-card: 14px;
+  --radius-card-large: 16px;
+  --radius-dialog: 20px;
+  --radius-sheet: 24px;
+  --radius-pill: 999px;
+  --ease: cubic-bezier(0.2,0.7,0.2,1);
+  --fast: 150ms; --base: 240ms; --sheet: 320ms; --hero: 2600ms;
+  --bg: #F8F6EF;
+  --surface: #FFFFFF;
+  --muted: #EFEDE4;
+  --tint: #E8F4F4;
+  --border: #EAE8E0;
+  --border-strong: #DDD9CC;
+  --text: #1C2B2B;
+  --text-muted: #617074;
+  --primary: #0F4C4C;
+  --primary-hover: #0C3F3F;
+  --primary-pressed: #0A3333;
+  --primary-button: #0F4C4C;
+  --on-primary: #FFFFFF;
+  --sidebar: #0F4C4C;
+  --row-hover: #FBFAF6;
+  --focus: #0F4C4C;
+  --status-resolved: #1F6F4A;
+  --status-resolved-bg: #E6F2EC;
+  --status-at-risk: #8A5A00;
+  --status-at-risk-bg: #FBF1DC;
+  --status-breached: #A32A21;
+  --status-breached-bg: #FBE7E5;
+  --status-info: #2C5A8A;
+  --status-info-bg: #E6EEF7;
+  --status-reopened: #6A3D8F;
+  --status-reopened-bg: #F1EAF7;
+  --status-awaiting: #5B4FA8;
+  --status-awaiting-bg: #ECEAF8;
+}
+/* dark: the user's choice wins; otherwise follow the system */
+:root[data-theme="dark"] {
+  --bg: #0E1A1A;
+  --surface: #152424;
+  --muted: #1B2E2E;
+  --tint: #1D3838;
+  --border: #22393A;
+  --border-strong: #2E4A4B;
+  --text: #E7EDEA;
+  --text-muted: #A4B4B3;
+  --primary: #8FD3CB;
+  --primary-hover: #1F7A7A;
+  --primary-pressed: #0A3333;
+  --primary-button: #1A6B6B;
+  --on-primary: #FFFFFF;
+  --sidebar: #0B2626;
+  --row-hover: #182929;
+  --focus: #8FD3CB;
+  --status-resolved: #7FD3A6;
+  --status-resolved-bg: #173328;
+  --status-at-risk: #E8B25A;
+  --status-at-risk-bg: #33280F;
+  --status-breached: #F0877E;
+  --status-breached-bg: #3A1C1A;
+  --status-info: #8DB6E0;
+  --status-info-bg: #16263A;
+  --status-reopened: #C3A3E0;
+  --status-reopened-bg: #2A1F36;
+  --status-awaiting: #A99FEA;
+  --status-awaiting-bg: #221F3A;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1A1A;
+    --surface: #152424;
+    --muted: #1B2E2E;
+    --tint: #1D3838;
+    --border: #22393A;
+    --border-strong: #2E4A4B;
+    --text: #E7EDEA;
+    --text-muted: #A4B4B3;
+    --primary: #8FD3CB;
+    --primary-hover: #1F7A7A;
+    --primary-pressed: #0A3333;
+    --primary-button: #1A6B6B;
+    --on-primary: #FFFFFF;
+    --sidebar: #0B2626;
+    --row-hover: #182929;
+    --focus: #8FD3CB;
+    --status-resolved: #7FD3A6;
+    --status-resolved-bg: #173328;
+    --status-at-risk: #E8B25A;
+    --status-at-risk-bg: #33280F;
+    --status-breached: #F0877E;
+    --status-breached-bg: #3A1C1A;
+    --status-info: #8DB6E0;
+    --status-info-bg: #16263A;
+    --status-reopened: #C3A3E0;
+    --status-reopened-bg: #2A1F36;
+    --status-awaiting: #A99FEA;
+    --status-awaiting-bg: #221F3A;
+  }
+}

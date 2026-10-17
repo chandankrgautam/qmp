@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./cp-shell.js"></script>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Devanagari:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:var(--bg); }
+  * { box-sizing:border-box; }
+  a { color:#0F5C63; text-decoration:none; }
+  a:hover { color:#13757E; text-decoration:underline; }
+  @keyframes riseIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+</style>
+</helmet>
+<div style="--bg:#F7F8F8;--surface:#FFFFFF;--surface2:#EDEFF0;--ink:#14181B;--ink2:#5A646B;--ink3:#7B858C;--line:#DFE3E5;--line2:#C7CDD1;--accent:#0F5C63;--accentH:#13757E;--accentTint:#E2F0F0;--ok:#1F6F4A;--okT:#E7F1EC;--warn:#8A5A00;--warnT:#F6EEDD;--bad:#A32A21;--badT:#F7E9E7;--info:#2C5A8A;--infoT:#E7EEF5;--rowpad:13px;font-family:'IBM Plex Sans','IBM Plex Sans Devanagari',system-ui,sans-serif;color:var(--ink);background:var(--bg);min-height:100vh;display:grid;grid-template-columns:248px minmax(0,1fr)">
+
+  <aside style="background:#14181B;color:#C7CDD1;display:flex;flex-direction:column;gap:4px;padding:18px 12px;min-height:100vh">
+    <div style="display:flex;align-items:center;gap:11px;padding:6px 10px 20px">
+      <span aria-label="Civil Portal" style="width:32px;height:32px;border-radius:7px;background:#161C21;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)"><svg viewBox="0 0 100 100" style="width:86%;height:86%"><polygon points="50.0,12.0 50.0,12.0 71.6,30.0 28.4,30.0" fill="#B9C2C8"></polygon><polygon points="24.8,33.0 75.2,33.0 86.0,42.0 86.0,50.0 14.0,50.0 14.0,42.0" fill="#86919A"></polygon><polygon points="14.0,53.0 86.0,53.0 86.0,68.0 14.0,68.0" fill="#34C7B0"></polygon><polygon points="14.0,71.0 86.0,71.0 86.0,86.0 14.0,86.0" fill="#5C6770"></polygon></svg></span>
+      <span style="display:flex;flex-direction:column;line-height:1.25;min-width:0">
+        <span style="font-size:14px;font-weight:600;color:#F2F4F5">Civil Portal</span>
+        <span style="font-size:11px;color:#7B858C;font-family:{{ font }}">{{ t.areaName }}</span>
+      </span>
+    </div>
+    <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="7">
+      <button onClick="{{ n.go }}" disabled="{{ n.disabled }}" style="display:flex;align-items:center;gap:11px;border:0;border-radius:8px;background:{{ n.bg }};color:{{ n.fg }};font:500 14px/1 'IBM Plex Sans';padding:11px 10px;cursor:{{ n.cursor }};text-align:left;min-height:42px;width:100%">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex:none"><path d="{{ n.path }}"></path></svg>
+        <span style="flex:1;min-width:0">{{ n.label }}</span>
+        <sc-if value="{{ n.badge }}" hint-placeholder-val="{{ false }}">
+          <span style="font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;padding:2px 7px;border-radius:10px;background:{{ n.badgeBg }};color:{{ n.badgeFg }}">{{ n.badge }}</span>
+        </sc-if>
+      </button>
+    </sc-for>
+    <div style="margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px 10px;border-top:1px solid #2E363C">
+      <span style="width:32px;height:32px;border-radius:50%;background:#2E363C;color:#C7CDD1;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex:none">AT</span>
+      <span style="display:flex;flex-direction:column;line-height:1.3;min-width:0">
+        <span style="font-size:13px;font-weight:500;color:#F2F4F5">A. Tiwari</span>
+        <span style="font-size:11px;color:#7B858C">Area Civil In-charge</span>
+      </span>
+    </div>
+  </aside>
+
+  <main style="display:flex;flex-direction:column;min-width:0">
+    <header style="position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 28px;background:var(--surface);border-bottom:1px solid var(--line)">
+      <div style="display:flex;flex-direction:column;gap:2px;margin-right:auto;min-width:0">
+        <span style="font-size:12px;color:var(--ink3)">Areas / Nigahi</span>
+        <span style="font-size:20px;font-weight:600;line-height:26px;font-family:{{ font }}">{{ t.pageTitle }}</span>
+      </div>
+      <button style="display:flex;align-items:center;gap:8px;border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);font:500 13px/1 'IBM Plex Sans';padding:11px 13px;cursor:pointer;min-height:42px" style-hover="background:var(--surface2)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M8 3v3M16 3v3M4 8.5h16M5 5.5h14a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1Z"></path></svg>
+        Sep 2026
+      </button>
+      
+      <cp-command-trigger></cp-command-trigger>
+      <cp-theme-toggle compact=""></cp-theme-toggle>
+      <div style="display:flex;gap:4px;padding:3px;background:var(--surface2);border-radius:8px">
+        <button onClick="{{ setEn }}" style="border:0;cursor:pointer;font:500 13px/1 'IBM Plex Sans';padding:9px 12px;border-radius:6px;background:{{ enBg }};color:{{ enFg }}">EN</button>
+        <button onClick="{{ setHi }}" style="border:0;cursor:pointer;font:500 13px/1 'IBM Plex Sans Devanagari';padding:9px 12px;border-radius:6px;background:{{ hiBg }};color:{{ hiFg }}">हिं</button>
+      </div>
+    </header>
+
+    <div style="padding:26px 28px 56px;display:flex;flex-direction:column;gap:28px;min-width:0">
+
+      <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px">
+        <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+          <div style="display:flex;flex-direction:column;gap:9px;padding:17px 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);animation:riseIn .3s ease-out both;animation-delay:{{ k.delay }}">
+            <span style="font-size:12px;color:var(--ink2);line-height:16px;font-family:{{ font }}">{{ k.label }}</span>
+            <span style="font-size:30px;line-height:34px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-0.015em">{{ k.value }}</span>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+              <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;color:{{ k.color }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="{{ k.trendPath }}"></path></svg>{{ k.delta }}
+              </span>
+              <svg viewBox="0 0 80 22" preserveAspectRatio="none" style="width:80px;height:22px;flex:none"><polyline points="{{ k.spark }}" fill="none" stroke="{{ k.color }}" stroke-width="1.5" stroke-linejoin="round"></polyline></svg>
+            </div>
+            <span style="font-size:11px;color:var(--ink3);font-family:{{ font }}">{{ t.vsAug }}</span>
+          </div>
+        </sc-for>
+      </section>
+
+      <section style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:baseline;gap:12px">
+          <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.scorecardTitle }}</h2>
+          <span style="font-size:13px;color:var(--ink3);font-family:{{ font }}">{{ t.scorecardSub }}</span>
+        </div>
+        <div style="border-radius:14px;background:#1D2328;color:#F2F4F5;padding:26px 28px;display:flex;flex-direction:column;gap:22px;box-shadow:0 4px 12px rgba(20,24,27,.10)">
+          <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:4px;margin-right:auto;min-width:0">
+              <span style="font-size:22px;line-height:29px;font-weight:600">Shakti Constructions Pvt. Ltd.</span>
+              <span style="font-size:13px;color:#A3ABB1;font-family:{{ font }}">{{ t.agreement }}</span>
+            </div>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:4px;font-size:13px;font-weight:600;background:rgba(95,190,140,.16);color:#7FD3A6;font-family:{{ font }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M12 3 4 6v6c0 4.6 3.2 7.9 8 9 4.8-1.1 8-4.4 8-9V6l-8-3ZM9 12l2 2 4-4"></path></svg>{{ t.meetingSla }}
+            </span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.10)">
+            <sc-for list="{{ score }}" as="sc" hint-placeholder-count="5">
+              <button onClick="{{ sc.drill }}" style="display:flex;flex-direction:column;gap:7px;padding:17px 18px 19px;background:#1D2328;border:0;border-left:1px solid rgba(255,255,255,.10);border-top:1px solid rgba(255,255,255,.10);margin-left:-1px;margin-top:-1px;cursor:pointer;text-align:left;flex:1 1 176px;min-width:176px" style-hover="background:#232B31">
+                <span style="font-size:12px;color:#A3ABB1;line-height:16px;font-family:{{ font }}">{{ sc.label }}</span>
+                <span style="font-size:30px;line-height:36px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;white-space:nowrap;color:{{ sc.color }}">{{ sc.value }}</span>
+                <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#A3ABB1;font-family:{{ font }}">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex:none"><path d="{{ sc.iconPath }}"></path></svg>{{ sc.note }}
+                </span>
+              </button>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+            <span style="font-size:13px;color:#A3ABB1;margin-right:auto;font-family:{{ font }}">{{ t.drillHint }}</span>
+            <button style="border:1px solid rgba(255,255,255,.22);border-radius:8px;background:transparent;color:#F2F4F5;font:500 14px/1 'IBM Plex Sans';padding:11px 16px;cursor:pointer;min-height:44px;font-family:{{ font }}" style-hover="background:rgba(255,255,255,.08)">{{ t.viewComplaints }}</button>
+            <button style="border:0;border-radius:8px;background:#3FA7AE;color:#0B2124;font:600 14px/1 'IBM Plex Sans';padding:11px 16px;cursor:pointer;min-height:44px;font-family:{{ font }}" style-hover="background:#5FC4CA">{{ t.downloadReport }}</button>
+          </div>
+        </div>
+      </section>
+
+      <section style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:22px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+            <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.slaTrend }}</h2>
+            <span style="font-size:12px;color:var(--ink3);font-family:{{ font }}">{{ t.target }}</span>
+          </div>
+          <div style="padding:20px 20px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:flex-end;gap:10px;height:168px">
+              <sc-for list="{{ trend }}" as="tr" hint-placeholder-count="12">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0">
+                  <span style="font-size:10px;color:var(--ink3);font-variant-numeric:tabular-nums">{{ tr.value }}</span>
+                  <div style="width:100%;border-radius:3px 3px 0 0;background:{{ tr.color }};height:{{ tr.h }}px"></div>
+                  <span style="font-size:10px;color:var(--ink3);white-space:nowrap">{{ tr.month }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--line)">
+              <sc-for list="{{ legend }}" as="lg" hint-placeholder-count="2">
+                <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink2);font-family:{{ font }}"><span style="width:10px;height:10px;border-radius:2px;background:{{ lg.color }}"></span>{{ lg.label }}</span>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+          <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.categoryTitle }}</h2>
+          <div style="padding:18px 20px;border:1px solid var(--line);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;gap:15px">
+            <sc-for list="{{ cats }}" as="c" hint-placeholder-count="6">
+              <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+                <div style="display:flex;align-items:center;gap:9px">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex:none;color:var(--ink3)"><path d="{{ c.path }}"></path></svg>
+                  <span style="font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ c.label }}</span>
+                  <span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums">{{ c.count }}</span>
+                </div>
+                <div style="height:6px;border-radius:3px;background:var(--surface2);overflow:hidden"><div style="height:100%;border-radius:3px;background:var(--accent);width:{{ c.pct }}%"></div></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+
+      <section style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+            <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.repeatTitle }}</h2>
+            <span style="font-size:12px;color:var(--ink3);font-family:{{ font }}">{{ t.repeatSub }}</span>
+          </div>
+          <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden">
+            <sc-for list="{{ repeats }}" as="rp" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-bottom:1px solid var(--line)" style-hover="background:var(--accentTint)">
+                <span style="font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;width:92px;flex:none">{{ rp.qtr }}</span>
+                <span style="font-size:13px;color:var(--ink2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ rp.issue }}</span>
+                <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:4px;font-size:12px;font-weight:600;background:{{ rp.bg }};color:{{ rp.fg }};flex:none;font-variant-numeric:tabular-nums">{{ rp.times }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+            <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.colonyTitle }}</h2>
+            <span style="font-size:12px;color:var(--ink3);font-family:{{ font }}">{{ t.colonySub }}</span>
+          </div>
+          <div style="padding:18px 20px;border:1px solid var(--line);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;gap:14px">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px">
+              <sc-for list="{{ blocks }}" as="b" hint-placeholder-count="16">
+                <div style="border-radius:4px;padding:9px 8px;display:flex;flex-direction:column;gap:3px;background:{{ b.bg }};border:1px solid {{ b.border }};cursor:pointer" style-hover="border-color:var(--accent)">
+                  <span style="font-size:12px;font-weight:600;color:{{ b.fg }};font-variant-numeric:tabular-nums">{{ b.name }}</span>
+                  <span style="font-size:11px;color:{{ b.fg }};opacity:.8;font-variant-numeric:tabular-nums">{{ b.count }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--line)">
+              <span style="font-size:12px;color:var(--ink3);font-family:{{ font }}">{{ t.fewer }}</span>
+              <span style="display:flex;gap:3px">
+                <span style="width:20px;height:10px;border-radius:2px;background:var(--surface2);border:1px solid var(--line)"></span>
+                <span style="width:20px;height:10px;border-radius:2px;background:#DCE9E9"></span>
+                <span style="width:20px;height:10px;border-radius:2px;background:#AFD0D2"></span>
+                <span style="width:20px;height:10px;border-radius:2px;background:#5D989D"></span>
+                <span style="width:20px;height:10px;border-radius:2px;background:#0F5C63"></span>
+              </span>
+              <span style="font-size:12px;color:var(--ink3);font-family:{{ font }}">{{ t.more }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section style="display:flex;flex-direction:column;gap:14px;min-width:0">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;margin-right:auto;font-family:{{ font }}">{{ t.needAttention }}</h2>
+          <div style="display:flex;gap:4px;padding:3px;background:var(--surface2);border-radius:8px">
+            <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+              <button onClick="{{ f.pick }}" style="border:0;cursor:pointer;font:500 13px/1 'IBM Plex Sans';padding:9px 12px;border-radius:6px;background:{{ f.bg }};color:{{ f.fg }};font-family:{{ font }}">{{ f.label }}</button>
+            </sc-for>
+          </div>
+          <button onClick="{{ toggleDensity }}" style="border:1px solid var(--line2);cursor:pointer;font:500 13px/1 'IBM Plex Sans';padding:10px 13px;border-radius:8px;background:var(--surface);color:var(--ink);min-height:42px" style-hover="background:var(--surface2)">{{ densityLabel }}</button>
+        </div>
+        <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow-x:auto">
+          <div style="display:grid;min-width:880px;grid-template-columns:112px minmax(0,1.7fr) minmax(0,1fr) 130px 118px 104px;gap:14px;padding:11px 16px;background:var(--surface2);border-bottom:1px solid var(--line);font-size:12px;font-weight:600;color:var(--ink2);position:sticky;top:0">
+            <sc-for list="{{ columns }}" as="col" hint-placeholder-count="6"><span style="font-family:{{ font }}">{{ col }}</span></sc-for>
+          </div>
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="7">
+            <div style="display:grid;min-width:880px;grid-template-columns:112px minmax(0,1.7fr) minmax(0,1fr) 130px 118px 104px;gap:14px;padding-left:16px;padding-right:16px;border-bottom:1px solid var(--line);font-size:14px;align-items:center;cursor:pointer;padding-top:{{ rowPad }};padding-bottom:{{ rowPad }}" style-hover="background:var(--accentTint)">
+              <span style="font-family:'IBM Plex Mono';font-size:12px;color:var(--ink2)">{{ r.ref }}</span>
+              <span style="display:flex;align-items:center;gap:9px;min-width:0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex:none;color:var(--ink3)"><path d="{{ r.path }}"></path></svg>
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ r.title }}</span>
+              </span>
+              <span style="font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.qtr }}</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:4px;font-size:12px;font-weight:500;justify-self:start;background:{{ r.bg }};color:{{ r.fg }};font-family:{{ font }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex:none"><path d="{{ r.statusPath }}"></path></svg>{{ r.sla }}
+              </span>
+              <span style="font-size:13px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ r.stage }}</span>
+              <span style="font-size:13px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.vendor }}</span>
+            </div>
+          </sc-for>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;flex-wrap:wrap">
+            <span style="font-size:12px;color:var(--ink3);margin-right:auto;font-variant-numeric:tabular-nums;font-family:{{ font }}">{{ t.showing }}</span>
+            <button style="border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);font:500 13px/1 'IBM Plex Sans';padding:10px 13px;cursor:pointer;min-height:40px;font-family:{{ font }}" style-hover="background:var(--surface2)">{{ t.exportCsv }}</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<cp-command-palette></cp-command-palette>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1400}}">
+const P = {
+  surface:'var(--surface)', surface2:'var(--surface2)', ink:'var(--ink)', ink2:'var(--ink2)', ink3:'var(--ink3)',
+  line:'var(--line)', line2:'var(--line2)', accent:'var(--accent)', accentTint:'var(--accentTint)',
+  ok:'var(--ok)', okT:'var(--okT)', warn:'var(--warn)', warnT:'var(--warnT)', bad:'var(--bad)', badT:'var(--badT)',
+  info:'var(--info)', infoT:'var(--infoT)'
+};
+const I = {
+  gauge:'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 12l4-3',
+  inbox:'M4 13h4l1.5 3h5L16 13h4M4 13 6.5 5h11L20 13v6H4v-6Z',
+  users:'M13 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M8 6.5m-3.5 0a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M17 13.5a4 4 0 0 1 4 4V20M15 3.3a3.5 3.5 0 0 1 0 6.4',
+  map:'M9 4 3 6.5v14L9 18l6 2.5 6-2.5v-14L15 6.5 9 4ZM9 4v14M15 6.5v14',
+  report:'M6 3h8l4 4v14H6zM14 3v4h4M9 13h6M9 17h6',
+  settings:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7.5 19.4l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 14.6a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7.5l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.1V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.5 1.4l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z',
+  lock:'M6 10.5h12V21H6zM8.5 10.5V7a3.5 3.5 0 0 1 7 0v3.5',
+  droplets:'M12 3c3 3.5 5 6.4 5 8.7A5 5 0 0 1 7 11.7C7 9.4 9 6.5 12 3Z',
+  rain:'M7.5 14.5a3.5 3.5 0 0 1 .4-7 5 5 0 0 1 9.4 1.3 3.2 3.2 0 0 1-.8 6.3M8 18l-1 2.5M12 18l-1 2.5M16 18l-1 2.5',
+  brick:'M3 6h18v12H3zM3 12h18M8 6v6M16 6v6M12 12v6',
+  door:'M4 20h16M6 20V5a1 1 0 0 1 1.2-1l7-1.4A1 1 0 0 1 15.5 3.6V20M12 12.5v1',
+  paint:'M3 4h13v6H3zM16 7h4v4h-7v3M11 14h4v6h-4z',
+  drain:'M2 7c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 13c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 19c2-2 4-2 6 0s4 2 6 0 4-2 6 0',
+  clock:'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 7v5l3 2',
+  alert:'M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0ZM12 9v4M12 17h.01',
+  check:'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M8 12.5l2.5 2.5L16 9.5',
+  userCheck:'M13 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M8 6.5m-3.5 0a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M16 13l2 2 4-4',
+  up:'M3 17 9.5 10.5l4 4L21 7M15 7h6v6',
+  down:'M3 7 9.5 13.5l4-4L21 17M15 17h6v-6',
+  star:'M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.8-5.3 2.8 1-5.8L3.5 9.7l5.9-.9L12 3.5Z',
+  rupee:'M6 4h12M6 9h12M15.5 4c0 5-3.5 5-6 5h-.5l7 10'
+};
+
+const STR = {
+  en: {
+    pageTitle:'Area dashboard', vsAug:'vs. Aug 2026', areaName:'Nigahi Area',
+    nav:['Dashboard','Work queue','Contractors','Colony map','Reports','Allotment (coming soon)','Settings'],
+    scorecardTitle:'Contractor scorecard', scorecardSub:'Comprehensive civil maintenance, Nigahi Area',
+    agreement:'Agreement NCL/CIV/2025-28 · 4,180 quarters', meetingSla:'Meeting SLA',
+    drillHint:'Every number drills through to the complaints behind it.',
+    viewComplaints:'View 148 complaints', downloadReport:'Download report',
+    slaTrend:'SLA compliance over the contract period', target:'Target 90%',
+    categoryTitle:'Complaints by category', repeatTitle:'Repeat-complaint quarters',
+    repeatSub:'3 or more in 90 days', colonyTitle:'Colony complaint density', colonySub:'Open complaints per block',
+    fewer:'Fewer', more:'More', needAttention:'Needs your attention',
+    showing:'Showing 7 of 148 complaints', exportCsv:'Export CSV',
+    comfortable:'Density: comfortable', compact:'Density: compact',
+    filters:['All open','Due soon','Overdue','Awaiting verification'],
+    columns:['Complaint','Problem','Quarter','SLA','Stage','Contractor'],
+    kpis:['SLA compliance','Avg. resolution','Open complaints','Resident rating'],
+    scoreLabels:['SLA compliance','Avg. resolution','Reopen rate','Resident rating','Deductions due'],
+    scoreNotes:['+3.1 pts vs Aug','4 h faster','Above 5% target','312 ratings','Sep 2026 bill'],
+    cats:['Plumbing','Seepage & roofing','Masonry','Doors & windows','Drainage','Painting'],
+    legend:['Met target','Below target'],
+    repeats:[
+      ['C-245','Kitchen tap, bathroom leak','4×'],['B-12','Seepage, bedroom wall','4×'],
+      ['A-101','Drain choked behind quarter','3×'],['D-08','Door frame, window latch','3×'],
+      ['E-56','Plaster falling, stairwell','3×']
+    ],
+    rows:[
+      ['NGH/0388','Seepage on bedroom ceiling','B-12, Sector 2','1 d over','Awaiting assign','—'],
+      ['NGH/0402','Drain choked behind quarter','A-101, Sector 1','8 h over','With contractor','Shakti'],
+      ['NGH/0412','Kitchen tap leaking','C-245, Sector 4','6 h left','With contractor','Shakti'],
+      ['NGH/0415','Plaster falling in stairwell','E-56, Sector 3','11 h left','Awaiting assign','—'],
+      ['NGH/0418','Bathroom door frame rotted','D-08, Sector 2','18 h left','Verify work','Shakti'],
+      ['NGH/0421','Window panes broken, Guest House','GH-2, Sector 1','1 d left','With contractor','Vindhya'],
+      ['NGH/0423','Wall paint peeling, Union Office','UO-1, Sector 4','2 d left','Verify work','Shakti']
+    ]
+  },
+  hi: {
+    pageTitle:'क्षेत्र डैशबोर्ड', vsAug:'अगस्त 2026 की तुलना में', areaName:'निगाही क्षेत्र',
+    nav:['डैशबोर्ड','कार्य सूची','ठेकेदार','कॉलोनी मानचित्र','रिपोर्ट','आवंटन (शीघ्र)','सेटिंग्स'],
+    scorecardTitle:'ठेकेदार स्कोरकार्ड', scorecardSub:'व्यापक सिविल अनुरक्षण, निगाही क्षेत्र',
+    agreement:'अनुबंध एनसीएल/सिविल/2025-28 · 4,180 क्वार्टर', meetingSla:'समय-सीमा का पालन',
+    drillHint:'हर आँकड़े से संबंधित शिकायतों तक पहुँचा जा सकता है।',
+    viewComplaints:'148 शिकायतें देखें', downloadReport:'रिपोर्ट डाउनलोड करें',
+    slaTrend:'अनुबंध अवधि में समय-सीमा पालन', target:'लक्ष्य 90%',
+    categoryTitle:'श्रेणीवार शिकायतें', repeatTitle:'बार-बार शिकायत वाले क्वार्टर',
+    repeatSub:'90 दिनों में 3 या अधिक', colonyTitle:'कॉलोनीवार शिकायत घनत्व', colonySub:'प्रति ब्लॉक लंबित शिकायतें',
+    fewer:'कम', more:'अधिक', needAttention:'आपके ध्यान की आवश्यकता',
+    showing:'148 में से 7 शिकायतें', exportCsv:'सीएसवी निर्यात',
+    comfortable:'घनत्व: सामान्य', compact:'घनत्व: सघन',
+    filters:['सभी लंबित','शीघ्र देय','विलंबित','सत्यापन शेष'],
+    columns:['शिकायत','समस्या','क्वार्टर','समय-सीमा','चरण','ठेकेदार'],
+    kpis:['समय-सीमा पालन','औसत निपटान','लंबित शिकायतें','निवासी रेटिंग'],
+    scoreLabels:['समय-सीमा पालन','औसत निपटान','पुनः खुलने की दर','निवासी रेटिंग','देय कटौती'],
+    scoreNotes:['अगस्त से +3.1 अंक','4 घंटे तेज़','5% लक्ष्य से अधिक','312 रेटिंग','सित. 2026 बिल'],
+    cats:['नल-जल कार्य','सीलन व छत','चिनाई','दरवाज़े व खिड़कियाँ','जल निकासी','रंग-रोगन'],
+    legend:['लक्ष्य पूरा','लक्ष्य से कम'],
+    repeats:[
+      ['सी-245','रसोई का नल, स्नानघर रिसाव','4×'],['बी-12','शयनकक्ष की दीवार में सीलन','4×'],
+      ['ए-101','क्वार्टर के पीछे नाली अवरुद्ध','3×'],['डी-08','दरवाज़े की चौखट, खिड़की कुंडी','3×'],
+      ['ई-56','सीढ़ी घर में पलस्तर','3×']
+    ],
+    rows:[
+      ['NGH/0388','शयनकक्ष की छत में सीलन','बी-12, सेक्टर 2','1 दिन अधिक','आवंटन शेष','—'],
+      ['NGH/0402','क्वार्टर के पीछे नाली अवरुद्ध','ए-101, सेक्टर 1','8 घं. अधिक','ठेकेदार के पास','शक्ति'],
+      ['NGH/0412','रसोई का नल टपक रहा है','सी-245, सेक्टर 4','6 घं. शेष','ठेकेदार के पास','शक्ति'],
+      ['NGH/0415','सीढ़ी घर में पलस्तर गिर रहा है','ई-56, सेक्टर 3','11 घं. शेष','आवंटन शेष','—'],
+      ['NGH/0418','स्नानघर के दरवाज़े की चौखट सड़ी','डी-08, सेक्टर 2','18 घं. शेष','कार्य सत्यापन','शक्ति'],
+      ['NGH/0421','अतिथि गृह की खिड़कियाँ टूटीं','जीएच-2, सेक्टर 1','1 दिन शेष','ठेकेदार के पास','विंध्य'],
+      ['NGH/0423','संघ कार्यालय का रंग उखड़ा','यूओ-1, सेक्टर 4','2 दिन शेष','कार्य सत्यापन','शक्ति']
+    ]
+  }
+};
+
+const TREND = [
+  ['Oct',86],['Nov',88],['Dec',84],['Jan',89],['Feb',91],['Mar',87],
+  ['Apr',90],['May',92],['Jun',88],['Jul',91],['Aug',89],['Sep',92]
+];
+const BLOCKS = [
+  ['A-1',2],['A-2',0],['A-3',5],['B-1',9],['B-2',12],['B-3',3],['C-1',7],['C-2',18],
+  ['C-3',14],['D-1',1],['D-2',6],['D-3',0],['E-1',11],['E-2',4],['GH-2',2],['UO-1',1]
+];
+const CAT_COUNTS = [52, 34, 21, 18, 14, 9];
+const CAT_PATHS = [I.droplets, I.rain, I.brick, I.door, I.drain, I.paint];
+
+class Component extends DCLogic {
+  state = { lang:'en', compact:false, filter:0 };
+
+  renderVals() {
+    const L = STR[this.state.lang];
+    const hi = this.state.lang === 'hi';
+    const font = hi ? "'IBM Plex Sans Devanagari', sans-serif" : "'IBM Plex Sans', sans-serif";
+    const maxCat = Math.max(...CAT_COUNTS);
+    const maxBlock = Math.max(...BLOCKS.map(b => b[1]));
+
+    const heat = n => {
+      const r = n / maxBlock;
+      if (n === 0) return { bg:'var(--bg)', fg:P.ink3, border:P.line };
+      if (r < 0.25) return { bg:'#DCE9E9', fg:'#1F4A4E', border:'transparent' };
+      if (r < 0.5) return { bg:'#AFD0D2', fg:'#143438', border:'transparent' };
+      if (r < 0.75) return { bg:'#5D989D', fg:'#FFFFFF', border:'transparent' };
+      return { bg:'#0F5C63', fg:'#FFFFFF', border:'transparent' };
+    };
+
+    const slaStyle = s => {
+      if (s.includes('over') || s.includes('अधिक')) return { bg:P.badT, fg:P.bad, path:I.alert };
+      if (/^(6|8|11) h|^(6|8|11) घं/.test(s)) return { bg:P.warnT, fg:P.warn, path:I.clock };
+      return { bg:P.okT, fg:P.ok, path:I.check };
+    };
+
+    return {
+      t: L, font,
+      setEn: () => this.setState({ lang:'en' }), setHi: () => this.setState({ lang:'hi' }),
+      enBg: !hi ? P.accent : 'transparent', enFg: !hi ? '#fff' : P.ink2,
+      hiBg: hi ? P.accent : 'transparent', hiFg: hi ? '#fff' : P.ink2,
+
+      navItems: L.nav.map((label,i) => ({
+        label, path: [I.gauge,I.inbox,I.users,I.map,I.report,I.lock,I.settings][i],
+        disabled: i === 5, cursor: i === 5 ? 'not-allowed' : 'pointer',
+        bg: i === 0 ? 'rgba(15,92,99,.35)' : 'transparent',
+        fg: i === 5 ? '#5A646B' : i === 0 ? '#F2F4F5' : '#C7CDD1',
+        badge: i === 1 ? '23' : '', badgeBg: 'rgba(163,42,33,.24)', badgeFg: '#F0A090',
+        go: () => {}
+      })),
+
+      kpis: [
+        { label:L.kpis[0], value:'92.4%', delta:'+3.1 pts', color:P.ok, trendPath:I.up, spark:'0,18 13,15 26,16 39,11 52,9 65,6 78,3', delay:'0ms' },
+        { label:L.kpis[1], value:'31 h', delta:'−4 h', color:P.ok, trendPath:I.down, spark:'0,5 13,7 26,6 39,10 52,12 65,14 78,17', delay:'60ms' },
+        { label:L.kpis[2], value:'148', delta:'+12', color:P.warn, trendPath:I.up, spark:'0,16 13,14 26,15 39,10 52,12 65,7 78,5', delay:'120ms' },
+        { label:L.kpis[3], value:'4.2', delta:'+0.2', color:P.ok, trendPath:I.up, spark:'0,15 13,13 26,14 39,10 52,8 65,7 78,5', delay:'180ms' }
+      ],
+
+      score: [
+        { label:L.scoreLabels[0], value:'92.4%', note:L.scoreNotes[0], iconPath:I.up, color:'#7FD3A6' },
+        { label:L.scoreLabels[1], value:'31 h', note:L.scoreNotes[1], iconPath:I.down, color:'#F2F4F5' },
+        { label:L.scoreLabels[2], value:'6.1%', note:L.scoreNotes[2], iconPath:I.up, color:'#F0A090' },
+        { label:L.scoreLabels[3], value:'4.2', note:L.scoreNotes[3], iconPath:I.star, color:'#F2F4F5' },
+        { label:L.scoreLabels[4], value:'₹1,24,500', note:L.scoreNotes[4], iconPath:I.rupee, color:'#E8C070' }
+      ].map(s => ({ ...s, drill: () => {} })),
+
+      trend: TREND.map(([month,value]) => ({
+        month, value, h: Math.round((value - 78) * 6.2),
+        color: value >= 90 ? P.ok : '#C08A3E'
+      })),
+      legend: [{ label:L.legend[0], color:P.ok }, { label:L.legend[1], color:'#C08A3E' }],
+
+      cats: L.cats.map((label,i) => ({
+        label, count: CAT_COUNTS[i], path: CAT_PATHS[i],
+        pct: Math.round(CAT_COUNTS[i] / maxCat * 100)
+      })),
+
+      repeats: L.repeats.map(([qtr,issue,times],i) => ({
+        qtr, issue, times,
+        bg: i < 2 ? P.badT : P.warnT, fg: i < 2 ? P.bad : P.warn
+      })),
+
+      blocks: BLOCKS.map(([name,count]) => ({ name, count, ...heat(count) })),
+
+      filters: L.filters.map((label,i) => ({
+        label, pick: () => this.setState({ filter:i }),
+        bg: this.state.filter === i ? P.surface : 'transparent',
+        fg: this.state.filter === i ? P.ink : P.ink2
+      })),
+
+      columns: L.columns,
+      rows: L.rows.map(([ref,title,qtr,sla,stage,vendor],i) => ({
+        ref, title, qtr, sla, stage, vendor,
+        path: [I.rain,I.drain,I.droplets,I.brick,I.door,I.door,I.paint][i],
+        ...(() => { const st = slaStyle(sla); return { bg:st.bg, fg:st.fg, statusPath:st.path }; })()
+      })),
+
+      rowPad: this.state.compact ? '7px' : '13px',
+      toggleDensity: () => this.setState(s => ({ compact: !s.compact })),
+      densityLabel: this.state.compact ? L.compact : L.comfortable
+    };
+  }
+}
+
+</script>
+</body>
+</html>

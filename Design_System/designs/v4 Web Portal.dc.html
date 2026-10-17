@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;family=Noto+Sans+Devanagari:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Poppins','Noto Sans Devanagari',system-ui,sans-serif;background:var(--bg,#F8F6EF);color:var(--tx,#1C2B2B);-webkit-font-smoothing:antialiased}
+a{color:var(--pr,#0F4C4C);font-weight:600;text-decoration:none}a:hover{text-decoration:underline}
+*{box-sizing:border-box}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #C9A96A;outline-offset:2px}
+</style>
+</helmet>
+<div style="display:flex;min-height:100vh;background:var(--bg,#F8F6EF);color:var(--tx,#1C2B2B)">
+  <aside style="width:{{ sideW }};flex:none;background:var(--side,#0F4C4C);color:#FFFFFF;display:flex;flex-direction:column;box-shadow:2px 0 12px rgba(15,76,76,.15);transition:width .25s;position:sticky;top:0;height:100vh">
+    <div style="min-height:72px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid rgba(255,255,255,.1)">
+      {{ logo }}
+      <sc-if value="{{ expanded }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:1;line-height:1.2;min-width:0"><div style="font-weight:700;font-size:13px;letter-spacing:.04em">CIVIL COLONY</div><div style="font-weight:600;font-size:10px;letter-spacing:.14em;color:#DFC28E">MAINTENANCE PORTAL</div></div>
+      </sc-if>
+      <button onClick="{{ toggleSide }}" aria-label="Collapse sidebar" style="border:0;background:transparent;color:rgba(255,255,255,.75);width:32px;height:32px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center">{{ sideChevron }}</button>
+    </div>
+    <nav style="flex:1;padding:12px 8px;display:flex;flex-direction:column;gap:4px;overflow:auto">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <button onClick="{{ n.go }}" disabled="{{ n.disabled }}" title="{{ n.label }}" style="border:0;cursor:{{ n.cursor }};display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;min-height:44px;background:{{ n.bg }};color:{{ n.fg }};font:{{ n.weight }} 14px Poppins,'Noto Sans Devanagari';text-align:left">
+          <span style="color:{{ n.ic }};display:flex;flex:none">{{ n.icon }}</span>
+          <sc-if value="{{ expanded }}" hint-placeholder-val="{{ true }}"><span style="flex:1;line-height:1.3">{{ n.label }}</span><span style="width:6px;height:6px;border-radius:999px;background:{{ n.dot }}"></span></sc-if>
+        </button>
+      </sc-for>
+    </nav>
+    <div style="padding:12px 8px;border-top:1px solid rgba(255,255,255,.1)">
+      <a href="v4 Landing and Login.dc.html" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:rgba(255,255,255,.75);font-weight:500;font-size:14px">{{ ic.logout }}<sc-if value="{{ expanded }}" hint-placeholder-val="{{ true }}"><span>{{ t.logout }}</span></sc-if></a>
+    </div>
+  </aside>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+    <header style="position:sticky;top:0;z-index:4;background:var(--sf,#FFFFFF);border-bottom:1px solid var(--bd,#EAE8E0);box-shadow:0 1px 4px rgba(0,0,0,.04);min-height:64px;padding:10px 24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--tm,#617074);flex:1;min-width:200px;flex-wrap:wrap">
+        <span>NCL</span><span style="color:var(--bd2,#DDD9CC)">/</span><span>{{ areaName }}</span><span style="color:var(--bd2,#DDD9CC)">/</span><span style="color:var(--tx,#1C2B2B);font-weight:600">{{ pageTitle }}</span>
+      </div>
+      <button onClick="{{ openPalette }}" style="display:flex;align-items:center;gap:10px;min-width:220px;border:1.5px solid var(--bd2,#DDD9CC);background:var(--bg,#F8F6EF);border-radius:999px;padding:8px 14px;color:var(--tm,#617074);font:400 13px Poppins;cursor:pointer">{{ ic.search }}<span style="flex:1;text-align:left">{{ t.search }}</span><span style="font:600 11px ui-monospace,Menlo,monospace;border:1px solid var(--bd2,#DDD9CC);border-radius:6px;padding:2px 6px">Ctrl K</span></button>
+      <select key="{{ role }}" defaultValue="{{ role }}" onChange="{{ onRole }}" aria-label="Preview as role" style="border:1.5px solid var(--bd2,#DDD9CC);background:var(--sf,#FFFFFF);color:var(--tx,#1C2B2B);border-radius:999px;padding:8px 12px;font:500 13px Poppins;min-height:40px">
+        <sc-for list="{{ roleOpts }}" as="o" hint-placeholder-count="5"><option value="{{ o.v }}" selected="{{ o.sel }}">{{ o.l }}</option></sc-for>
+      </select>
+      <div style="display:flex;border:1.5px solid var(--bd2,#DDD9CC);border-radius:999px;padding:2px">
+        <button onClick="{{ setEn }}" style="border:0;border-radius:999px;padding:6px 12px;font:600 12px Poppins;cursor:pointer;background:{{ enBg }};color:{{ enFg }}">EN</button>
+        <button onClick="{{ setHi }}" style="border:0;border-radius:999px;padding:6px 12px;font:600 12px 'Noto Sans Devanagari';cursor:pointer;background:{{ hiBg }};color:{{ hiFg }}">हिं</button>
+      </div>
+      <button onClick="{{ toggleDark }}" aria-label="Toggle dark mode" style="width:40px;height:40px;border-radius:999px;border:1.5px solid var(--bd2,#DDD9CC);background:transparent;color:var(--tm,#617074);display:flex;align-items:center;justify-content:center;cursor:pointer">{{ themeIcon }}</button>
+      <div style="position:relative;color:var(--tm,#617074);display:flex">{{ ic.bell }}<span style="position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:999px;background:#C0392B"></span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding-left:14px;border-left:1px solid var(--bd,#EAE8E0)">
+        <div style="width:36px;height:36px;border-radius:999px;background:#0F4C4C;color:#FFFFFF;font:700 13px Poppins;display:flex;align-items:center;justify-content:center">{{ me.ini }}</div>
+        <div style="line-height:1.25"><div style="font-weight:600;font-size:13px">{{ me.name }}</div><div style="font-size:12px;color:var(--tm,#617074)">{{ me.role }}</div></div>
+      </div>
+    </header>
+
+    <main style="padding:24px;display:flex;flex-direction:column;gap:20px;max-width:1440px;width:100%">
+      <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap">
+        <div style="flex:1;min-width:240px">
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:var(--pr,#0F4C4C)">{{ pageTitle }}</h1>
+          <p style="margin:2px 0 0;font-size:14px;color:var(--tm,#617074)">{{ pageSub }}</p>
+        </div>
+        <sc-if value="{{ pageAction }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ pageAction.fn }}" style="border:0;border-radius:999px;background:var(--prb,#0F4C4C);color:#FFFFFF;padding:11px 20px;min-height:44px;font:600 14px Poppins,'Noto Sans Devanagari';display:flex;gap:8px;align-items:center;cursor:pointer">{{ pageAction.icon }}{{ pageAction.label }}</button>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ isQueue }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="Work queue" style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px">
+            <sc-for list="{{ buckets }}" as="b" hint-placeholder-count="4">
+              <button onClick="{{ b.pick }}" style="text-align:left;cursor:pointer;border-radius:14px;padding:16px 18px;background:{{ b.bg }};border:1.5px solid {{ b.bd }};font-family:Poppins,'Noto Sans Devanagari';display:flex;flex-direction:column;gap:4px">
+                <span style="font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--tm,#617074)">{{ b.label }}</span>
+                <span style="font-size:30px;font-weight:700;color:{{ b.c }};font-variant-numeric:tabular-nums;line-height:1.1">{{ b.n }}</span>
+                <span style="font-size:12px;color:var(--tm,#617074)">{{ b.sub }}</span>
+              </button>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <div style="display:flex;gap:4px;background:var(--mu,#EFEDE4);border-radius:999px;padding:3px">
+              <sc-for list="{{ scopeTabs }}" as="s" hint-placeholder-count="2">
+                <button onClick="{{ s.pick }}" style="border:0;border-radius:999px;padding:8px 16px;font:600 13px Poppins,'Noto Sans Devanagari';cursor:pointer;background:{{ s.bg }};color:{{ s.fg }}">{{ s.label }}</button>
+              </sc-for>
+            </div>
+            <sc-for list="{{ catChips }}" as="c" hint-placeholder-count="5">
+              <button onClick="{{ c.pick }}" style="display:flex;gap:6px;align-items:center;border:1.5px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};border-radius:999px;padding:7px 12px;font:600 12px Poppins,'Noto Sans Devanagari';cursor:pointer">{{ c.icon }}{{ c.label }}</button>
+            </sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:{{ queueCols }};gap:16px;align-items:start">
+            <div style="background:var(--sf,#FFFFFF);border:1px solid var(--bd,#EAE8E0);border-radius:14px;overflow:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:720px">
+                <thead><tr style="background:var(--bg,#F8F6EF);position:sticky;top:0">
+                  <sc-for list="{{ qHead }}" as="h" hint-placeholder-count="6"><th style="text-align:left;padding:12px 16px;font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--tm,#617074);border-bottom:1px solid var(--bd,#EAE8E0)">{{ h }}</th></sc-for>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+                    <tr onClick="{{ r.open }}" style="cursor:pointer;background:{{ r.rowBg }};border-bottom:1px solid var(--bd,#EAE8E0)">
+                      <td style="padding:12px 16px"><div style="font:600 12px ui-monospace,Menlo,monospace;color:var(--pr,#0F4C4C)">{{ r.id }}</div><div style="font-size:11px;color:var(--tm,#617074)">{{ r.ago }}</div></td>
+                      <td style="padding:12px 16px"><div style="font-weight:600">{{ r.qtr }}</div><div style="font-size:12px;color:var(--tm,#617074)">{{ r.colony }}</div></td>
+                      <td style="padding:12px 16px"><div style="display:flex;gap:8px;align-items:center"><span style="width:30px;height:30px;flex:none;border-radius:8px;background:var(--tint,#E8F4F4);color:var(--pr,#0F4C4C);display:flex;align-items:center;justify-content:center">{{ r.catIcon }}</span><div style="min-width:0"><div style="font-weight:500">{{ r.cat }}</div><div style="font-size:12px;color:var(--tm,#617074);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.desc }}</div></div></div></td>
+                      <td style="padding:12px 16px"><span style="display:inline-flex;gap:6px;align-items:center;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;background:{{ r.st.bg }};color:{{ r.st.fg }};white-space:nowrap"><span style="width:6px;height:6px;border-radius:999px;background:{{ r.st.fg }}"></span>{{ r.st.label }}</span></td>
+                      <td style="padding:12px 16px;min-width:140px"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:{{ r.sla.fg }};font-variant-numeric:tabular-nums"><span>{{ r.sla.label }}</span><span>{{ r.sla.left }}</span></div><div style="height:6px;border-radius:999px;background:var(--mu,#EFEDE4);margin-top:5px;overflow:hidden"><div style="height:100%;width:{{ r.sla.pct }};background:{{ r.sla.fg }};border-radius:999px"></div></div></td>
+                      <td style="padding:12px 16px;font-size:12px;color:var(--tm,#617074)">{{ r.who }}</td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+              <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:40px;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center"><div style="font-weight:600">{{ t.emptyT }}</div><div style="font-size:13px;color:var(--tm,#617074)">{{ t.emptyB }}</div><button onClick="{{ clearFilters }}" style="margin-top:6px;border:1.5px solid var(--bd2,#DDD9CC);background:var(--sf,#FFFFFF);color:var(--pr,#0F4C4C);border-radius:999px;padding:8px 16px;font:600 13px Poppins;cursor:pointer">{{ t.clear }}</button></div>
+              </sc-if>
+            </div>
+
+            <sc-if value="{{ sel }}" hint-placeholder-val="{{ false }}">
+              <div style="background:var(--sf,#FFFFFF);border:1px solid var(--bd,#EAE8E0);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px;position:sticky;top:88px">
+                <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+                  <div><div style="font:600 12px ui-monospace,Menlo,monospace;color:#B08F4E">{{ sel.id }}</div><div style="font-size:17px;font-weight:700;color:var(--pr,#0F4C4C)">{{ sel.qtr }} · {{ sel.colony }}</div><div style="font-size:13px;color:var(--tm,#617074)">{{ sel.cat }} · {{ sel.resident }}</div></div>
+                  <button onClick="{{ closeSel }}" aria-label="Close" style="border:0;background:var(--mu,#EFEDE4);color:var(--tm,#617074);width:32px;height:32px;border-radius:999px;cursor:pointer;display:flex;align-items:center;justify-content:center">{{ ic.x }}</button>
+                </div>
+                <div style="background:{{ sel.sla.tint }};border-radius:12px;padding:14px;display:flex;gap:14px;align-items:center">
+                  <div style="width:56px;height:56px;flex:none;border-radius:999px;background:conic-gradient({{ sel.sla.fg }} 0 {{ sel.sla.pct }},var(--sf,#FFFFFF) 0);display:flex;align-items:center;justify-content:center"><div style="width:44px;height:44px;border-radius:999px;background:{{ sel.sla.tint }};display:flex;align-items:center;justify-content:center;font:700 12px Poppins;color:{{ sel.sla.fg }};font-variant-numeric:tabular-nums">{{ sel.sla.short }}</div></div>
+                  <div><div style="font-weight:600;color:{{ sel.sla.fg }}">{{ sel.sla.label }} · {{ sel.sla.left }}</div><div style="font-size:12px;color:var(--tm,#617074)">{{ t.slaRule }} {{ sel.slaH }} h · {{ t.due }} {{ sel.due }}</div></div>
+                </div>
+                <p style="margin:0;font-size:14px;line-height:1.6">{{ sel.desc }}</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                  <div style="aspect-ratio:4/3;border-radius:10px;background:repeating-linear-gradient(135deg,var(--mu,#EFEDE4) 0 8px,var(--sf,#FFFFFF) 8px 16px);border:1px solid var(--bd,#EAE8E0);display:flex;align-items:flex-end;padding:8px;font:500 11px ui-monospace,Menlo,monospace;color:var(--tm,#617074)">{{ t.before }}</div>
+                  <div style="aspect-ratio:4/3;border-radius:10px;background:repeating-linear-gradient(135deg,var(--mu,#EFEDE4) 0 8px,var(--sf,#FFFFFF) 8px 16px);border:1px solid var(--bd,#EAE8E0);display:flex;align-items:flex-end;padding:8px;font:500 11px ui-monospace,Menlo,monospace;color:var(--tm,#617074)">{{ t.after }}</div>
+                </div>
+                <div>
+                  <div style="font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--tm,#617074);margin-bottom:10px">{{ t.timeline }}</div>
+                  <sc-for list="{{ sel.steps }}" as="s" hint-placeholder-count="5">
+                    <div style="display:flex;gap:12px">
+                      <div style="display:flex;flex-direction:column;align-items:center"><span style="width:12px;height:12px;border-radius:999px;border:2px solid {{ s.c }};background:{{ s.fill }};margin-top:4px"></span><span style="flex:1;width:2px;background:var(--bd,#EAE8E0);min-height:18px"></span></div>
+                      <div style="padding-bottom:12px"><div style="font-size:13px;font-weight:600;color:{{ s.tc }}">{{ s.label }}</div><div style="font-size:12px;color:var(--tm,#617074)">{{ s.meta }}</div></div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <sc-for list="{{ sel.actions }}" as="a" hint-placeholder-count="2">
+                    <button onClick="{{ a.fn }}" style="flex:1;min-width:140px;border:{{ a.bd }};border-radius:999px;background:{{ a.bg }};color:{{ a.fg }};padding:11px 16px;min-height:44px;font:600 14px Poppins,'Noto Sans Devanagari';cursor:pointer">{{ a.label }}</button>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ sel.noAction }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;color:var(--tm,#617074);background:var(--bg,#F8F6EF);border-radius:10px;padding:10px 12px">{{ sel.noAction }}</div></sc-if>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDash }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Area dashboard" style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+            <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+              <div style="border-radius:14px;padding:18px;background:{{ k.bg }};border:1px solid {{ k.bd }};display:flex;flex-direction:column;gap:6px;min-width:0">
+                <span style="font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--tm,#617074)">{{ k.label }}</span>
+                <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:8px"><span style="font-size:30px;font-weight:700;color:{{ k.c }};font-variant-numeric:tabular-nums;line-height:1">{{ k.v }}</span>
+                  <div style="display:flex;gap:2px;align-items:flex-end;height:28px"><sc-for list="{{ k.spark }}" as="h" hint-placeholder-count="8"><span style="width:5px;border-radius:2px;background:{{ k.c }};opacity:.55;height:{{ h }}"></span></sc-for></div></div>
+                <span style="font-size:12px;color:{{ k.dc }};font-weight:500">{{ k.delta }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px">
+            <div style="background:var(--sf,#FFFFFF);border:1px solid var(--bd,#EAE8E0);border-radius:14px;padding:20px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="margin:0;font-size:15px;font-weight:600;color:var(--pr,#0F4C4C)">{{ t.slaTrend }}</h3><span style="font-size:12px;color:var(--tm,#617074)">{{ t.target }} 90%</span></div>
+              <div style="position:relative;height:180px;display:flex;gap:10px;align-items:flex-end;border-bottom:1px solid var(--bd,#EAE8E0)">
+                <div style="position:absolute;left:0;right:0;bottom:{{ targetLine }};border-top:1.5px dashed #C9A96A"></div>
+                <sc-for list="{{ trend }}" as="m" hint-placeholder-count="6">
+                  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;justify-content:flex-end;height:100%"><span style="font-size:11px;font-weight:600;color:var(--tm,#617074);font-variant-numeric:tabular-nums">{{ m.v }}</span><div style="width:100%;max-width:38px;height:{{ m.h }};background:{{ m.c }};border-radius:6px 6px 0 0"></div></div>
+                </sc-for>
+              </div>
+              <div style="display:flex;gap:10px;margin-top:6px"><sc-for list="{{ trend }}" as="m" hint-placeholder-count="6"><span style="flex:1;text-align:center;font-size:11px;color:var(--tm,#617074)">{{ m.m }}</span></sc-for></div>
+            </div>
+            <div style="background:var(--sf,#FFFFFF);border:1px solid var(--bd,#EAE8E0);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px">
+              <h3 style="margin:0 0 4px;font-size:15px;font-weight:600;color:var(--pr,#0F4C4C)">{{ t.byCat }}</h3>
+              <sc-for list="{{ cats }}" as="c" hint-placeholder-count="6">
+                <div style="display:flex;gap:10px;align-items:center"><span style="color:var(--pr,#0F4C4C);display:flex">{{ c.icon }}</span><div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>{{ c.label }}</span><span style="font-weight:600;font-variant-numeric:tabular-nums">{{ c.n }}</span></div><div style="height:6px;border-radius:999px;background:var(--mu,#EFEDE4);margin-top:5px"><div style="height:100%;width:{{ c.w }};background:#0F4C4C;border-radius:999px"></div></div></div></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:var(--sf,#FFFFFF);border:1px solid var(--bd,#EAE8E0);border-radius:14px;overflow:auto">
+            <div style="padding:16px 20px;display:flex;justify-content:space-between"><h3 style="margin:0;font-size:15px;font-weight:600;color:var(--pr,#0F4C4C)">{{ t.repeat }}</h3><span style="font-size:12px;color:var(--tm,#617074)">{{ t.last90 }}</span></div>
+            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:560px">
+              <thead><tr style="background:var(--bg,#F8F6EF)"><sc-for list="{{ repHead }}" as="h" hint-placeholder-count="5"><th style="text-align:left;padding:10px 20px;font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--tm,#617074)">{{ h }}</th></sc-for></tr></thead>
+              <tbody><sc-for list="{{ repeats }}" as="r" hint-placeholder-count="4"><tr style="border-top:1px solid var(--bd,#EAE8E0)"><td style="padding:12px 20px;font-weight:600">{{ r.q }}</td><td style="padding:12px 20px">{{ r.colony }}</td><td style="padding:12px 20px">{{ r.cat }}</td><td style="padding:12px 20px;font-weight:700;color:#C0392B;font-variant-numeric:tabular-nums">{{ r.n }}</td><td style="padding:12px 20px;color:var(--tm,#617074)">{{ r.last }}</td></tr></sc-for></tbody>
+            </table>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isScore }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Contractor scorecard" style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <sc-for list="{{ ctrTabs }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.pick }}" style="border:1.5px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};border-radius:999px;padding:8px 16px;font:600 13px Poppins;cursor:pointer">{{ c.name }}</button></sc-for>
+          </div>
+          <div style="background:linear-gradient(150deg,#0F4C4C,#0A3333);border-radius:20px;padding:28px;color:#FFFFFF;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:28px;align-items:center">
+            <div style="display:flex;gap:22px;align-items:center;flex-wrap:wrap;min-width:0">
+              <div style="width:150px;height:150px;flex:none;border-radius:999px;background:conic-gradient(#C9A96A 0 {{ sc.slaPct }},rgba(255,255,255,.12) 0);display:flex;align-items:center;justify-content:center">
+                <div style="width:122px;height:122px;border-radius:999px;background:#0C3E3E;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-size:36px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1">{{ sc.sla }}</span><span style="font-size:11px;color:rgba(255,255,255,.75)">{{ t.slaComp }}</span></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;min-width:0;flex:1 1 180px;overflow-wrap:anywhere">
+                <span style="font-size:11px;font-weight:600;letter-spacing:.12em;color:#DFC28E">{{ t.contractor }}</span>
+                <span style="font-size:20px;font-weight:700;line-height:1.25">{{ sc.name }}</span>
+                <span style="font-size:13px;color:rgba(255,255,255,.78)">{{ sc.contract }}</span>
+                <span style="align-self:flex-start;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;background:{{ sc.gradeBg }};color:#0A3333">{{ sc.grade }}</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:rgba(255,255,255,.14);border-radius:14px;overflow:hidden">
+              <sc-for list="{{ sc.metrics }}" as="m" hint-placeholder-count="4">
+                <button onClick="{{ drill }}" style="all:unset;cursor:pointer;background:#0D4545;padding:16px;display:flex;flex-direction:column;gap:4px">
+                  <span style="font-size:12px;color:rgba(255,255,255,.75)">{{ m.l }}</span>
+                  <span style="font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ m.c }}">{{ m.v }}</span>
+                  <span style="font-size:11px;color:rgba(255,255,255,.7)">{{ m.d }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:16px">
+            <div style="background:var(--sf,#FFFFFF);border:1px solid var(--bd,#EAE8E0);border-radius:14px;padding:20px">
+              <h3 style="margin:0 0 14px;font-size:15px;font-weight:600;color:var(--pr,#0F4C4C)">{{ t.deductions }}</h3>
+              <sc-for list="{{ sc.ded }}" as="d" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--bd,#EAE8E0);font-size:13px"><span>{{ d.l }}</span><span style="font-weight:600;font-variant-numeric:tabular-nums">{{ d.v }}</span></div></sc-for>
+              <div style="display:flex;justify-content:space-between;padding-top:12px;font-weight:700;color:#C0392B;font-variant-numeric:tabular-nums"><span>{{ t.totalDue }}</span><span>{{ sc.dedTotal }}</span></div>
+            </div>
+            <div style="background:var(--sf,#FFFFFF);border:1px solid var(--bd,#EAE8E0);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px">
+              <h3 style="margin:0;font-size:15px;font-weight:600;color:var(--pr,#0F4C4C)">{{ t.ratingMix }}</h3>
+              <sc-for list="{{ sc.stars }}" as="s" hint-placeholder-count="5"><div style="display:flex;gap:10px;align-items:center;font-size:13px"><span style="width:26px;font-variant-numeric:tabular-nums">{{ s.s }}★</span><div style="flex:1;height:8px;border-radius:999px;background:var(--mu,#EFEDE4)"><div style="height:100%;width:{{ s.w }};background:#C9A96A;border-radius:999px"></div></div><span style="width:34px;text-align:right;color:var(--tm,#617074);font-variant-numeric:tabular-nums">{{ s.n }}</span></div></sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isHq }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="HQ overview" style="background:var(--sf,#FFFFFF);border:1px solid var(--bd,#EAE8E0);border-radius:14px;overflow:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:860px">
+            <thead><tr style="background:var(--bg,#F8F6EF)"><sc-for list="{{ hqHead }}" as="h" hint-placeholder-count="7"><th style="text-align:left;padding:12px 16px;font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--tm,#617074)">{{ h }}</th></sc-for></tr></thead>
+            <tbody><sc-for list="{{ hqRows }}" as="a" hint-placeholder-count="13">
+              <tr onClick="{{ a.go }}" style="border-top:1px solid var(--bd,#EAE8E0);cursor:pointer">
+                <td style="padding:10px 16px;font-weight:700;color:var(--tm,#617074);font-variant-numeric:tabular-nums">{{ a.rank }}</td>
+                <td style="padding:10px 16px"><div style="display:flex;gap:8px;align-items:center"><span style="font:600 11px ui-monospace,Menlo,monospace;background:var(--tint,#E8F4F4);color:var(--pr,#0F4C4C);border-radius:999px;padding:3px 8px">{{ a.code }}</span><span style="font-weight:600">{{ a.name }}</span></div></td>
+                <td style="padding:10px 16px;font-variant-numeric:tabular-nums">{{ a.qtrs }}</td>
+                <td style="padding:10px 16px;font-variant-numeric:tabular-nums">{{ a.open }}</td>
+                <td style="padding:6px 16px"><span style="display:inline-block;min-width:74px;text-align:center;border-radius:8px;padding:6px 8px;font-weight:700;background:{{ a.slaBg }};color:{{ a.slaFg }};font-variant-numeric:tabular-nums">{{ a.sla }}</span></td>
+                <td style="padding:10px 16px;font-variant-numeric:tabular-nums">{{ a.reopen }}</td>
+                <td style="padding:10px 16px;font-variant-numeric:tabular-nums">{{ a.rating }}</td>
+                <td style="padding:10px 16px;font-weight:600;font-variant-numeric:tabular-nums">{{ a.ded }}</td>
+              </tr>
+            </sc-for></tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isUsers }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Users and roles" style="background:var(--sf,#FFFFFF);border:1px solid var(--bd,#EAE8E0);border-radius:14px;overflow:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:820px">
+            <thead><tr style="background:var(--bg,#F8F6EF)"><sc-for list="{{ uHead }}" as="h" hint-placeholder-count="6"><th style="text-align:left;padding:12px 18px;font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--tm,#617074)">{{ h }}</th></sc-for></tr></thead>
+            <tbody><sc-for list="{{ users }}" as="u" hint-placeholder-count="6">
+              <tr style="border-top:1px solid var(--bd,#EAE8E0)">
+                <td style="padding:12px 18px"><div style="display:flex;gap:10px;align-items:center"><span style="width:32px;height:32px;border-radius:999px;background:#0F4C4C;color:#FFFFFF;font:700 11px Poppins;display:flex;align-items:center;justify-content:center">{{ u.ini }}</span><div><div style="font-weight:600">{{ u.name }}</div><div style="font-size:12px;color:var(--tm,#617074)">{{ u.email }}</div></div></div></td>
+                <td style="padding:12px 18px;font:500 12px ui-monospace,Menlo,monospace;color:var(--tm,#617074)">{{ u.id }}</td>
+                <td style="padding:12px 18px"><span style="border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;background:var(--tint,#E8F4F4);color:var(--pr,#0F4C4C)">{{ u.role }}</span></td>
+                <td style="padding:12px 18px">{{ u.desig }}</td>
+                <td style="padding:12px 18px">{{ u.area }}</td>
+                <td style="padding:12px 18px"><span style="border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;background:{{ u.stBg }};color:{{ u.stFg }}">{{ u.st }}</span></td>
+              </tr>
+            </sc-for></tbody>
+          </table>
+        </div>
+      </sc-if>
+    </main>
+  </div>
+
+  <sc-if value="{{ modal }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(10,51,51,.45);z-index:20;display:flex;align-items:center;justify-content:center;padding:20px">
+      <div onClick="{{ stop }}" role="dialog" style="width:100%;max-width:{{ modal.w }};max-height:90vh;overflow:auto;background:var(--sf,#FFFFFF);border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.25);padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;justify-content:space-between;gap:12px"><div><h2 style="margin:0;font-size:18px;font-weight:700;color:var(--pr,#0F4C4C)">{{ modal.title }}</h2><p style="margin:2px 0 0;font-size:13px;color:var(--tm,#617074)">{{ modal.sub }}</p></div><button onClick="{{ closeModal }}" aria-label="Close" style="border:0;background:var(--mu,#EFEDE4);color:var(--tm,#617074);width:36px;height:36px;border-radius:999px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none">{{ ic.x }}</button></div>
+
+        <sc-if value="{{ modal.isAssign }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ ctrList }}" as="c" hint-placeholder-count="3">
+              <label onClick="{{ c.pick }}" style="display:flex;gap:12px;align-items:center;border:1.5px solid {{ c.bd }};background:{{ c.bg }};border-radius:14px;padding:14px;cursor:pointer">
+                <span style="width:18px;height:18px;flex:none;border-radius:999px;border:2px solid {{ c.dot }};display:flex;align-items:center;justify-content:center"><span style="width:8px;height:8px;border-radius:999px;background:{{ c.fill }}"></span></span>
+                <div style="flex:1;min-width:0"><div style="font-weight:600">{{ c.name }}</div><div style="font-size:12px;color:var(--tm,#617074)">{{ c.meta }}</div></div>
+                <div style="text-align:right"><div style="font-weight:700;color:{{ c.slaC }};font-variant-numeric:tabular-nums">{{ c.sla }}</div><div style="font-size:11px;color:var(--tm,#617074)">{{ c.load }}</div></div>
+              </label>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ modal.isReason }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ reasonChips }}" as="r" hint-placeholder-count="4"><button onClick="{{ r.pick }}" style="border:1.5px solid {{ r.bd }};background:{{ r.bg }};color:{{ r.fg }};border-radius:999px;padding:7px 12px;font:500 12px Poppins,'Noto Sans Devanagari';cursor:pointer">{{ r.l }}</button></sc-for></div>
+          <textarea placeholder="{{ t.reasonPh }}" style="min-height:90px;border:1.5px solid var(--bd2,#DDD9CC);border-radius:12px;padding:12px;font:400 14px Poppins;background:var(--sf,#FFFFFF);color:var(--tx,#1C2B2B);resize:vertical"></textarea>
+        </sc-if>
+
+        <sc-if value="{{ modal.isUser }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+            <div style="display:flex;flex-direction:column;gap:6px;grid-column:1/-1"><label style="font-size:12px;font-weight:600;color:var(--tm,#617074)">{{ t.fRole }} *</label>
+              <div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ uRoles }}" as="r" hint-placeholder-count="6"><button onClick="{{ r.pick }}" style="border:1.5px solid {{ r.bd }};background:{{ r.bg }};color:{{ r.fg }};border-radius:999px;padding:7px 12px;font:600 12px Poppins,'Noto Sans Devanagari';cursor:pointer">{{ r.l }}</button></sc-for></div></div>
+            <sc-for list="{{ uFields }}" as="f" hint-placeholder-count="6">
+              <div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:12px;font-weight:600;color:var(--tm,#617074)">{{ f.label }}</label>
+                <sc-if value="{{ f.isSelect }}" hint-placeholder-val="{{ false }}"><select style="border:1.5px solid var(--bd2,#DDD9CC);border-radius:12px;padding:0 12px;min-height:46px;font:400 14px Poppins;background:var(--sf,#FFFFFF);color:var(--tx,#1C2B2B)"><sc-for list="{{ f.opts }}" as="o" hint-placeholder-count="4"><option>{{ o }}</option></sc-for></select></sc-if>
+                <sc-if value="{{ f.isInput }}" hint-placeholder-val="{{ true }}"><input placeholder="{{ f.ph }}" style="border:1.5px solid var(--bd2,#DDD9CC);border-radius:12px;padding:0 12px;min-height:46px;font:400 14px Poppins;background:var(--sf,#FFFFFF);color:var(--tx,#1C2B2B)"></sc-if>
+                <sc-if value="{{ f.hint }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--tm,#617074)">{{ f.hint }}</span></sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding-top:4px">
+          <button onClick="{{ closeModal }}" style="border:1.5px solid var(--bd2,#DDD9CC);background:var(--bg,#F8F6EF);color:var(--tm,#617074);border-radius:999px;padding:11px 20px;min-height:44px;font:600 14px Poppins,'Noto Sans Devanagari';cursor:pointer">{{ t.cancel }}</button>
+          <button onClick="{{ modal.confirm }}" style="border:0;background:{{ modal.btnBg }};color:#FFFFFF;border-radius:999px;padding:11px 22px;min-height:44px;font:600 14px Poppins,'Noto Sans Devanagari';cursor:pointer">{{ modal.btn }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ palette }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closePalette }}" style="position:fixed;inset:0;background:rgba(10,51,51,.35);z-index:30;display:flex;justify-content:center;padding:12vh 20px 20px">
+      <div onClick="{{ stop }}" style="width:100%;max-width:560px;align-self:flex-start;background:var(--sf,#FFFFFF);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.25);overflow:hidden">
+        <div style="display:flex;gap:10px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--bd,#EAE8E0);color:var(--tm,#617074)">{{ ic.search }}<input autoFocus="{{ true }}" value="{{ pq }}" onChange="{{ onPq }}" placeholder="{{ t.palettePh }}" style="flex:1;border:0;outline:0;background:transparent;font:400 15px Poppins;color:var(--tx,#1C2B2B)"><span style="font:600 11px ui-monospace,Menlo,monospace;border:1px solid var(--bd2,#DDD9CC);border-radius:6px;padding:2px 6px">Esc</span></div>
+        <div style="padding:6px;max-height:360px;overflow:auto"><sc-for list="{{ pItems }}" as="p" hint-placeholder-count="6"><button onClick="{{ p.fn }}" style="width:100%;border:0;background:transparent;display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:10px;cursor:pointer;color:var(--tx,#1C2B2B);font:500 14px Poppins,'Noto Sans Devanagari';text-align:left"><span style="color:var(--pr,#0F4C4C);display:flex">{{ p.icon }}</span><span style="flex:1">{{ p.l }}</span><span style="font-size:12px;color:var(--tm,#617074)">{{ p.k }}</span></button></sc-for></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:40;background:#0A3333;color:#FFFFFF;border-radius:999px;padding:12px 12px 12px 20px;display:flex;gap:14px;align-items:center;box-shadow:0 12px 32px rgba(0,0,0,.25);font-size:14px"><span style="color:#7FD3A6;display:flex">{{ ic.check }}</span><span>{{ toast }}</span><button onClick="{{ undo }}" style="border:0;background:rgba(255,255,255,.12);color:#DFC28E;border-radius:999px;padding:6px 14px;font:600 13px Poppins;cursor:pointer">{{ t.undo }}</button></div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;role&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;incharge&quot;,&quot;overseer&quot;,&quot;area&quot;,&quot;hq&quot;,&quot;admin&quot;],&quot;default&quot;:&quot;incharge&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { role: this.props.role ?? 'incharge', page: null, lang: 'en', dark: false, side: true, bucket: 'all', scope: 'qtr', cat: 'all', selId: null, modal: null, pickCtr: 0, reasons: [], uRole: 'overseer', palette: false, pq: '', toast: null, prev: null, ctr: 0,
+    rows: [
+      { id:'CP-24518', qtr:'Qtr No. C-245', colony:'Nigahi · Sector C', cat:'plumbing', desc:'Kitchen tap leaking continuously, water collecting under sink.', resident:'R. K. Tiwari', st:'registered', slaH:24, used:21, ago:'21 hrs ago', who:'—' },
+      { id:'CP-24516', qtr:'Qtr No. B-112', colony:'Nigahi · Sector B', cat:'roof', desc:'Seepage from roof slab in bedroom after rain; plaster flaking.', resident:'Sunita Devi', st:'assigned', slaH:72, used:80, ago:'3 days ago', who:'Shree Balaji Constructions' },
+      { id:'CP-24511', qtr:'Qtr No. D-018', colony:'Nigahi · Sector D', cat:'door', desc:'Main door frame loose; door does not lock properly.', resident:'A. Khan', st:'completed', slaH:48, used:30, ago:'2 days ago', who:'Vindhya Civil Works' },
+      { id:'CP-24507', qtr:'Qtr No. A-067', colony:'Nigahi · Sector A', cat:'drain', desc:'Bathroom floor trap blocked, water backing up.', resident:'P. Yadav', st:'verified', slaH:24, used:18, ago:'1 day ago', who:'Shree Balaji Constructions' },
+      { id:'CP-24503', qtr:'Qtr No. C-301', colony:'Nigahi · Sector C', cat:'floor', desc:'Kitchen floor tiles cracked and lifting near the wall.', resident:'M. Singh', st:'flagged', slaH:96, used:70, ago:'4 days ago', who:'R. K. Builders' },
+      { id:'CP-24499', qtr:'Qtr No. E-044', colony:'Nigahi · Sector E', cat:'paint', desc:'Wall dampness and peeling paint in living room.', resident:'K. Prasad', st:'assigned', slaH:120, used:40, ago:'2 days ago', who:'R. K. Builders' },
+      { id:'GH-00412', qtr:'Guest House, Room 4', colony:'Nigahi · Admin area', cat:'plumbing', desc:'Geyser inlet pipe leaking in attached bathroom.', resident:'Guest House caretaker', st:'registered', slaH:24, used:6, ago:'6 hrs ago', who:'—', other:true },
+      { id:'HS-00227', qtr:'Bachelor Hostel, Block 2', colony:'Nigahi · Sector F', cat:'masonry', desc:'Boundary wall section collapsed near gate.', resident:'Hostel warden', st:'assigned', slaH:168, used:60, ago:'3 days ago', who:'Vindhya Civil Works', other:true }
+    ]};
+  componentDidMount() { this.theme(); this.kh = e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); this.setState({ palette: true, pq: '' }); } if (e.key === 'Escape') this.setState({ palette: false, modal: null }); }; window.addEventListener('keydown', this.kh); }
+  componentWillUnmount() { window.removeEventListener('keydown', this.kh); clearTimeout(this.tt); }
+  componentDidUpdate() { this.theme(); }
+  theme() {
+    const v = this.state.dark ? { bg:'#0E1A1A', sf:'#152424', bd:'#22393A', bd2:'#2E4A4B', tx:'#E7EDEA', tm:'#A4B4B3', pr:'#8FD3CB', prb:'#1A6B6B', mu:'#1B2E2E', tint:'#1D3838', side:'#0B2626' }
+      : { bg:'#F8F6EF', sf:'#FFFFFF', bd:'#EAE8E0', bd2:'#DDD9CC', tx:'#1C2B2B', tm:'#617074', pr:'#0F4C4C', prb:'#0F4C4C', mu:'#EFEDE4', tint:'#E8F4F4', side:'#0F4C4C' };
+    Object.entries(v).forEach(([k, x]) => document.documentElement.style.setProperty('--' + k, x));
+  }
+  I(p, s = 18) { return React.createElement('svg', { width: s, height: s, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true }, p.split('|').map((d, i) => React.createElement('path', { key: i, d }))); }
+  ini(n) { const w = n.replace(/\./g, ' ').split(/\s+/).filter(Boolean); return (w[0][0] + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase(); }
+  flash(msg, prev) { clearTimeout(this.tt); this.setState({ toast: msg, prev }); this.tt = setTimeout(() => this.setState({ toast: null }), 5000); }
+  renderVals() {
+    const s = this.state, hi = s.lang === 'hi', e = React.createElement, L = (a, b) => hi ? b : a;
+    const P = { queue:'M9 11l3 3L22 4|M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11', dash:'M3 3h7v7H3z|M14 3h7v7h-7z|M14 14h7v7h-7z|M3 14h7v7H3z', score:'M12 15a7 7 0 1 0 0-14 7 7 0 0 0 0 14z|M8.2 13.9 7 23l5-3 5 3-1.2-9.1', hq:'M18 20V10|M12 20V4|M6 20v-6', users:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2|M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z|M19 8v6|M22 11h-6', allot:'M3 21h18|M5 21V7l7-4 7 4v14|M10 21v-5h4v5', logout:'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4|M16 17l5-5-5-5|M21 12H9', search:'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z|M21 21l-4.3-4.3', bell:'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9|M13.7 21a2 2 0 0 1-3.4 0', x:'M18 6 6 18|M6 6l12 12', check:'M20 6 9 17l-5-5', sun:'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z|M12 2v2|M12 20v2|M2 12h2|M20 12h2|M4.9 4.9l1.4 1.4|M17.7 17.7l1.4 1.4|M4.9 19.1l1.4-1.4|M17.7 6.3l1.4-1.4', moon:'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z', plus:'M12 5v14|M5 12h14', cl:'M15 18l-6-6 6-6', cr:'M9 18l6-6-6-6', dl:'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4|M7 10l5 5 5-5|M12 15V3',
+      plumbing:'M12 2.7 5.6 9.1a9 9 0 1 0 12.8 0z', roof:'M3 12l9-8 9 8|M5 10v10h14V10|M9 16c1 1 2 1.5 3 0s2-1 3 0', door:'M5 21V3h11l3 2v16|M3 21h18|M13 12h.01', drain:'M4 6h16|M4 10h16|M8 14c0 3 1.5 5 4 6 2.5-1 4-3 4-6', floor:'M3 3h18v18H3z|M3 12h18|M12 3v18', paint:'M4 3h13v6H4z|M17 6h3v5h-9v3|M10 14h2v7h-2z', masonry:'M2 6h20v12H2z|M2 12h20|M8 6v6|M16 6v6|M12 12v6' };
+    const ic = {}; Object.keys(P).forEach(k => ic[k] = this.I(P[k]));
+    const T = { logout:L('Log out','लॉग आउट'), search:L('Search quarters, complaints…','क्वार्टर, शिकायत खोजें…'), emptyT:L('No complaints match these filters','इन फ़िल्टरों से कोई शिकायत नहीं मिली'), emptyB:L('Clear the filters to see the full queue.','पूरी सूची देखने के लिए फ़िल्टर हटाएँ।'), clear:L('Clear filters','फ़िल्टर हटाएँ'),
+      slaRule:L('SLA','SLA'), due:L('due','नियत'), before:L('before photo','पहले की फ़ोटो'), after:L('after photo','बाद की फ़ोटो'), timeline:L('ACTIVITY','गतिविधि'), slaTrend:L('SLA compliance, last 6 months','SLA अनुपालन, पिछले 6 माह'), target:L('Target','लक्ष्य'), byCat:L('Complaints by category','श्रेणी अनुसार शिकायतें'),
+      repeat:L('Top repeat-complaint quarters','बार-बार शिकायत वाले क्वार्टर'), last90:L('Last 90 days','पिछले 90 दिन'), slaComp:L('SLA compliance','SLA अनुपालन'), contractor:L('CONTRACTOR','ठेकेदार'), deductions:L('Deductions due, September 2026','देय कटौती, सितंबर 2026'), totalDue:L('Total due','कुल देय'), ratingMix:L('Resident ratings','निवासी रेटिंग'),
+      reasonPh:L('Add details the contractor needs to fix it right','ठेकेदार के लिए विवरण जोड़ें'), fRole:L('Role','भूमिका'), cancel:L('Cancel','रद्द करें'), palettePh:L('Type a command or search','कमांड लिखें या खोजें'), undo:L('Undo','पूर्ववत') };
+    const CAT = { plumbing:L('Plumbing','प्लंबिंग'), roof:L('Roofing and seepage','छत व रिसाव'), door:L('Doors and windows','दरवाज़े व खिड़कियाँ'), drain:L('Drainage','जल निकासी'), floor:L('Flooring','फ़र्श'), paint:L('Painting','पेंटिंग'), masonry:L('Masonry','चिनाई') };
+    const ST = { registered:[L('Registered','दर्ज'),'#FEF3E2','#A85A00'], assigned:[L('Assigned','सौंपा गया'),'#E8F1FA','#1F5F8B'], completed:[L('Awaiting verification','सत्यापन लंबित'),'#F3ECFA','#6C3483'], verified:[L('Verified by overseer','ओवरसियर द्वारा सत्यापित'),'#E8F5EC','#1E6B34'], flagged:[L('Flagged, poor quality','खराब गुणवत्ता चिह्नित'),'#FDEDEC','#A93226'], accepted:[L('Accepted, with resident','स्वीकृत, निवासी पुष्टि'),'#E8F4F4','#0F4C4C'] };
+    const sla = r => { const left = r.slaH - r.used, pct = Math.min(100, r.used / r.slaH * 100); const over = left < 0, soon = !over && left <= r.slaH * .25;
+      const fg = over ? '#C0392B' : soon ? '#B9770E' : '#2E7D32'; return { fg, tint: over ? '#FDEDEC' : soon ? '#FEF5E7' : '#E8F5EC', pct: pct + '%', label: over ? L('Overdue','समय सीमा पार') : soon ? L('Due soon','जल्द नियत') : L('On time','समय पर'), left: over ? L(`${-left} h late`,`${-left} घं. देर`) : L(`${left} h left`,`${left} घं. शेष`), short: over ? `+${-left}h` : `${left}h`, over, soon }; };
+    const roleNav = { incharge:['queue','dash'], overseer:['queue'], area:['dash','score','queue'], hq:['hq','dash','score'], admin:['users'] };
+    const NL = { queue:L('Work queue','कार्य सूची'), dash:L('Area dashboard','क्षेत्र डैशबोर्ड'), score:L('Contractor scorecard','ठेकेदार स्कोरकार्ड'), hq:L('All-Areas overview','सभी क्षेत्र'), users:L('Users and roles','उपयोगकर्ता व भूमिकाएँ') };
+    const page = s.page && roleNav[s.role].includes(s.page) ? s.page : roleNav[s.role][0];
+    const go = p => () => this.setState({ page: p, selId: null, palette: false });
+    const nav = roleNav[s.role].map(k => ({ k, label: NL[k], icon: ic[k], go: go(k), disabled: false, cursor: 'pointer', bg: page === k ? 'rgba(255,255,255,.15)' : 'transparent', fg: page === k ? '#FFFFFF' : 'rgba(255,255,255,.72)', ic: page === k ? '#C9A96A' : 'currentColor', dot: page === k ? '#C9A96A' : 'transparent', weight: page === k ? 600 : 500 }));
+    nav.push({ label: L('Allotment (coming soon)','आवंटन (जल्द)'), icon: ic.allot, go: null, disabled: true, cursor: 'not-allowed', bg: 'transparent', fg: 'rgba(255,255,255,.5)', ic: 'currentColor', dot: 'transparent', weight: 500 });
+    const ME = { incharge:['S. P. Mishra','Dy. Manager (Civil) · Colony Incharge'], overseer:['R. Chaurasia','Overseer (Civil)'], area:['A. K. Verma','Chief Manager (Civil) · Area In-charge'], hq:['N. Bhattacharya','GM (Civil), NCL HQ'], admin:['Priya Sharma','Portal administrator'] }[s.role];
+    // queue
+    const rowsAll = s.rows.filter(r => (s.scope === 'other') === !!r.other);
+    const bucketFn = { all: () => true, open: r => ['registered','assigned','flagged'].includes(r.st), soon: r => sla(r).soon, over: r => sla(r).over, verify: r => s.role === 'overseer' ? r.st === 'completed' : r.st === 'verified' };
+    const rows = rowsAll.filter(bucketFn[s.bucket]).filter(r => s.cat === 'all' || r.cat === s.cat);
+    const bDef = [['open',L('OPEN','खुली'),'var(--pr,#0F4C4C)',L('Not yet fixed','अभी ठीक नहीं')],['soon',L('DUE SOON','जल्द नियत'),'#B9770E',L('Under 25% SLA left','25% से कम समय')],['over',L('OVERDUE','समय पार'),'#C0392B',L('SLA breached','SLA उल्लंघन')],['verify',s.role==='overseer'?L('TO VERIFY','सत्यापन हेतु'):L('TO ACCEPT','स्वीकृति हेतु'),'#6C3483',s.role==='overseer'?L('Completed by contractor','ठेकेदार द्वारा पूर्ण'):L('Verified by overseer','ओवरसियर द्वारा सत्यापित')]];
+    const sel = s.rows.find(r => r.id === s.selId);
+    const upd = (id, st, msg, extra = {}) => { const prev = s.rows; this.setState({ rows: s.rows.map(r => r.id === id ? Object.assign({}, r, { st }, extra) : r), modal: null, reasons: [] }); this.flash(msg, prev); };
+    const btn = (label, fn, kind) => ({ label, fn, bg: kind === 'p' ? 'var(--prb,#0F4C4C)' : kind === 'd' ? '#C0392B' : 'var(--sf,#FFFFFF)', fg: kind === 's' ? 'var(--pr,#0F4C4C)' : '#FFFFFF', bd: kind === 's' ? '1.5px solid var(--bd2,#DDD9CC)' : '0' });
+    let selV = null;
+    if (sel) {
+      const order = ['registered','assigned','completed','verified','accepted'], idx = sel.st === 'flagged' ? 2 : order.indexOf(sel.st);
+      const stepL = [[L('Registered by resident','निवासी द्वारा दर्ज'), sel.ago + ' · ' + sel.resident],[L('Assigned to contractor','ठेकेदार को सौंपा'), sel.who],[L('Work completed','काम पूरा'), L('Before and after photos uploaded','फ़ोटो अपलोड')],[sel.st === 'flagged' ? L('Flagged by overseer','ओवरसियर द्वारा चिह्नित') : L('Verified by overseer','ओवरसियर द्वारा सत्यापित'), 'R. Chaurasia'],[L('Accepted, sent to resident','स्वीकृत, निवासी को भेजा'), 'S. P. Mishra']];
+      const steps = stepL.map((x, i) => { const done = i <= idx + (sel.st === 'flagged' ? 1 : 0), bad = sel.st === 'flagged' && i === 3; return { label: x[0], meta: done ? x[1] : L('Pending','लंबित'), c: bad ? '#C0392B' : done ? '#2E7D32' : 'var(--bd2,#DDD9CC)', fill: bad ? '#C0392B' : done ? '#2E7D32' : 'transparent', tc: done ? 'var(--tx,#1C2B2B)' : 'var(--tm,#617074)' }; });
+      let actions = [], noAction = null;
+      if (s.role === 'incharge' || s.role === 'area') {
+        if (sel.st === 'registered') actions = [btn(L('Assign to contractor','ठेकेदार को सौंपें'), () => this.setState({ modal: 'assign', pickCtr: 0 }), 'p')];
+        else if (sel.st === 'verified') actions = [btn(L('Accept work','काम स्वीकारें'), () => upd(sel.id, 'accepted', L('Work accepted. Sent to resident for confirmation','काम स्वीकृत')), 'p'), btn(L('Return for rework','दोबारा काम हेतु लौटाएँ'), () => this.setState({ modal: 'rework' }), 's')];
+        else if (sel.st === 'flagged') actions = [btn(L('Reassign to contractor','ठेकेदार को दोबारा सौंपें'), () => this.setState({ modal: 'assign', pickCtr: 0 }), 'p')];
+        else noAction = sel.st === 'completed' ? L('Waiting for the Colony Overseer to verify this work on site.','ओवरसियर के सत्यापन की प्रतीक्षा।') : L('With the contractor. You will be notified when work is marked complete.','ठेकेदार के पास।');
+      } else if (s.role === 'overseer') {
+        if (sel.st === 'completed') actions = [btn(L('Verify work','काम सत्यापित करें'), () => upd(sel.id, 'verified', L('Work verified','काम सत्यापित')), 'p'), btn(L('Flag poor quality','खराब गुणवत्ता चिह्नित करें'), () => this.setState({ modal: 'flag' }), 'd')];
+        else noAction = L('Nothing to verify yet. This job is not marked complete by the contractor.','अभी सत्यापन हेतु कुछ नहीं।');
+      } else noAction = L('View only for your role.','आपकी भूमिका के लिए केवल देखें।');
+      selV = Object.assign({}, sel, { cat: CAT[sel.cat], sla: sla(sel), due: '26 Sep 2026, 10:30 AM', steps, actions, noAction });
+    }
+    const CTR = [['Shree Balaji Constructions','CMC/NGH/2024/07 · Plumbing, masonry, drainage','94.1%','#2E7D32',L('6 open jobs','6 खुले काम')],['Vindhya Civil Works','CMC/NGH/2024/08 · Doors, flooring, masonry','88.6%','#B9770E',L('9 open jobs','9 खुले काम')],['R. K. Builders','CMC/NGH/2023/12 · Painting, roofing','81.2%','#C0392B',L('11 open jobs','11 खुले काम')]];
+    const MODALS = {
+      assign: { w:'560px', title: L('Assign to contractor','ठेकेदार को सौंपें'), sub: (sel ? sel.qtr + ' · ' : '') + L('Contractors registered in Nigahi Area','निगाही क्षेत्र में पंजीकृत ठेकेदार'), isAssign: true, btn: L('Assign job','काम सौंपें'), btnBg: 'var(--prb,#0F4C4C)', confirm: () => upd(s.selId, 'assigned', L('Job assigned to ','काम सौंपा: ') + CTR[s.pickCtr][0], { who: CTR[s.pickCtr][0], used: 0 }) },
+      flag: { w:'520px', title: L('Flag poor quality','खराब गुणवत्ता चिह्नित करें'), sub: L('The Colony Incharge will reassign this to the contractor.','कॉलोनी प्रभारी इसे दोबारा सौंपेंगे।'), isReason: true, btn: L('Flag work','चिह्नित करें'), btnBg: '#C0392B', confirm: () => upd(s.selId, 'flagged', L('Work flagged for rework','काम चिह्नित')) },
+      rework: { w:'520px', title: L('Return for rework','दोबारा काम हेतु लौटाएँ'), sub: L('Tell the contractor what still needs fixing.','ठेकेदार को बताएँ क्या ठीक करना है।'), isReason: true, btn: L('Return work','लौटाएँ'), btnBg: '#C0392B', confirm: () => upd(s.selId, 'flagged', L('Work returned for rework','काम लौटाया')) },
+      user: { w:'720px', title: L('Add user','उपयोगकर्ता जोड़ें'), sub: L('Fields change with the role you pick.','भूमिका के अनुसार फ़ील्ड बदलते हैं।'), isUser: true, btn: L('Add user','उपयोगकर्ता जोड़ें'), btnBg: 'var(--prb,#0F4C4C)', confirm: () => { this.setState({ modal: null }); this.flash(L('User added','उपयोगकर्ता जोड़ा'), null); } }
+    };
+    const modal = s.modal ? MODALS[s.modal] : null;
+    const REASONS = [L('Leak still present','रिसाव अभी भी'),L('Poor finish','खराब फ़िनिश'),L('Wrong material used','गलत सामग्री'),L('Debris not cleared','मलबा नहीं हटाया'),L('Work incomplete','काम अधूरा')];
+    const AREAS = [['AML','Amlohri','अमलोरी',1840,42,93.8,3.1,4.4,'₹38,500'],['NGH','Nigahi','निगाही',2210,61,91.2,4.2,4.3,'₹52,200'],['JNT','Jayant','जयंत',1960,55,90.4,4.8,4.2,'₹61,000'],['DCH','Dudhichua','दुधीचुआ',1720,48,89.7,5.0,4.1,'₹64,800'],['KHD','Khadia','खड़िया',1180,37,88.1,5.6,4.0,'₹71,300'],['KSL','Krishnashila','कृष्णशिला',860,24,92.6,3.8,4.3,'₹29,900'],['BINA','Bina','बीना',1240,46,84.9,7.1,3.8,'₹98,400'],['KKR','Kakri','ककरी',780,29,86.3,6.4,3.9,'₹82,100'],['JRD','Jhingurda','झिंगुरदा',920,34,82.7,8.2,3.6,'₹1,12,600'],['BLB','Block-B','ब्लॉक-बी',1010,31,90.9,4.4,4.2,'₹44,700'],['CWS','Central Workshop','सेंट्रल वर्कशॉप',420,12,95.1,2.4,4.5,'₹12,300'],['NSC','Nehru Shatabdi Chikitsalaya','नेहरू शताब्दी चिकित्सालय',360,14,93.3,3.0,4.4,'₹15,800'],['NCL HQ','NCL HQ Colony','एनसीएल मुख्यालय कॉलोनी',1500,39,94.4,2.9,4.5,'₹27,600']].sort((a, b) => b[5] - a[5]);
+    const heat = v => v >= 93 ? ['#D6EFDD','#14532D'] : v >= 90 ? ['#E8F5EC','#1E6B34'] : v >= 87 ? ['#FEF5E7','#8A5300'] : ['#FDEDEC','#A93226'];
+    const ctrs = [['Shree Balaji Constructions','CMC/NGH/2024/07 · 1 Apr 2024 – 31 Mar 2027','94.1%',94.1,'18.4 h','3.2%','4.5 / 5','₹14,200',L('Grade A','ग्रेड A'),'#7FD3A6'],['Vindhya Civil Works','CMC/NGH/2024/08 · 1 Apr 2024 – 31 Mar 2027','88.6%',88.6,'26.1 h','6.8%','4.1 / 5','₹31,700',L('Grade B','ग्रेड B'),'#DFC28E'],['R. K. Builders','CMC/NGH/2023/12 · 1 Oct 2023 – 30 Sep 2026','81.2%',81.2,'39.5 h','11.4%','3.5 / 5','₹58,900',L('Grade C · review','ग्रेड C · समीक्षा'),'#F5B7B1']];
+    const c = ctrs[s.ctr];
+    const uRoleDefs = [['resident',L('Resident','निवासी')],['contractor',L('Contractor supervisor','ठेकेदार पर्यवेक्षक')],['incharge',L('Civil Colony Incharge','सिविल कॉलोनी प्रभारी')],['overseer',L('Civil Colony Overseer','सिविल कॉलोनी ओवरसियर')],['area',L('Area Civil In-charge','क्षेत्र सिविल प्रभारी')],['hq',L('HQ Civil','मुख्यालय सिविल')],['admin',L('Administrator','प्रशासक')]];
+    const DES = ['MT (Civil)','Asst. Manager (Civil)','Dy. Manager (Civil)','Chief Manager (Civil)'];
+    const areaOpts = AREAS.map(a => hi ? a[2] : a[1]);
+    const f = (label, ph, o = {}) => Object.assign({ label, ph, isInput: !o.opts, isSelect: !!o.opts, opts: o.opts || [], hint: o.hint || null }, {});
+    const ur = s.uRole, isOfficer = ['incharge','area','hq','admin'].includes(ur);
+    let uFields = [f(L('Full name *','पूरा नाम *'), 'e.g. Rakesh Chaurasia')];
+    if (ur === 'resident') uFields.push(f(L('Resident type *','निवासी प्रकार *'), '', { opts: [L('NCL employee','एनसीएल कर्मचारी'), L('Non-NCL resident','गैर-एनसीएल निवासी')] }), f(L('Employee ID','कर्मचारी आईडी'), 'NCL/EMP/2018/0142', { hint: L('Required for NCL employees only','केवल एनसीएल कर्मचारियों हेतु') }), f(L('Mobile number *','मोबाइल नंबर *'), '98765 43210'), f(L('Area *','क्षेत्र *'), '', { opts: areaOpts }), f(L('Quarter number *','क्वार्टर नंबर *'), 'Qtr No. C-245'));
+    else if (ur === 'contractor') uFields.push(f(L('Contractor firm *','ठेकेदार फ़र्म *'), '', { opts: CTR.map(x => x[0]) }), f(L('Staff ID *','स्टाफ़ आईडी *'), 'CTR/NGH/0412'), f(L('Mobile number *','मोबाइल नंबर *'), '98765 43210'), f(L('Area *','क्षेत्र *'), '', { opts: areaOpts }));
+    else if (ur === 'overseer') uFields.push(f(L('Employee ID *','कर्मचारी आईडी *'), 'NCL/EMP/2016/0311'), f(L('Designation *','पदनाम *'), 'e.g. Overseer (Civil)'), f(L('Official email','आधिकारिक ईमेल'), 'name@ncl.gov.in', { hint: L('Optional for Overseer (Civil)','ओवरसियर हेतु वैकल्पिक') }), f(L('Mobile number *','मोबाइल नंबर *'), '98765 43210'), f(L('Area *','क्षेत्र *'), '', { opts: areaOpts }));
+    else uFields.push(f(L('Employee ID *','कर्मचारी आईडी *'), 'NCL/EMP/2012/0087'), f(L('Designation *','पदनाम *'), '', { opts: DES }), f(L('Official email *','आधिकारिक ईमेल *'), 'name@ncl.gov.in'), f(L('Mobile number *','मोबाइल नंबर *'), '98765 43210'), f(L('Area *','क्षेत्र *'), '', { opts: ur === 'hq' || ur === 'admin' ? ['NCL HQ'] : areaOpts }));
+    const pill = (on) => ({ bd: on ? 'var(--pr,#0F4C4C)' : 'var(--bd2,#DDD9CC)', bg: on ? 'var(--prb,#0F4C4C)' : 'var(--sf,#FFFFFF)', fg: on ? '#FFFFFF' : 'var(--tm,#617074)' });
+    const PAGES = { queue: [NL.queue, L('Nigahi Area · complaints needing your action today','निगाही क्षेत्र · आज आपकी कार्रवाई हेतु')], dash: [NL.dash, L('Nigahi Area · September 2026 · 2,210 quarters','निगाही क्षेत्र · सितंबर 2026')], score: [NL.score, L('Nigahi Area · click any number to see its complaints','निगाही क्षेत्र · किसी संख्या पर क्लिक करें')], hq: [NL.hq, L('13 Areas ranked by SLA compliance · September 2026','SLA अनुपालन अनुसार 13 क्षेत्र')], users: [NL.users, L('Accounts across all 13 Areas','सभी 13 क्षेत्रों के खाते')] };
+    const pageAction = page === 'users' ? { label: L('Add user','उपयोगकर्ता जोड़ें'), icon: ic.plus, fn: () => this.setState({ modal: 'user' }) } : page === 'dash' || page === 'score' || page === 'hq' ? { label: L('Download report','रिपोर्ट डाउनलोड करें'), icon: ic.dl, fn: () => this.flash(L('Report downloaded','रिपोर्ट डाउनलोड हुई'), null) } : null;
+    const pAll = [...roleNav[s.role].map(k => ({ l: L('Go to ','जाएँ: ') + NL[k], icon: ic[k], k: '', fn: go(k) })), { l: L('Toggle dark mode','डार्क मोड'), icon: ic.moon, k: '', fn: () => this.setState(x => ({ dark: !x.dark, palette: false })) }, { l: L('Switch to हिंदी / English','भाषा बदलें'), icon: ic.search, k: '', fn: () => this.setState(x => ({ lang: x.lang === 'hi' ? 'en' : 'hi', palette: false })) }, ...s.rows.map(r => ({ l: r.id + ' · ' + r.qtr, icon: ic[r.cat], k: ST[r.st][0], fn: () => this.setState({ page: 'queue', selId: r.id, palette: false, bucket: 'all', cat: 'all', scope: r.other ? 'other' : 'qtr' }) }))];
+    return {
+      t: T, ic, logo: e('svg', { width: 36, height: 36, viewBox: '0 0 56 56', style: { flex: 'none' } }, e('circle', { cx: 28, cy: 28, r: 26, stroke: '#C9A96A', strokeWidth: 2.5, fill: '#FFFFFF' }), e('polygon', { points: '28,12 42,24 14,24', fill: '#0F4C4C' }), e('rect', { x: 17, y: 23, width: 22, height: 16, rx: 1, fill: '#0F4C4C' }), e('rect', { x: 20, y: 26, width: 5, height: 5, fill: '#E74C3C' }), e('rect', { x: 27, y: 26, width: 5, height: 5, fill: '#F39C12' }), e('rect', { x: 20, y: 32.5, width: 5, height: 5, fill: '#3498DB' }), e('rect', { x: 27, y: 32.5, width: 5, height: 5, fill: '#2ECC71' }), e('path', { d: 'M36 36 Q44 28 44 20 Q36 20 30 30 Q30 38 36 36Z', fill: '#2E7D32', opacity: .85 })),
+      expanded: s.side, sideW: s.side ? '248px' : '68px', toggleSide: () => this.setState(x => ({ side: !x.side })), sideChevron: s.side ? ic.cl : ic.cr, nav,
+      areaName: s.role === 'hq' || s.role === 'admin' ? 'NCL HQ' : L('Nigahi Area','निगाही क्षेत्र'), pageTitle: PAGES[page][0], pageSub: PAGES[page][1], pageAction,
+      role: s.role, onRole: ev => this.setState({ role: ev.target.value, page: null, selId: null, bucket: 'all' }),
+      roleOpts: [['incharge',L('Preview: Colony Incharge','पूर्वावलोकन: कॉलोनी प्रभारी')],['overseer',L('Preview: Colony Overseer','पूर्वावलोकन: ओवरसियर')],['area',L('Preview: Area In-charge','पूर्वावलोकन: क्षेत्र प्रभारी')],['hq',L('Preview: HQ','पूर्वावलोकन: मुख्यालय')],['admin',L('Preview: Administrator','पूर्वावलोकन: प्रशासक')]].map(o => ({ v: o[0], l: o[1], sel: o[0] === s.role })),
+      setEn: () => this.setState({ lang: 'en' }), setHi: () => this.setState({ lang: 'hi' }), enBg: hi ? 'transparent' : 'var(--prb,#0F4C4C)', enFg: hi ? 'var(--tm,#617074)' : '#FFFFFF', hiBg: hi ? 'var(--prb,#0F4C4C)' : 'transparent', hiFg: hi ? '#FFFFFF' : 'var(--tm,#617074)',
+      toggleDark: () => this.setState(x => ({ dark: !x.dark })), themeIcon: s.dark ? ic.sun : ic.moon,
+      me: { name: ME[0], role: ME[1], ini: this.ini(ME[0]) },
+      isQueue: page === 'queue', isDash: page === 'dash', isScore: page === 'score', isHq: page === 'hq', isUsers: page === 'users',
+      buckets: bDef.map(b => { const on = s.bucket === b[0]; return { label: b[1], c: b[2], sub: b[3], n: rowsAll.filter(bucketFn[b[0]]).length, pick: () => this.setState({ bucket: on ? 'all' : b[0], selId: null }), bg: on ? 'var(--tint,#E8F4F4)' : 'var(--sf,#FFFFFF)', bd: on ? 'var(--pr,#0F4C4C)' : 'var(--bd,#EAE8E0)' }; }),
+      scopeTabs: [['qtr',L('Quarters','क्वार्टर')],['other',L('Other buildings','अन्य भवन')]].map(x => { const on = s.scope === x[0]; return { label: x[1], pick: () => this.setState({ scope: x[0], selId: null }), bg: on ? 'var(--sf,#FFFFFF)' : 'transparent', fg: on ? 'var(--pr,#0F4C4C)' : 'var(--tm,#617074)' }; }),
+      catChips: [['all',L('All categories','सभी श्रेणियाँ')], ...Object.entries(CAT).slice(0, 5)].map(x => Object.assign({ label: x[1], icon: x[0] === 'all' ? null : this.I(P[x[0]], 14), pick: () => this.setState({ cat: x[0], selId: null }) }, pill(s.cat === x[0]))),
+      qHead: [L('COMPLAINT','शिकायत'), s.scope === 'other' ? L('BUILDING','भवन') : L('QUARTER','क्वार्टर'), L('PROBLEM','समस्या'), L('STATUS','स्थिति'), L('SLA','SLA'), L('CONTRACTOR','ठेकेदार')],
+      queueCols: sel ? 'minmax(0,1.5fr) minmax(320px,1fr)' : 'minmax(0,1fr)',
+      rows: rows.map(r => ({ id: r.id, ago: r.ago, qtr: r.qtr, colony: r.colony, cat: CAT[r.cat], catIcon: this.I(P[r.cat], 16), desc: r.desc, who: r.who, st: { label: ST[r.st][0], bg: ST[r.st][1], fg: ST[r.st][2] }, sla: sla(r), rowBg: r.id === s.selId ? 'var(--tint,#E8F4F4)' : 'transparent', open: () => this.setState({ selId: r.id }) })),
+      noRows: rows.length === 0, clearFilters: () => this.setState({ bucket: 'all', cat: 'all' }),
+      sel: selV, closeSel: () => this.setState({ selId: null }),
+      kpis: [[L('SLA COMPLIANCE','SLA अनुपालन'),'91.2%','#2E7D32','#E8F5EC',L('↑ 1.8 pts vs August','↑ 1.8 अंक'),'#1E6B34',[60,64,58,70,72,68,76,80]],[L('OPEN COMPLAINTS','खुली शिकायतें'),'61','#A85A00','#FEF3E2',L('↑ 7 vs August','↑ 7'),'#A93226',[40,52,48,60,55,62,58,70]],[L('AVG. RESOLUTION','औसत समाधान'),'22.6 h','var(--pr,#0F4C4C)','var(--tint,#E8F4F4)',L('↓ 2.1 h vs August','↓ 2.1 घं.'),'#1E6B34',[80,74,70,72,66,62,60,56]],[L('REOPEN RATE','पुनः खुली दर'),'4.2%','#6C3483','#F3ECFA',L('↓ 0.6 pts vs August','↓ 0.6 अंक'),'#1E6B34',[70,66,72,60,58,54,50,48]]].map(k => ({ label: k[0], v: k[1], c: k[2], bg: k[3], bd: 'var(--bd,#EAE8E0)', delta: k[4], dc: k[5], spark: k[6].map(h => h * .35 + 'px') })),
+      trend: [['Apr',86.2],['May',87.9],['Jun',84.1],['Jul',88.4],['Aug',89.4],['Sep',91.2]].map(m => ({ m: m[0], v: m[1] + '%', h: ((m[1] - 75) / 20 * 140) + 'px', c: m[1] >= 90 ? '#2E7D32' : '#C9A96A' })), targetLine: ((90 - 75) / 20 * 140 + 18) + 'px',
+      cats: [['plumbing',142],['roof',96],['drain',71],['door',58],['floor',33],['paint',27]].map(x => ({ icon: this.I(P[x[0]], 16), label: CAT[x[0]], n: x[1], w: x[1] / 142 * 100 + '%' })),
+      repHead: [L('QUARTER','क्वार्टर'),L('COLONY','कॉलोनी'),L('CATEGORY','श्रेणी'),L('COMPLAINTS','शिकायतें'),L('LAST','अंतिम')],
+      repeats: [['Qtr No. B-112','Sector B',CAT.roof,4,'22 Sep 2026'],['Qtr No. C-245','Sector C',CAT.plumbing,3,'24 Sep 2026'],['Qtr No. A-019','Sector A',CAT.drain,3,'11 Sep 2026'],['Qtr No. E-207','Sector E',CAT.paint,3,'2 Sep 2026']].map(r => ({ q: r[0], colony: r[1], cat: r[2], n: r[3], last: r[4] })),
+      ctrTabs: ctrs.map((x, i) => Object.assign({ name: x[0], pick: () => this.setState({ ctr: i }) }, pill(s.ctr === i))),
+      sc: { name: c[0], contract: c[1], sla: c[2], slaPct: c[3] + '%', grade: c[8], gradeBg: c[9], metrics: [[L('Avg. resolution time','औसत समाधान समय'),c[4],'#FFFFFF',L('Target 24 h','लक्ष्य 24 घं.')],[L('Reopen rate','पुनः खुली दर'),c[5],'#FFFFFF',L('Target under 5%','लक्ष्य 5% से कम')],[L('Resident rating','निवासी रेटिंग'),c[6],'#DFC28E',L('From 312 ratings','312 रेटिंग')],[L('Deductions due','देय कटौती'),c[7],'#F5B7B1',L('This month','इस माह')]].map(m => ({ l: m[0], v: m[1], c: m[2], d: m[3] })),
+        ded: [[L('SLA breaches beyond grace (₹500 each)','SLA उल्लंघन (₹500 प्रति)'),'₹'+(s.ctr===0?'9,000':s.ctr===1?'21,500':'38,000')],[L('Reopened after closure (₹800 each)','बंद होने के बाद पुनः खुली (₹800)'),'₹'+(s.ctr===0?'3,200':s.ctr===1?'7,200':'14,400')],[L('Flagged by overseer (₹400 each)','ओवरसियर द्वारा चिह्नित (₹400)'),'₹'+(s.ctr===0?'2,000':s.ctr===1?'3,000':'6,500')]].map(d => ({ l: d[0], v: d[1] })), dedTotal: c[7],
+        stars: [5,4,3,2,1].map((n, i) => { const v = [[168,96,32,10,6],[120,104,52,24,12],[70,88,74,46,34]][s.ctr][i]; return { s: n, n: v, w: v / 180 * 100 + '%' }; }) },
+      drill: () => this.setState({ page: 'queue', bucket: 'all', selId: null }),
+      hqHead: ['#', L('AREA','क्षेत्र'), L('QUARTERS','क्वार्टर'), L('OPEN','खुली'), L('SLA','SLA'), L('REOPEN','पुनः खुली'), L('RATING','रेटिंग'), L('DEDUCTIONS','कटौती')],
+      hqRows: AREAS.map((a, i) => { const h = heat(a[5]); return { rank: i + 1, code: a[0], name: hi ? a[2] : a[1], qtrs: a[3].toLocaleString('en-IN'), open: a[4], sla: a[5].toFixed(1) + '%', slaBg: h[0], slaFg: h[1], reopen: a[6].toFixed(1) + '%', rating: a[7].toFixed(1), ded: a[8], go: go('dash') }; }),
+      uHead: [L('USER','उपयोगकर्ता'),L('EMPLOYEE ID','कर्मचारी आईडी'),L('ROLE','भूमिका'),L('DESIGNATION','पदनाम'),L('AREA','क्षेत्र'),L('STATUS','स्थिति')],
+      users: [['S. P. Mishra','sp.mishra@ncl.gov.in','NCL/EMP/2009/0412',uRoleDefs[2][1],'Dy. Manager (Civil)','Nigahi',1],['R. Chaurasia','—','NCL/EMP/2016/0311',uRoleDefs[3][1],'Overseer (Civil)','Nigahi',1],['A. K. Verma','ak.verma@ncl.gov.in','NCL/EMP/2004/0087',uRoleDefs[4][1],'Chief Manager (Civil)','Nigahi',1],['Neha Gupta','neha.gupta@ncl.gov.in','NCL/EMP/2019/0265',uRoleDefs[2][1],'Asst. Manager (Civil)','Amlohri',1],['Vikas Patel','vikas.patel@ncl.gov.in','NCL/EMP/2022/0489',uRoleDefs[2][1],'MT (Civil)','Bina',0],['Ramesh Yadav','—','CTR/NGH/0412',uRoleDefs[1][1],'Site supervisor','Nigahi',1]].map(u => ({ name: u[0], ini: this.ini(u[0]), email: u[1], id: u[2], role: u[3], desig: u[4], area: u[5], st: u[6] ? L('Active','सक्रिय') : L('Inactive','निष्क्रिय'), stBg: u[6] ? '#E8F5EC' : 'var(--mu,#EFEDE4)', stFg: u[6] ? '#1E6B34' : 'var(--tm,#617074)' })),
+      modal, closeModal: () => this.setState({ modal: null, reasons: [] }), stop: ev => ev.stopPropagation(),
+      ctrList: CTR.map((x, i) => { const on = s.pickCtr === i; return { name: x[0], meta: x[1], sla: x[2], slaC: x[3], load: x[4], pick: () => this.setState({ pickCtr: i }), bd: on ? 'var(--pr,#0F4C4C)' : 'var(--bd2,#DDD9CC)', bg: on ? 'var(--tint,#E8F4F4)' : 'var(--sf,#FFFFFF)', dot: on ? 'var(--pr,#0F4C4C)' : 'var(--bd2,#DDD9CC)', fill: on ? 'var(--pr,#0F4C4C)' : 'transparent' }; }),
+      reasonChips: REASONS.map(r => Object.assign({ l: r, pick: () => this.setState(x => ({ reasons: x.reasons.includes(r) ? x.reasons.filter(y => y !== r) : [...x.reasons, r] })) }, pill(s.reasons.includes(r)))),
+      uRoles: uRoleDefs.map(r => Object.assign({ l: r[1], pick: () => this.setState({ uRole: r[0] }) }, pill(ur === r[0]))), uFields,
+      palette: s.palette, openPalette: () => this.setState({ palette: true, pq: '' }), closePalette: () => this.setState({ palette: false }), pq: s.pq, onPq: ev => this.setState({ pq: ev.target.value }),
+      pItems: pAll.filter(p => p.l.toLowerCase().includes(s.pq.toLowerCase())).slice(0, 9),
+      toast: s.toast, undo: () => { if (s.prev) this.setState({ rows: s.prev }); this.setState({ toast: null }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./cp-shell.js"></script>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Sans+Devanagari:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:var(--bg); }
+  * { box-sizing:border-box; }
+  a { color:#0F5C63; text-decoration:none; }
+  a:hover { color:#13757E; text-decoration:underline; }
+  @keyframes riseIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+</style>
+</helmet>
+<div style="--bg:#F7F8F8;--surface:#FFFFFF;--surface2:#EDEFF0;--ink:#14181B;--ink2:#5A646B;--ink3:#7B858C;--line:#DFE3E5;--line2:#C7CDD1;--accent:#0F5C63;--accentH:#13757E;--accentTint:#E2F0F0;--ok:#1F6F4A;--okT:#E7F1EC;--warn:#8A5A00;--warnT:#F6EEDD;--bad:#A32A21;--badT:#F7E9E7;--info:#2C5A8A;--infoT:#E7EEF5;font-family:'IBM Plex Sans','IBM Plex Sans Devanagari',system-ui,sans-serif;color:var(--ink);background:var(--bg);min-height:100vh">
+
+  <sc-if value="{{ normalMode }}" hint-placeholder-val="{{ true }}">
+    <div style="display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh">
+      <aside style="background:#14181B;color:#C7CDD1;display:flex;flex-direction:column;gap:4px;padding:18px 12px">
+        <div style="display:flex;align-items:center;gap:11px;padding:6px 10px 20px">
+          <span aria-label="Civil Portal" style="width:32px;height:32px;border-radius:7px;background:#161C21;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)"><svg viewBox="0 0 100 100" style="width:86%;height:86%"><polygon points="50.0,12.0 50.0,12.0 71.6,30.0 28.4,30.0" fill="#B9C2C8"></polygon><polygon points="24.8,33.0 75.2,33.0 86.0,42.0 86.0,50.0 14.0,50.0 14.0,42.0" fill="#86919A"></polygon><polygon points="14.0,53.0 86.0,53.0 86.0,68.0 14.0,68.0" fill="#34C7B0"></polygon><polygon points="14.0,71.0 86.0,71.0 86.0,86.0 14.0,86.0" fill="#5C6770"></polygon></svg></span>
+          <span style="display:flex;flex-direction:column;line-height:1.25;min-width:0">
+            <span style="font-size:14px;font-weight:600;color:#F2F4F5">Civil Portal</span>
+            <span style="font-size:11px;color:#7B858C;font-family:{{ font }}">{{ t.hq }}</span>
+          </span>
+        </div>
+        <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="6">
+          <button onClick="{{ n.go }}" disabled="{{ n.disabled }}" style="display:flex;align-items:center;gap:11px;border:0;border-radius:8px;background:{{ n.bg }};color:{{ n.fg }};font:500 14px/1 'IBM Plex Sans';padding:11px 10px;cursor:{{ n.cursor }};text-align:left;min-height:42px;width:100%;font-family:{{ font }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex:none"><path d="{{ n.path }}"></path></svg>
+            <span style="flex:1;min-width:0">{{ n.label }}</span>
+          </button>
+        </sc-for>
+        <div style="margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px 10px;border-top:1px solid #2E363C">
+          <span style="width:32px;height:32px;border-radius:50%;background:#2E363C;color:#C7CDD1;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex:none">SM</span>
+          <span style="display:flex;flex-direction:column;line-height:1.3;min-width:0">
+            <span style="font-size:13px;font-weight:500;color:#F2F4F5">S. Mishra</span>
+            <span style="font-size:11px;color:#7B858C;font-family:{{ font }}">{{ t.role }}</span>
+          </span>
+        </div>
+      </aside>
+
+      <main style="display:flex;flex-direction:column;min-width:0">
+        <header style="position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 28px;background:var(--surface);border-bottom:1px solid var(--line)">
+          <div style="display:flex;flex-direction:column;gap:2px;margin-right:auto;min-width:0">
+            <span style="font-size:12px;color:var(--ink3);font-family:{{ font }}">{{ t.crumb }}</span>
+            <span style="font-size:20px;font-weight:600;line-height:26px;font-family:{{ font }}">{{ t.pageTitle }}</span>
+          </div>
+          <button style="display:flex;align-items:center;gap:8px;border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);font:500 13px/1 'IBM Plex Sans';padding:11px 13px;cursor:pointer;min-height:42px;font-family:{{ font }}" style-hover="background:var(--surface2)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M8 3v3M16 3v3M4 8.5h16M5 5.5h14a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1Z"></path></svg>
+            {{ t.period }}
+          </button>
+          <button onClick="{{ enterMeeting }}" style="display:flex;align-items:center;gap:8px;border:0;border-radius:8px;background:#1D2328;color:#F2F4F5;font:600 13px/1 'IBM Plex Sans';padding:11px 15px;cursor:pointer;min-height:42px;font-family:{{ font }}" style-hover="background:#242B30">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M4 5h16v11H4zM9 20h6M12 16v4"></path></svg>
+            {{ t.meetingMode }}
+          </button>
+          <cp-command-trigger></cp-command-trigger>
+      <cp-theme-toggle compact=""></cp-theme-toggle>
+      <div style="display:flex;gap:4px;padding:3px;background:var(--surface2);border-radius:8px">
+            <button onClick="{{ setEn }}" style="border:0;cursor:pointer;font:500 13px/1 'IBM Plex Sans';padding:9px 12px;border-radius:6px;background:{{ enBg }};color:{{ enFg }}">EN</button>
+            <button onClick="{{ setHi }}" style="border:0;cursor:pointer;font:500 13px/1 'IBM Plex Sans Devanagari';padding:9px 12px;border-radius:6px;background:{{ hiBg }};color:{{ hiFg }}">हिं</button>
+          </div>
+        </header>
+
+        <div style="padding:26px 28px 56px;display:flex;flex-direction:column;gap:28px;min-width:0">
+
+          <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px">
+            <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;gap:9px;padding:17px 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);animation:riseIn .3s ease-out both;animation-delay:{{ k.delay }}">
+                <span style="font-size:12px;color:var(--ink2);line-height:16px;font-family:{{ font }}">{{ k.label }}</span>
+                <span style="font-size:30px;line-height:34px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-0.015em">{{ k.value }}</span>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                  <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;color:{{ k.color }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="{{ k.trendPath }}"></path></svg>{{ k.delta }}
+                  </span>
+                  <svg viewBox="0 0 80 22" preserveAspectRatio="none" style="width:80px;height:22px;flex:none"><polyline points="{{ k.spark }}" fill="none" stroke="{{ k.color }}" stroke-width="1.5" stroke-linejoin="round"></polyline></svg>
+                </div>
+                <span style="font-size:11px;color:var(--ink3);font-family:{{ font }}">{{ t.vsPrev }}</span>
+              </div>
+            </sc-for>
+          </section>
+
+          <section style="display:flex;flex-direction:column;gap:14px;min-width:0">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;margin-right:auto;font-family:{{ font }}">{{ t.rankTitle }}</h2>
+              <div style="display:flex;gap:4px;padding:3px;background:var(--surface2);border-radius:8px">
+                <sc-for list="{{ sorts }}" as="so" hint-placeholder-count="3">
+                  <button onClick="{{ so.pick }}" style="border:0;cursor:pointer;font:500 13px/1 'IBM Plex Sans';padding:9px 12px;border-radius:6px;background:{{ so.bg }};color:{{ so.fg }};font-family:{{ font }}">{{ so.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow-x:auto">
+              <div style="display:grid;min-width:1100px;grid-template-columns:36px 180px 118px 96px 88px 104px 100px 120px minmax(0,1fr);gap:14px;padding:11px 16px;background:var(--surface2);border-bottom:1px solid var(--line);font-size:12px;font-weight:600;color:var(--ink2);position:sticky;top:0">
+                <span></span>
+                <sc-for list="{{ columns }}" as="col" hint-placeholder-count="7"><span style="font-family:{{ font }}">{{ col }}</span></sc-for>
+              </div>
+              <sc-for list="{{ areas }}" as="a" hint-placeholder-count="13">
+                <div style="display:grid;min-width:1100px;grid-template-columns:36px 180px 118px 96px 88px 104px 100px 120px minmax(0,1fr);gap:14px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px;align-items:center;cursor:pointer" style-hover="background:var(--accentTint)">
+                  <span style="font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums">{{ a.rank }}</span>
+                  <span style="display:flex;flex-direction:column;gap:1px;min-width:0">
+                    <span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ a.name }}</span>
+                    <span style="font-family:'IBM Plex Mono';font-size:11px;color:var(--ink3)">{{ a.code }} · {{ a.qtrs }}</span>
+                  </span>
+                  <span style="display:inline-flex;align-items:center;gap:7px;justify-self:start">
+                    <span style="width:44px;height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;flex:none"><span style="display:block;height:100%;border-radius:3px;background:{{ a.slaColor }};width:{{ a.slaPct }}%"></span></span>
+                    <span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:{{ a.slaColor }}">{{ a.sla }}</span>
+                  </span>
+                  <span style="font-size:13px;font-variant-numeric:tabular-nums;color:{{ a.per100Color }};font-weight:500">{{ a.per100 }}</span>
+                  <span style="font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink2)">{{ a.avg }}</span>
+                  <span style="font-size:13px;font-variant-numeric:tabular-nums;color:{{ a.ftfColor }};font-weight:500">{{ a.ftf }}</span>
+                  <span style="font-size:13px;font-variant-numeric:tabular-nums;color:{{ a.reopenColor }}">{{ a.reopen }}</span>
+                  <span style="font-size:13px;font-variant-numeric:tabular-nums;color:{{ a.dedColor }};font-family:'IBM Plex Mono'">{{ a.deductions }}</span>
+                  <span style="font-size:13px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ a.contractor }}</span>
+                </div>
+              </sc-for>
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;flex-wrap:wrap">
+                <span style="font-size:12px;color:var(--ink3);margin-right:auto;font-variant-numeric:tabular-nums;font-family:{{ font }}">{{ t.footNote }}</span>
+                <button style="border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);font:500 13px/1 'IBM Plex Sans';padding:10px 13px;cursor:pointer;min-height:40px;font-family:{{ font }}" style-hover="background:var(--surface2)">{{ t.exportXlsx }}</button>
+              </div>
+            </div>
+          </section>
+
+          <section style="display:flex;flex-direction:column;gap:14px;min-width:0">
+            <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+              <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.heatTitle }}</h2>
+              <span style="font-size:13px;color:var(--ink3);font-family:{{ font }}">{{ t.heatSub }}</span>
+            </div>
+            <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:16px;overflow-x:auto">
+              <div style="min-width:760px;display:flex;flex-direction:column;gap:3px">
+                <div style="display:grid;grid-template-columns:180px repeat(12,minmax(0,1fr));gap:3px;padding-left:0">
+                  <span></span>
+                  <sc-for list="{{ months }}" as="m" hint-placeholder-count="12">
+                    <span style="font-size:11px;color:var(--ink3);text-align:center;font-family:{{ font }}">{{ m }}</span>
+                  </sc-for>
+                </div>
+                <sc-for list="{{ heatRows }}" as="hr" hint-placeholder-count="13">
+                  <div style="display:grid;grid-template-columns:180px repeat(12,minmax(0,1fr));gap:3px;align-items:center">
+                    <span style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:10px;font-family:{{ font }}">{{ hr.name }}</span>
+                    <sc-for list="{{ hr.cells }}" as="c" hint-placeholder-count="12">
+                      <span style="height:26px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;background:{{ c.bg }};color:{{ c.fg }}">{{ c.v }}</span>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </section>
+
+          <section style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:22px;align-items:start">
+            <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.lagTitle }}</h2>
+                <span style="font-size:13px;color:var(--ink3);font-family:{{ font }}">{{ t.lagSub }}</span>
+              </div>
+              <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:18px 20px;display:flex;flex-direction:column;gap:12px">
+                <sc-for list="{{ lagRows }}" as="lr" hint-placeholder-count="13">
+                  <div style="display:grid;grid-template-columns:150px minmax(0,1fr) 56px;gap:12px;align-items:center">
+                    <span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ lr.name }}</span>
+                    <span style="display:flex;height:14px;border-radius:3px;overflow:hidden;background:var(--surface2)">
+                      <span style="background:{{ lr.l1 }};width:{{ lr.w1 }}%"></span>
+                      <span style="background:{{ lr.l2 }};width:{{ lr.w2 }}%"></span>
+                      <span style="background:{{ lr.l3 }};width:{{ lr.w3 }}%"></span>
+                    </span>
+                    <span style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--ink2);text-align:right">{{ lr.total }}</span>
+                  </div>
+                </sc-for>
+                <div style="display:flex;gap:16px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--line)">
+                  <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink2);font-family:{{ font }}"><span style="width:10px;height:10px;border-radius:2px;background:#8A5A00"></span>{{ lagKey1 }}</span>
+                  <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink2);font-family:{{ font }}"><span style="width:10px;height:10px;border-radius:2px;background:#0F5C63"></span>{{ lagKey2 }}</span>
+                  <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink2);font-family:{{ font }}"><span style="width:10px;height:10px;border-radius:2px;background:#7B858C"></span>{{ lagKey3 }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.funnelTitle }}</h2>
+                <span style="font-size:13px;color:var(--ink3);font-family:{{ font }}">{{ t.funnelSub }}</span>
+              </div>
+              <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:18px 20px;display:flex;flex-direction:column;gap:14px">
+                <sc-for list="{{ funnel }}" as="fn" hint-placeholder-count="5">
+                  <div style="display:flex;flex-direction:column;gap:6px">
+                    <div style="display:flex;align-items:baseline;gap:10px">
+                      <span style="font-size:13px;flex:1;min-width:0;font-family:{{ font }}">{{ fn.label }}</span>
+                      <span style="font-size:12px;color:var(--bad);font-variant-numeric:tabular-nums">{{ fn.drop }}</span>
+                      <span style="font-size:14px;font-weight:600;font-variant-numeric:tabular-nums">{{ fn.value }}</span>
+                    </div>
+                    <div style="height:10px;border-radius:3px;background:var(--surface2);overflow:hidden"><div style="height:100%;border-radius:3px;background:{{ fn.color }};width:{{ fn.pct }}%"></div></div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </section>
+
+          <section style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start">
+            <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.scatterTitle }}</h2>
+                <span style="font-size:13px;color:var(--ink3);line-height:19px;font-family:{{ font }}">{{ t.scatterSub }}</span>
+              </div>
+              <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:18px 20px 14px">
+                <div style="position:relative;height:300px;border-left:1px solid var(--line2);border-bottom:1px solid var(--line2)">
+                  <div style="position:absolute;left:0;right:0;border-top:1px dashed var(--line2);top:{{ targetTop }}"></div>
+                  <span style="position:absolute;left:4px;font-size:10px;color:var(--ink3);background:var(--surface);padding:0 4px;font-family:{{ font }};top:{{ targetTop }};transform:translateY(-130%)">{{ t.target }}</span>
+                  <sc-for list="{{ scatter }}" as="sc" hint-placeholder-count="13">
+                    <span style="position:absolute;left:{{ sc.left }};top:{{ sc.top }};transform:translate(-50%,-50%);display:block;width:0;height:0">
+                      <span style="position:absolute;left:0;top:0;transform:translate(-50%,-50%);width:{{ sc.size }};height:{{ sc.size }};border-radius:50%;background:{{ sc.color }};opacity:.85"></span>
+                      <span style="position:absolute;left:0;top:0;font-size:10px;line-height:13px;color:var(--ink2);font-family:'IBM Plex Mono';white-space:nowrap;transform:translate(-50%,-50%) {{ sc.labelShift }}">{{ sc.code }}</span>
+                    </span>
+                  </sc-for>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding-top:8px">
+                  <span style="font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums">{{ xAxisMin }}</span>
+                  <span style="font-size:11px;color:var(--ink3);font-family:{{ font }}">{{ t.perHundred }}</span>
+                  <span style="font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums">{{ xAxisMax }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.slopeTitle }}</h2>
+                <span style="font-size:13px;color:var(--ink3);font-family:{{ font }}">{{ t.slopeSub }}</span>
+              </div>
+              <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:18px 20px;display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ slope }}" as="sl" hint-placeholder-count="13">
+                  <div style="display:grid;grid-template-columns:28px minmax(0,1fr) 28px 52px;gap:12px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)">
+                    <span style="font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums;text-align:center">{{ sl.prev }}</span>
+                    <span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ sl.name }}</span>
+                    <span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;text-align:center">{{ sl.now }}</span>
+                    <span style="font-size:12px;font-weight:600;color:{{ sl.color }};text-align:right;font-variant-numeric:tabular-nums">{{ sl.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </section>
+
+          <section style="display:flex;flex-direction:column;gap:14px;min-width:0">
+            <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+              <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.matrixTitle }}</h2>
+              <span style="font-size:13px;color:var(--ink3);font-family:{{ font }}">{{ t.matrixSub }}</span>
+            </div>
+            <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:16px 18px;overflow-x:auto">
+              <div style="min-width:760px;display:flex;flex-direction:column;gap:2px">
+                <div style="display:grid;grid-template-columns:180px repeat(8,minmax(0,1fr));gap:4px">
+                  <span></span>
+                  <sc-for list="{{ catsShort }}" as="cs" hint-placeholder-count="8">
+                    <span style="font-size:11px;color:var(--ink3);text-align:center;font-family:{{ font }}">{{ cs }}</span>
+                  </sc-for>
+                </div>
+                <sc-for list="{{ matrix }}" as="mx" hint-placeholder-count="13">
+                  <div style="display:grid;grid-template-columns:180px repeat(8,minmax(0,1fr));gap:4px;align-items:center;height:42px">
+                    <span style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:10px;font-family:{{ font }}">{{ mx.name }}</span>
+                    <sc-for list="{{ mx.cells }}" as="mc" hint-placeholder-count="8">
+                      <span style="display:flex;align-items:center;justify-content:center">
+                        <span style="width:{{ mc.size }};height:{{ mc.size }};border-radius:50%;background:{{ mc.bg }};opacity:.9"></span>
+                      </span>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </section>
+
+          <section style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start">
+            <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.dedTitle }}</h2>
+                <span style="font-size:13px;color:var(--ink3);font-family:{{ font }}">{{ t.dedSub }}</span>
+              </div>
+              <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:18px 20px;display:flex;flex-direction:column;gap:13px">
+                <sc-for list="{{ dedRows }}" as="dr" hint-placeholder-count="13">
+                  <div style="display:grid;grid-template-columns:140px minmax(0,1fr) 52px;gap:12px;align-items:center">
+                    <span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ dr.name }}</span>
+                    <span style="display:flex;flex-direction:column;gap:3px">
+                      <span style="height:8px;border-radius:2px;background:var(--surface2);overflow:hidden"><span style="display:block;height:100%;border-radius:2px;background:#A32A21;width:{{ dr.wL }}%"></span></span>
+                      <span style="height:8px;border-radius:2px;background:var(--surface2);overflow:hidden"><span style="display:block;height:100%;border-radius:2px;background:#1F6F4A;width:{{ dr.wR }}%"></span></span>
+                    </span>
+                    <span style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--ink2);text-align:right">{{ dr.gapPct }}</span>
+                  </div>
+                </sc-for>
+                <div style="display:flex;gap:16px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--line)">
+                  <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink2);font-family:{{ font }}"><span style="width:10px;height:10px;border-radius:2px;background:#A32A21"></span>{{ t.dedLevied }}</span>
+                  <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink2);font-family:{{ font }}"><span style="width:10px;height:10px;border-radius:2px;background:#1F6F4A"></span>{{ t.dedRecovered }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.partTitle }}</h2>
+                <span style="font-size:13px;color:var(--ink3);line-height:19px;font-family:{{ font }}">{{ t.partSub }}</span>
+              </div>
+              <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:18px 20px;display:flex;flex-direction:column;gap:13px">
+                <sc-for list="{{ participation }}" as="pp" hint-placeholder-count="13">
+                  <div style="display:grid;grid-template-columns:150px minmax(0,1fr) 44px;gap:12px;align-items:center">
+                    <span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ pp.name }}</span>
+                    <span style="height:8px;border-radius:2px;background:var(--surface2);overflow:hidden"><span style="display:block;height:100%;border-radius:2px;background:{{ pp.color }};width:{{ pp.w }}%"></span></span>
+                    <span style="font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:{{ pp.color }};text-align:right">{{ pp.pct }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </section>
+
+          <section style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:22px;align-items:start">
+            <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.mapTitle }}</h2>
+                <span style="font-size:13px;color:var(--ink3);line-height:19px;font-family:{{ font }}">{{ t.mapSub }}</span>
+              </div>
+              <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:18px">
+                <div style="position:relative;height:340px;border-radius:4px;background:repeating-linear-gradient(0deg,#F2F4F4 0 1px,transparent 1px 42px),repeating-linear-gradient(90deg,#F2F4F4 0 1px,transparent 1px 42px),#FBFCFC;border:1px solid var(--line)">
+                  <sc-for list="{{ mapPins }}" as="mp" hint-placeholder-count="13">
+                    <span style="position:absolute;left:{{ mp.left }};top:{{ mp.top }};transform:translate(-50%,-50%);display:flex;flex-direction:{{ mp.dir }};align-items:center;gap:6px">
+                      <span style="width:{{ mp.size }};height:{{ mp.size }};border-radius:50%;background:{{ mp.color }};border:2px solid #fff;box-shadow:0 1px 4px rgba(20,24,27,.25);flex:none"></span>
+                      <span style="font-size:10px;color:var(--ink2);font-family:'IBM Plex Mono';white-space:nowrap">{{ mp.code }}</span>
+                    </span>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.contractorTitle }}</h2>
+                <span style="font-size:13px;color:var(--ink3);font-family:{{ font }}">{{ t.contractorSub }}</span>
+              </div>
+              <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow-x:auto">
+                <div style="display:grid;min-width:640px;grid-template-columns:minmax(0,1.4fr) 62px 86px 78px 96px 116px;gap:12px;padding:11px 16px;background:var(--surface2);border-bottom:1px solid var(--line);font-size:12px;font-weight:600;color:var(--ink2)">
+                  <sc-for list="{{ contractorCols }}" as="cc" hint-placeholder-count="6"><span style="font-family:{{ font }}">{{ cc }}</span></sc-for>
+                </div>
+                <sc-for list="{{ vendors }}" as="vd" hint-placeholder-count="5">
+                  <div style="display:grid;min-width:640px;grid-template-columns:minmax(0,1.4fr) 62px 86px 78px 96px 116px;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line);font-size:13px;align-items:center;border-left:3px solid {{ vd.edge }};background:{{ vd.rowBg }}">
+                    <span style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                      <span style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }};color:{{ vd.nameColor }}">{{ vd.name }}</span>
+                      <span style="font-family:'IBM Plex Mono';font-size:10px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ vd.areas }}</span>
+                    </span>
+                    <span style="font-variant-numeric:tabular-nums;color:var(--ink2)">{{ vd.areaCount }}</span>
+                    <span style="font-variant-numeric:tabular-nums;color:var(--ink2)">{{ vd.qtrs }}</span>
+                    <span style="font-variant-numeric:tabular-nums;font-weight:600;color:{{ vd.slaColor }}">{{ vd.sla }}</span>
+                    <span style="font-variant-numeric:tabular-nums;color:{{ vd.breachColor }};font-weight:500">{{ vd.breach }}</span>
+                    <span style="font-variant-numeric:tabular-nums;font-family:'IBM Plex Mono';color:var(--ink2)">{{ vd.ded }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </section>
+
+          <section style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:22px;align-items:start">
+            <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+                <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.trendTitle }}</h2>
+                <span style="font-size:12px;color:var(--ink3);font-family:{{ font }}">{{ t.target }}</span>
+              </div>
+              <div style="padding:20px 20px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:flex-end;gap:9px;height:172px">
+                  <sc-for list="{{ trend }}" as="tr" hint-placeholder-count="12">
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0">
+                      <span style="font-size:10px;color:var(--ink3);font-variant-numeric:tabular-nums">{{ tr.value }}</span>
+                      <div style="width:100%;border-radius:3px 3px 0 0;background:{{ tr.color }};height:{{ tr.h }}px"></div>
+                      <span style="font-size:10px;color:var(--ink3);white-space:nowrap">{{ tr.month }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="display:flex;gap:16px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--line)">
+                  <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink2);font-family:{{ font }}"><span style="width:10px;height:10px;border-radius:2px;background:var(--ok)"></span>{{ t.metTarget }}</span>
+                  <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink2);font-family:{{ font }}"><span style="width:10px;height:10px;border-radius:2px;background:#C08A3E"></span>{{ t.belowTarget }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+              <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ t.watchTitle }}</h2>
+              <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden">
+                <sc-for list="{{ watch }}" as="w" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)">
+                    <span style="display:flex;width:30px;height:30px;border-radius:8px;background:{{ w.bg }};color:{{ w.fg }};align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="{{ w.path }}"></path></svg></span>
+                    <span style="display:flex;flex-direction:column;gap:3px;min-width:0">
+                      <span style="font-size:14px;font-weight:600;line-height:20px;font-family:{{ font }}">{{ w.title }}</span>
+                      <span style="font-size:12px;line-height:18px;color:var(--ink2);font-family:{{ font }}">{{ w.detail }}</span>
+                    </span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ meetingMode }}" hint-placeholder-val="{{ false }}">
+    <div style="min-height:100vh;background:#0F1315;color:#F2F4F5;display:flex;flex-direction:column">
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:24px 40px;border-bottom:1px solid #2E363C">
+        <div style="display:flex;flex-direction:column;gap:3px;margin-right:auto;min-width:0">
+          <span style="font-size:14px;color:#7B858C;font-family:{{ font }}">{{ t.meetingCrumb }}</span>
+          <span style="font-size:32px;font-weight:600;line-height:40px;letter-spacing:-0.015em;font-family:{{ font }}">{{ slideTitle }}</span>
+        </div>
+        <span style="font-size:15px;color:#A3ABB1;font-variant-numeric:tabular-nums;font-family:{{ font }}">{{ slideCounter }}</span>
+        <button onClick="{{ prevSlide }}" style="border:1px solid #3C454B;border-radius:8px;background:transparent;color:#F2F4F5;width:48px;height:48px;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#1D2328"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M15 5l-7 7 7 7"></path></svg></button>
+        <button onClick="{{ nextSlide }}" style="border:1px solid #3C454B;border-radius:8px;background:transparent;color:#F2F4F5;width:48px;height:48px;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#1D2328"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M9 5l7 7-7 7"></path></svg></button>
+        <button onClick="{{ toggleRotate }}" style="border:1px solid #3C454B;border-radius:8px;background:{{ rotateBg }};color:{{ rotateFg }};font:600 15px/1 'IBM Plex Sans';padding:14px 18px;cursor:pointer;min-height:48px;font-family:{{ font }}">{{ rotateLabel }}</button>
+        <div style="display:flex;gap:4px;padding:3px;background:#1D2328;border:1px solid #3C454B;border-radius:8px">
+          <button onClick="{{ setEn }}" style="border:0;cursor:pointer;font:600 15px/1 'IBM Plex Sans';padding:11px 14px;border-radius:6px;background:{{ mEnBg }};color:{{ mEnFg }}">EN</button>
+          <button onClick="{{ setHi }}" style="border:0;cursor:pointer;font:600 15px/1 'IBM Plex Sans Devanagari';padding:11px 14px;border-radius:6px;background:{{ mHiBg }};color:{{ mHiFg }}">हिं</button>
+        </div>
+        <button onClick="{{ exitMeeting }}" style="border:0;border-radius:8px;background:#3FA7AE;color:#0B2124;font:600 15px/1 'IBM Plex Sans';padding:14px 20px;cursor:pointer;min-height:48px;font-family:{{ font }}">{{ t.exitMeeting }}</button>
+      </div>
+
+      <div style="flex:1;padding:36px 40px 44px;display:flex;flex-direction:column;gap:32px;min-width:0">
+        <sc-if value="{{ slideKpi }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px">
+            <sc-for list="{{ bigKpis }}" as="b" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;gap:12px;padding:28px 30px;border-radius:14px;background:#1D2328;border:1px solid #2E363C;min-width:0">
+                <span style="font-size:17px;color:#A3ABB1;line-height:23px;font-family:{{ font }}">{{ b.label }}</span>
+                <span style="font-size: clamp(26px, 3.2vw, 40px); line-height: 1.2; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; color: {{ b.color }}; min-width: 0; overflow-wrap: anywhere">{{ b.value }}</span>
+                <span style="display:inline-flex;align-items:center;gap:8px;font-size:16px;font-weight:500;color:{{ b.color }};font-family:{{ font }}">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="{{ b.trendPath }}"></path></svg>{{ b.delta }}
+                </span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ slideRank }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <sc-for list="{{ topAreas }}" as="ta" hint-placeholder-count="13">
+              <div style="display:grid;grid-template-columns:44px minmax(0,1fr) minmax(120px,180px) 104px;gap:20px;align-items:center;padding:10px 22px;border-radius:8px;background:#1D2328;border:1px solid #2E363C">
+                <span style="font-size:17px;font-weight:600;color:#7B858C;font-variant-numeric:tabular-nums">{{ ta.rank }}</span>
+                <span style="font-size:20px;font-weight:600;line-height:26px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ ta.name }}</span>
+                <span style="height:8px;border-radius:4px;background:#2E363C;overflow:hidden"><span style="display:block;height:100%;border-radius:4px;background:{{ ta.color }};width:{{ ta.pct }}%"></span></span>
+                <span style="font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;color:{{ ta.color }}">{{ ta.sla }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ slideTrend }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;display:flex;flex-direction:column;gap:18px;padding:28px 30px;border-radius:14px;background:#1D2328;border:1px solid #2E363C">
+            <div style="display:flex;align-items:flex-end;gap:14px;flex:1;min-height:300px">
+              <sc-for list="{{ trend }}" as="tr" hint-placeholder-count="12">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0;height:100%;justify-content:flex-end">
+                  <span style="font-size:15px;color:#A3ABB1;font-variant-numeric:tabular-nums">{{ tr.value }}</span>
+                  <div style="width:100%;border-radius:4px 4px 0 0;background:{{ tr.bigColor }};height:{{ tr.bigH }}px"></div>
+                  <span style="font-size:15px;color:#A3ABB1;white-space:nowrap">{{ tr.month }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <span style="font-size:15px;color:#7B858C;font-family:{{ font }}">{{ t.trendCaption }}</span>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+</div>
+
+<cp-command-palette></cp-command-palette>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1600,&quot;height&quot;:1200}}">
+const P = {
+  surface:'var(--surface)', surface2:'var(--surface2)', ink:'var(--ink)', ink2:'var(--ink2)', ink3:'var(--ink3)',
+  line:'var(--line)', line2:'var(--line2)', accent:'var(--accent)', accentTint:'var(--accentTint)',
+  ok:'var(--ok)', okT:'var(--okT)', warn:'var(--warn)', warnT:'var(--warnT)', bad:'var(--bad)', badT:'var(--badT)',
+  info:'var(--info)', infoT:'var(--infoT)'
+};
+const I = {
+  globe:'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18',
+  gauge:'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 12l4-3',
+  users:'M13 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M8 6.5m-3.5 0a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M17 13.5a4 4 0 0 1 4 4V20M15 3.3a3.5 3.5 0 0 1 0 6.4',
+  report:'M6 3h8l4 4v14H6zM14 3v4h4M9 13h6M9 17h6',
+  settings:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7.5 19.4l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 14.6a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7.5l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.1V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.5 1.4l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z',
+  lock:'M6 10.5h12V21H6zM8.5 10.5V7a3.5 3.5 0 0 1 7 0v3.5',
+  up:'M3 17 9.5 10.5l4 4L21 7M15 7h6v6',
+  down:'M3 7 9.5 13.5l4-4L21 17M15 17h6v-6',
+  alert:'M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0ZM12 9v4M12 17h.01',
+  rotateCcw:'M3 5v5h5M3.6 10.2a9 9 0 1 0 2.2-4.1L3 8.5',
+  rupee:'M6 4h12M6 9h12M15.5 4c0 5-3.5 5-6 5h-.5l7 10',
+  star:'M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.8-5.3 2.8 1-5.8L3.5 9.7l5.9-.9L12 3.5Z'
+};
+
+const AREAS = [
+  // name, code, qtrs, sla, avgH, reopen, rating, deductionsLevied, contractor,
+  // complaints, assignLag, contractorLag, verifyLag, firstTimeFix, dedRecovered, participation, rankPrev, ageing[0-1,1-3,3-7,7+], lat, lon
+  ['Nigahi','NGH',4180,'92.4',31,'6.1','4.2',124500,'Shakti Constructions',612,6,19,6,'89.3',86000,'72',7,[71,44,24,9],24.13,82.60],
+  ['Amlohri','AML',3040,'94.1',27,'4.4','4.4',62000,'Vindhya Infra',388,4,17,6,'92.6',54000,'78',2,[58,31,12,3],24.15,82.55],
+  ['Jayant','JNT',2610,'90.8',34,'5.2','4.1',88200,'Sai Ram Builders',421,8,20,6,'88.1',51000,'69',8,[49,38,21,7],24.12,82.65],
+  ['Dudhichua','DCH',1920,'89.6',36,'5.9','4.0',102400,'Vindhya Infra',352,9,21,6,'86.4',58000,'64',9,[41,33,22,11],24.15,82.70],
+  ['Khadia','KHD',1180,'93.2',29,'4.1','4.3',41500,'Shakti Constructions',188,5,18,6,'91.8',36000,'74',5,[32,19,9,2],24.18,82.75],
+  ['Krishnashila','KSL',640,'91.5',32,'5.4','4.1',36800,'Sai Ram Builders',112,6,20,6,'88.9',24000,'70',6,[21,14,7,3],24.20,82.72],
+  ['Bina','BINA',580,'87.4',41,'7.2','3.8',146900,'Narmada Civil Works',141,12,23,6,'82.3',61000,'58',13,[24,20,17,12],24.22,82.50],
+  ['Kakri','KKR',520,'88.9',38,'6.4','3.9',97300,'Narmada Civil Works',108,10,22,6,'85.1',44000,'62',11,[19,16,12,7],24.10,82.78],
+  ['Jhingurda','JRD',430,'85.1',44,'8.1','3.6',168500,'Bharat Constructions',119,14,24,6,'79.4',52000,'54',12,[17,18,16,14],24.13,82.80],
+  ['Block-B','BLB',390,'90.2',33,'5.7','4.0',54100,'Bharat Constructions',74,7,20,6,'87.6',31000,'67',10,[15,10,6,3],24.11,82.76],
+  ['Central Workshop','CWS',310,'92.8',28,'4.8','4.2',29600,'Shakti Constructions',48,5,17,6,'90.7',22000,'71',4,[11,7,3,1],24.19,82.66],
+  ['NSC Hospital Colony','NSC',280,'94.6',25,'3.7','4.5',18200,'Vindhya Infra',39,3,16,6,'94.1',15000,'81',3,[9,5,2,0],24.20,82.66],
+  ['NCL HQ Colony','NCL HQ',1040,'95.3',24,'3.2','4.6',12400,'Vindhya Infra',162,3,15,6,'95.2',11000,'84',1,[38,17,5,1],24.20,82.67]
+];
+
+const AREA_HI = {
+  'Nigahi':'निगाही','Amlohri':'अमलोरी','Jayant':'जयंत','Dudhichua':'दुधीचुआ','Khadia':'खड़िया',
+  'Krishnashila':'कृष्णशिला','Bina':'बीना','Kakri':'ककरी','Jhingurda':'झिंगुरदा','Block-B':'ब्लॉक-बी',
+  'Central Workshop':'केंद्रीय कार्यशाला','NSC Hospital Colony':'एनएससी अस्पताल कॉलोनी','NCL HQ Colony':'एनसीएल मुख्यालय कॉलोनी'
+};
+const VENDOR_HI = {
+  'Shakti Constructions':'शक्ति कंस्ट्रक्शंस','Vindhya Infra':'विंध्य इंफ्रा','Sai Ram Builders':'साईं राम बिल्डर्स',
+  'Narmada Civil Works':'नर्मदा सिविल वर्क्स','Bharat Constructions':'भारत कंस्ट्रक्शंस'
+};
+const MONTH_HI = { Oct:'अक्तू.', Nov:'नव.', Dec:'दिस.', Jan:'जन.', Feb:'फ़र.', Mar:'मार्च', Apr:'अप्रै.', May:'मई', Jun:'जून', Jul:'जुल.', Aug:'अग.', Sep:'सित.' };
+
+const HEAT = (() => {
+  let seed = 7;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  const seasonal = [0.4, 0.8, 1.2, 1.4, 1.2, 0.6, -0.4, -1.2, -3.4, -4.2, -2.2, 0.6];
+  return AREAS.map(a => {
+    const base = parseFloat(a[3]);
+    return seasonal.map(s => Math.max(72, Math.min(99, +(base + s + (rnd() * 3 - 1.5)).toFixed(1))));
+  });
+})();
+
+const CATS_EN = ['Plumbing','Seepage','Masonry','Doors & windows','Flooring','Painting','Drainage','Boundary'];
+const CAT_MIX = [
+  [0.27,0.31,0.11,0.08,0.06,0.05,0.09,0.03],[0.29,0.18,0.13,0.11,0.08,0.09,0.08,0.04],
+  [0.24,0.29,0.12,0.09,0.07,0.06,0.10,0.03],[0.22,0.34,0.11,0.08,0.06,0.05,0.11,0.03],
+  [0.28,0.19,0.14,0.11,0.08,0.08,0.08,0.04],[0.26,0.24,0.13,0.10,0.07,0.07,0.09,0.04],
+  [0.19,0.38,0.12,0.07,0.05,0.04,0.12,0.03],[0.21,0.33,0.13,0.08,0.06,0.05,0.11,0.03],
+  [0.18,0.41,0.12,0.07,0.05,0.04,0.10,0.03],[0.25,0.26,0.13,0.09,0.07,0.06,0.10,0.04],
+  [0.31,0.15,0.15,0.12,0.09,0.09,0.06,0.03],[0.30,0.16,0.14,0.12,0.09,0.10,0.06,0.03],
+  [0.32,0.14,0.13,0.13,0.10,0.11,0.05,0.02]
+];
+const FUNNEL_EN = ['Registered','Assigned','Contractor completed','Verified by officer','Confirmed & closed'];
+const FUNNEL = [2874, 2801, 2612, 2489, 2188];
+
+const TREND = [
+  ['Oct',88],['Nov',89],['Dec',85],['Jan',90],['Feb',92],['Mar',88],
+  ['Apr',91],['May',93],['Jun',89],['Jul',92],['Aug',90],['Sep',91]
+];
+
+const STR = {
+  en: {
+    hq:'HQ, Singrauli', role:'HQ Civil Department', crumb:'All Areas',
+    pageTitle:'All-Areas overview', period:'Oct 2025 – Sep 2026', meetingMode:'Meeting mode',
+    nav:['All Areas','Area dashboards','Contractors','Reports','Allotment (coming soon)','Settings'],
+    vsPrev:'vs. previous month',
+    kpis:['SLA compliance, all Areas','Avg. resolution','Open complaints','Deductions this month'],
+    rankTitle:'13 Areas compared',
+    columns:['Area','SLA compliance','Per 100 qtrs','Avg. hours','First-time fix','Reopen rate','Deductions','Contractor'],
+    sorts:['SLA','Per 100 qtrs','Deductions','Reopen rate'],
+    footNote:'13 Areas · 15,000 quarters · contract period Oct 2025 – Sep 2026',
+    exportXlsx:'Export Excel',
+    trendTitle:'SLA compliance over the contract period', target:'Target 90%',
+    metTarget:'Met target', belowTarget:'Below target',
+    trendCaption:'Monthly SLA compliance across all 13 Areas. Target 90%.',
+    perHundred:'Per 100 qtrs', firstFix:'First-time fix',
+    heatTitle:'SLA by Area and month', heatSub:'Contract period · darker is worse',
+    lagTitle:'Where the time goes', lagSub:'Average hours per complaint, split by who holds it',
+    lagKeys:['Waiting to be assigned','With the contractor','Awaiting verification'],
+    funnelTitle:'Complaint funnel, contract period', funnelSub:'Where complaints stop moving',
+    matrixTitle:'Category concentration by Area', matrixSub:'Bubble size is share of that Area\u2019s complaints',
+    scatterTitle:'Load against performance', scatterSub:'Each dot is an Area · x = complaints per 100 quarters · y = SLA compliance',
+    scatterQ:['Low load, still failing','High load, coping','Low load, coping','High load, failing'],
+    slopeTitle:'Rank movement, Aug to Sep', slopeSub:'Position by SLA compliance',
+    mapTitle:'Areas across the Singrauli coalfield', mapSub:'Marker colour is SLA compliance · positions indicative pending survey coordinates',
+    dedTitle:'Deductions levied against recovered', dedSub:'Contract period to date',
+    dedLevied:'Levied', dedRecovered:'Recovered',
+    contractorTitle:'Contractors across Areas', contractorSub:'Flagged where one contractor is below target in more than one Area',
+    flagLabel:'Below target, 2+ Areas',
+    contractorCols:['Contractor','Areas','Quarters','SLA','Breach months','Deductions'],
+    partTitle:'Resident confirmation rate', partSub:'Complaints the resident confirmed, against auto-closed on timeout',
+    watchTitle:'Needs HQ attention',
+    watch:[
+      ['Jhingurda below target for 4 months','85.1% SLA, 8.1% reopen rate. Bharat Constructions has the highest deductions in the field.','bad'],
+      ['Bina reopen rate climbing','7.2%, up from 5.1% in June. Mostly seepage complaints re-raised within 30 days.','bad'],
+      ['Monsoon seepage load','Seepage is 34% of all complaints since July, against 19% in the dry months.','warn'],
+      ['NCL HQ Colony leads the field','95.3% SLA and the lowest reopen rate. Worth studying how Vindhya staffs it.','ok']
+    ],
+    meetingCrumb:'NCL Civil Department · Monthly review, Sep 2026',
+    slides:['All Areas at a glance','Areas ranked by SLA compliance','SLA trend, contract period'],
+    catsShort:['Plumbing','Seepage','Masonry','Doors','Flooring','Painting','Drainage','Boundary'],
+    months:['Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep'],
+    funnelStages:['Registered','Assigned','Contractor completed','Verified by officer','Confirmed & closed'],
+    exitMeeting:'Exit meeting mode', rotateOn:'Auto-rotate on', rotateOff:'Auto-rotate off'
+  },
+  hi: {
+    hq:'मुख्यालय, सिंगरौली', role:'मुख्यालय सिविल विभाग', crumb:'सभी क्षेत्र',
+    pageTitle:'सभी क्षेत्रों का अवलोकन', period:'अक्तू. 2025 – सित. 2026', meetingMode:'बैठक मोड',
+    nav:['सभी क्षेत्र','क्षेत्र डैशबोर्ड','ठेकेदार','रिपोर्ट','आवंटन (शीघ्र)','सेटिंग्स'],
+    vsPrev:'पिछले माह की तुलना में',
+    kpis:['समय-सीमा पालन, सभी क्षेत्र','औसत निपटान','लंबित शिकायतें','इस माह कटौती'],
+    rankTitle:'13 क्षेत्रों की तुलना',
+    columns:['क्षेत्र','समय-सीमा पालन','प्रति 100 क्वा.','औसत घंटे','प्रथम बार समाधान','पुनः खुलने की दर','कटौती','ठेकेदार'],
+    sorts:['समय-सीमा','प्रति 100 क्वा.','कटौती','पुनः खुलना'],
+    footNote:'13 क्षेत्र · 15,000 क्वार्टर · अनुबंध अवधि अक्तू. 2025 – सित. 2026',
+    exportXlsx:'एक्सेल निर्यात',
+    trendTitle:'अनुबंध अवधि में समय-सीमा पालन', target:'लक्ष्य 90%',
+    metTarget:'लक्ष्य पूरा', belowTarget:'लक्ष्य से कम',
+    trendCaption:'सभी 13 क्षेत्रों में मासिक समय-सीमा पालन। लक्ष्य 90%।',
+    perHundred:'प्रति 100 क्वा.', firstFix:'प्रथम बार में समाधान',
+    heatTitle:'क्षेत्र और माह अनुसार समय-सीमा पालन', heatSub:'अनुबंध अवधि · गहरा रंग अर्थात् खराब',
+    lagTitle:'समय कहाँ जाता है', lagSub:'प्रति शिकायत औसत घंटे, उत्तरदायित्व अनुसार',
+    lagKeys:['आवंटन की प्रतीक्षा','ठेकेदार के पास','सत्यापन की प्रतीक्षा'],
+    funnelTitle:'शिकायत प्रवाह, अनुबंध अवधि', funnelSub:'शिकायतें कहाँ रुकती हैं',
+    matrixTitle:'क्षेत्रवार श्रेणी सघनता', matrixSub:'बुलबुले का आकार उस क्षेत्र की शिकायतों में हिस्सेदारी',
+    scatterTitle:'भार बनाम निष्पादन', scatterSub:'प्रत्येक बिंदु एक क्षेत्र · x = प्रति 100 क्वार्टर शिकायतें · y = समय-सीमा पालन',
+    scatterQ:['कम भार, फिर भी विफल','अधिक भार, संभाल रहे','कम भार, संभाल रहे','अधिक भार, विफल'],
+    slopeTitle:'रैंक में बदलाव, अगस्त से सितंबर', slopeSub:'समय-सीमा पालन के अनुसार स्थान',
+    mapTitle:'सिंगरौली कोलफ़ील्ड में क्षेत्र', mapSub:'चिह्न का रंग समय-सीमा पालन · स्थिति सांकेतिक, सर्वेक्षण निर्देशांक शेष',
+    dedTitle:'लगाई गई बनाम वसूली गई कटौती', dedSub:'अनुबंध अवधि में अब तक',
+    dedLevied:'लगाई गई', dedRecovered:'वसूली गई',
+    contractorTitle:'क्षेत्रों में ठेकेदार', contractorSub:'एक से अधिक क्षेत्र में लक्ष्य से नीचे होने पर चिह्नित',
+    flagLabel:'2+ क्षेत्रों में लक्ष्य से नीचे',
+    contractorCols:['ठेकेदार','क्षेत्र','क्वार्टर','समय-सीमा','चूक के माह','कटौती'],
+    partTitle:'निवासी पुष्टि दर', partSub:'निवासी द्वारा पुष्टि बनाम समय-सीमा पर स्वतः बंद',
+    watchTitle:'मुख्यालय के ध्यान हेतु',
+    watch:[
+      ['झिंगुरदा 4 माह से लक्ष्य से नीचे','85.1% पालन, 8.1% पुनः खुलने की दर। भारत कंस्ट्रक्शंस की कटौती सर्वाधिक है।','bad'],
+      ['बीना में पुनः खुलने की दर बढ़ रही','7.2%, जून के 5.1% से अधिक। अधिकांश सीलन शिकायतें 30 दिनों में पुनः दर्ज।','bad'],
+      ['मानसून में सीलन का भार','जुलाई से सीलन कुल शिकायतों का 34% है, शुष्क माह के 19% के मुक़ाबले।','warn'],
+      ['एनसीएल मुख्यालय कॉलोनी अग्रणी','95.3% पालन और न्यूनतम पुनः खुलने की दर। विंध्य की कार्यप्रणाली अध्ययन योग्य।','ok']
+    ],
+    meetingCrumb:'एनसीएल सिविल विभाग · मासिक समीक्षा, सित. 2026',
+    slides:['सभी क्षेत्र एक दृष्टि में','समय-सीमा पालन के अनुसार क्षेत्र','समय-सीमा प्रवृत्ति, अनुबंध अवधि'],
+    catsShort:['नल-जल','सीलन','चिनाई','दरवाज़े','फ़र्श','रंग-रोगन','निकासी','चहारदीवारी'],
+    months:['अक्तू.','नव.','दिस.','जन.','फ़र.','मार्च','अप्रै.','मई','जून','जुल.','अग.','सित.'],
+    funnelStages:['दर्ज','आवंटित','ठेकेदार ने पूर्ण किया','अधिकारी द्वारा सत्यापित','पुष्टि व बंद'],
+    exitMeeting:'बैठक मोड से बाहर', rotateOn:'स्वतः बदलाव चालू', rotateOff:'स्वतः बदलाव बंद'
+  }
+};
+
+class Component extends DCLogic {
+  state = { lang:'en', sort:0, meeting:false, slide:0, rotate:true };
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.meeting !== prevState.meeting || this.state.rotate !== prevState.rotate) this.syncRotate();
+  }
+  componentDidMount() { this.syncRotate(); }
+  componentWillUnmount() { clearInterval(this.rot); }
+
+  syncRotate() {
+    clearInterval(this.rot);
+    if (this.state.meeting && this.state.rotate) {
+      this.rot = setInterval(() => this.setState(s => ({ slide: (s.slide + 1) % 3 })), 9000);
+    }
+  }
+
+  renderVals() {
+    const L = STR[this.state.lang];
+    const hi = this.state.lang === 'hi';
+    const font = hi ? "'IBM Plex Sans Devanagari', sans-serif" : "'IBM Plex Sans', sans-serif";
+
+    const num = s => parseFloat(String(s).replace(/,/g, ''));
+    const inr = n => n.toLocaleString('en-IN');
+    const hrU = hi ? 'घं.' : 'h';
+    const per100 = a => +(a[9] / a[2] * 100).toFixed(1);
+
+    const sorted = [...AREAS].sort((a, b) => {
+      if (this.state.sort === 1) return per100(b) - per100(a);
+      if (this.state.sort === 2) return b[7] - a[7];
+      if (this.state.sort === 3) return num(b[5]) - num(a[5]);
+      return num(b[3]) - num(a[3]);
+    });
+
+    const slaColor = v => v >= 92 ? P.ok : v >= 90 ? '#2C6E4F' : v >= 88 ? P.warn : P.bad;
+    const nm = a => hi ? (AREA_HI[a] || a) : a;
+
+    const areas = sorted.map((row, i) => {
+      const [name, code, qtrs, sla, avg, reopen, rating, ded, contractor, complaints, , , , ftf] = row;
+      const v = num(sla), p100 = per100(row);
+      return {
+        rank: i + 1, name: nm(name), code, qtrs: hi ? `${inr(qtrs)} क्वा.` : `${inr(qtrs)} qtrs`,
+        sla: `${sla}%`, slaPct: Math.round((v - 80) / 20 * 100), slaColor: slaColor(v),
+        per100: p100.toFixed(1), per100Color: p100 > 14 ? P.bad : p100 > 11 ? P.warn : P.ink2,
+        avg: `${avg} ${hrU}`,
+        ftf: `${ftf}%`, ftfColor: num(ftf) < 85 ? P.bad : num(ftf) < 89 ? P.warn : P.ok,
+        reopen: `${reopen}%`, reopenColor: num(reopen) > 6 ? P.bad : num(reopen) > 5 ? P.warn : P.ink2,
+        rating, deductions: `₹${inr(ded)}`, dedColor: ded > 120000 ? P.bad : P.ink2,
+        contractor: hi ? (VENDOR_HI[contractor] || contractor) : contractor
+      };
+    });
+
+    // heatmap
+    const heatColor = v => v >= 93 ? '#1F6F4A' : v >= 90 ? '#2A7A54' : v >= 87 ? '#E0C070' : v >= 84 ? '#A85F2E' : '#A32A21';
+    const heatFg = v => (v >= 87 && v < 90) ? '#2A2410' : '#FFFFFF';
+    const heatRows = AREAS.map((a, i) => ({
+      name: nm(a[0]),
+      cells: HEAT[i].map(v => ({ v: v.toFixed(0), bg: heatColor(v), fg: heatFg(v) }))
+    }));
+
+    // lag split
+    const lagMax = Math.max(...AREAS.map(a => a[10] + a[11] + a[12]));
+    const lagRows = AREAS.map(a => {
+      const tot = a[10] + a[11] + a[12];
+      return {
+        name: nm(a[0]), total: `${tot} ${hrU}`,
+        w1: (a[10] / lagMax * 100).toFixed(1), w2: (a[11] / lagMax * 100).toFixed(1), w3: (a[12] / lagMax * 100).toFixed(1),
+        l1: '#8A5A00', l2: '#0F5C63', l3: '#7B858C'
+      };
+    }).sort((x, y) => parseFloat(y.w1) - parseFloat(x.w1));
+
+    // funnel
+    const funnel = FUNNEL.map((v, i) => ({
+      label: L.funnelStages[i], value: inr(v),
+      pct: (v / FUNNEL[0] * 100).toFixed(1),
+      drop: i === 0 ? '' : `−${inr(FUNNEL[i-1] - v)}`,
+      color: i === 4 ? P.warn : P.accent
+    }));
+
+    // category matrix
+    const matrix = AREAS.map((a, i) => ({
+      name: nm(a[0]),
+      cells: CAT_MIX[i].map((share, c) => {
+        const size = Math.round(10 + share * 58);
+        return { size: `${size}px`, pct: Math.round(share * 100) + '%',
+          bg: share > 0.3 ? '#A32A21' : share > 0.22 ? '#C97A48' : share > 0.12 ? '#5D989D' : '#AFD0D2' };
+      })
+    }));
+
+    // scatter
+    const p100s = AREAS.map(per100);
+    const slas = AREAS.map(a => num(a[3]));
+    const xMin = Math.floor(Math.min(...p100s)) - 1, xMax = Math.ceil(Math.max(...p100s)) + 1;
+    const yMin = Math.floor(Math.min(...slas)) - 1, yMax = Math.ceil(Math.max(...slas)) + 1;
+    // labels sit centred UNDER their dot, so collision is a symmetric box in plot-%
+    const XW = 8.4, LH = 4.7, BL = 4.8, DOTY = 3.4;
+    const dots = AREAS.map((a, i) => ({
+      x: (p100s[i] - xMin) / (xMax - xMin) * 100,
+      y: 100 - (slas[i] - yMin) / (yMax - yMin) * 100
+    }));
+    const labelsPlaced = [];
+    const scatter = AREAS.map((a, i) => {
+      const { x, y } = dots[i];
+      const clear = cy =>
+        !dots.some((d, j) => j !== i && Math.abs(d.x - x) < XW && Math.abs(d.y - cy) < DOTY) &&
+        !labelsPlaced.some(p => Math.abs(p.x - x) < XW && Math.abs(p.y - cy) < LH);
+      let ly = y + BL, step = 0;
+      while (!clear(ly) && step < 14) {
+        step++;
+        ly = y + (step % 2 ? -1 : 1) * (BL + Math.ceil(step / 2) * LH);
+      }
+      labelsPlaced.push({ x, y: ly });
+      return {
+        code: a[1], name: nm(a[0]),
+        left: `${x.toFixed(1)}%`, top: `${y.toFixed(1)}%`,
+        labelShift: `translateY(${Math.round((ly - y) * 3)}px)`,
+        color: slaColor(slas[i]), size: `${Math.round(9 + a[2] / 4180 * 15)}px`
+      };
+    });
+    const targetTop = `${(100 - (90 - yMin) / (yMax - yMin) * 100).toFixed(1)}%`;
+    const xAxisMin = String(xMin), xAxisMax = String(xMax);
+
+    // slope
+    const slopeNow = {};
+    areas.forEach(a => { slopeNow[a.name] = a.rank; });
+    const slope = AREAS.map(a => {
+      const now = areas.findIndex(x => x.name === nm(a[0])) + 1;
+      const prev = a[16];
+      return { name: nm(a[0]), prev, now, moved: prev - now,
+        y1: `${(prev - 1) / 12 * 100}%`, y2: `${(now - 1) / 12 * 100}%`,
+        color: prev - now > 0 ? P.ok : prev - now < 0 ? P.bad : P.line2,
+        label: prev - now > 0 ? `▲ ${prev - now}` : prev - now < 0 ? `▼ ${now - prev}` : '–' };
+    }).sort((a, b) => a.now - b.now);
+    const slopeLines = slope.map(s => ({
+      y1: (s.prev - 1) / 12 * 100, y2: (s.now - 1) / 12 * 100, stroke: s.color
+    }));
+
+    // map (indicative positions from approximate coordinates)
+    const lats = AREAS.map(a => a[18]), lons = AREAS.map(a => a[19]);
+    const laMin = Math.min(...lats) - 0.02, laMax = Math.max(...lats) + 0.02;
+    const loMin = Math.min(...lons) - 0.02, loMax = Math.max(...lons) + 0.02;
+    const clusters = [];
+    AREAS.forEach(a => {
+      const x = (a[19] - loMin) / (loMax - loMin) * 100;
+      const y = 100 - (a[18] - laMin) / (laMax - laMin) * 100;
+      const near = clusters.find(c => Math.abs(c.x - x) < 7 && Math.abs(c.y - y) < 7);
+      if (near) near.members.push(a); else clusters.push({ x, y, members: [a] });
+    });
+    const mapPins = clusters.map(c => {
+      const worst = c.members.reduce((w, m) => num(m[3]) < num(w[3]) ? m : w, c.members[0]);
+      const qtrs = c.members.reduce((s, m) => s + m[2], 0);
+      return {
+        code: c.members.map(m => m[1]).join(' · '),
+        name: c.members.map(m => nm(m[0])).join(', '),
+        left: `${c.x.toFixed(1)}%`, top: `${c.y.toFixed(1)}%`,
+        dir: c.x > 60 ? 'row-reverse' : 'row',
+        color: slaColor(num(worst[3])), size: `${Math.round(12 + qtrs / 4180 * 14)}px`
+      };
+    });
+
+    // deductions levied vs recovered
+    const dedMax = Math.max(...AREAS.map(a => a[7]));
+    const dedRows = [...AREAS].sort((a, b) => b[7] - a[7]).map(a => ({
+      name: nm(a[0]),
+      levied: `₹${inr(a[7])}`, recovered: `₹${inr(a[14])}`,
+      wL: (a[7] / dedMax * 100).toFixed(1), wR: (a[14] / dedMax * 100).toFixed(1),
+      gapPct: Math.round((1 - a[14] / a[7]) * 100) + '%'
+    }));
+
+    // contractor roll-up across areas
+    const byVendor = {};
+    AREAS.forEach(a => {
+      const k = a[8];
+      byVendor[k] = byVendor[k] || { areas:[], qtrs:0, slaSum:0, n:0, ded:0, breach:0 };
+      const v = byVendor[k];
+      v.areas.push(a[1]); v.qtrs += a[2]; v.slaSum += num(a[3]); v.n++; v.ded += a[7];
+      v.breach += HEAT[AREAS.indexOf(a)].filter(m => m < 90).length;
+    });
+    const vendors = Object.entries(byVendor).map(([name, v]) => {
+      const avgSla = v.slaSum / v.n;
+      return { name: hi ? (VENDOR_HI[name] || name) : name,
+        areas: v.areas.join(', '), areaCount: v.n, qtrs: inr(v.qtrs),
+        sla: avgSla.toFixed(1) + '%', slaColor: slaColor(avgSla),
+        breach: String(v.breach), breachColor: v.breach > 20 ? P.bad : v.breach > 10 ? P.warn : P.ink2,
+        ded: `₹${inr(v.ded)}`, flagged: v.n > 1 && avgSla < 90,
+        edge: (v.n > 1 && avgSla < 90) ? P.bad : 'transparent',
+        rowBg: (v.n > 1 && avgSla < 90) ? P.badT : 'transparent',
+        nameColor: (v.n > 1 && avgSla < 90) ? P.bad : P.ink };
+    }).sort((a, b) => parseFloat(a.sla) - parseFloat(b.sla));
+
+    // participation
+    const participation = [...AREAS].sort((a, b) => num(a[15]) - num(b[15])).map(a => ({
+      name: nm(a[0]), pct: a[15] + '%', w: a[15],
+      color: num(a[15]) < 62 ? P.bad : num(a[15]) < 72 ? P.warn : P.ok
+    }));
+
+    const trend = TREND.map(([month, value]) => ({
+      month: hi ? (MONTH_HI[month] || month) : month, value,
+      h: Math.round((value - 80) * 9.5), bigH: Math.round((value - 80) * 20),
+      color: value >= 90 ? P.ok : '#C08A3E',
+      bigColor: value >= 90 ? '#5FBE8C' : '#E0A63C'
+    }));
+
+    const watchTone = { bad:{ bg:P.badT, fg:P.bad, path:I.alert }, warn:{ bg:P.warnT, fg:P.warn, path:I.rotateCcw }, ok:{ bg:P.okT, fg:P.ok, path:I.star } };
+
+    return {
+      t: L, font,
+      setEn: () => this.setState({ lang:'en' }), setHi: () => this.setState({ lang:'hi' }),
+      enBg: !hi ? P.accent : 'transparent', enFg: !hi ? '#fff' : P.ink2,
+      hiBg: hi ? P.accent : 'transparent', hiFg: hi ? '#fff' : P.ink2,
+      mEnBg: !hi ? '#3FA7AE' : 'transparent', mEnFg: !hi ? '#0B2124' : '#A3ABB1',
+      mHiBg: hi ? '#3FA7AE' : 'transparent', mHiFg: hi ? '#0B2124' : '#A3ABB1',
+
+      normalMode: !this.state.meeting, meetingMode: this.state.meeting,
+      enterMeeting: () => this.setState({ meeting:true, slide:0 }),
+      exitMeeting: () => this.setState({ meeting:false }),
+
+      navItems: L.nav.map((label, i) => ({
+        label, path: [I.globe, I.gauge, I.users, I.report, I.lock, I.settings][i],
+        disabled: i === 4, cursor: i === 4 ? 'not-allowed' : 'pointer',
+        bg: i === 0 ? 'rgba(15,92,99,.35)' : 'transparent',
+        fg: i === 4 ? '#5A646B' : i === 0 ? '#F2F4F5' : '#C7CDD1',
+        go: () => {}
+      })),
+
+      kpis: [
+        { label:L.kpis[0], value:'91.4%', delta:'+1.2 pts', color:P.ok, trendPath:I.up, spark:'0,18 13,15 26,16 39,11 52,9 65,6 78,4', delay:'0ms' },
+        { label:L.kpis[1], value:`32 ${hrU}`, delta:`−3 ${hrU}`, color:P.ok, trendPath:I.down, spark:'0,5 13,7 26,6 39,10 52,12 65,14 78,17', delay:'60ms' },
+        { label:L.kpis[2], value:'1,284', delta:'+96', color:P.warn, trendPath:I.up, spark:'0,16 13,14 26,15 39,10 52,12 65,7 78,5', delay:'120ms' },
+        { label:L.kpis[3], value:'₹9,82,400', delta:'+₹1,14,000', color:P.bad, trendPath:I.up, spark:'0,17 13,16 26,12 39,13 52,9 65,8 78,3', delay:'180ms' }
+      ],
+
+      sorts: L.sorts.map((label, i) => ({
+        label, pick: () => this.setState({ sort:i }),
+        bg: this.state.sort === i ? P.surface : 'transparent',
+        fg: this.state.sort === i ? P.ink : P.ink2
+      })),
+      columns: L.columns,
+      areas,
+      months: L.months, catsShort: L.catsShort, scatterQ: L.scatterQ,
+      lagKey1: L.lagKeys[0], lagKey2: L.lagKeys[1], lagKey3: L.lagKeys[2],
+      contractorCols: L.contractorCols,
+      heatRows, lagRows, funnel, matrix, scatter, slope, slopeLines, mapPins, dedRows, vendors, participation,
+      targetTop, xAxisMin, xAxisMax,
+
+      trend,
+      watch: L.watch.map(([title, detail, tone]) => ({ title, detail, ...watchTone[tone] })),
+
+      slide: this.state.slide,
+      slideKpi: this.state.slide === 0, slideRank: this.state.slide === 1, slideTrend: this.state.slide === 2,
+      slideTitle: L.slides[this.state.slide],
+      slideCounter: `${this.state.slide + 1} / 3`,
+      nextSlide: () => { this.setState(s => ({ slide: (s.slide + 1) % 3 })); this.syncRotate(); },
+      prevSlide: () => { this.setState(s => ({ slide: (s.slide + 2) % 3 })); this.syncRotate(); },
+      toggleRotate: () => this.setState(s => ({ rotate: !s.rotate })),
+      rotateLabel: this.state.rotate ? L.rotateOn : L.rotateOff,
+      rotateBg: this.state.rotate ? '#1D2328' : 'transparent',
+      rotateFg: this.state.rotate ? '#F2F4F5' : '#A3ABB1',
+
+      bigKpis: [
+        { label:L.kpis[0], value:'91.4%', delta:'+1.2 pts', color:'#5FBE8C', trendPath:I.up },
+        { label:L.kpis[1], value:`32 ${hrU}`, delta:`−3 ${hrU}`, color:'#5FBE8C', trendPath:I.down },
+        { label:L.kpis[2], value:'1,284', delta:'+96', color:'#E0A63C', trendPath:I.up },
+        { label:L.kpis[3], value:'₹9,82,400', delta:'+₹1,14,000', color:'#F0A090', trendPath:I.up }
+      ],
+      topAreas: areas.map(a => ({
+        rank: a.rank, name: a.name, sla: a.sla, pct: a.slaPct,
+        color: a.slaColor === P.bad ? '#F0A090' : a.slaColor === P.warn ? '#E0A63C' : '#5FBE8C'
+      }))
+    };
+  }
+}
+
+</script>
+</body>
+</html>

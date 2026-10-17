@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./cp-shell.js"></script>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Devanagari:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:var(--bg); }
+  * { box-sizing:border-box; }
+  a { color:#0F5C63; text-decoration:none; }
+  a:hover { color:#13757E; text-decoration:underline; }
+  @keyframes riseIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+</style>
+</helmet>
+<div style="--bg:#F7F8F8;--surface:#FFFFFF;--surface2:#EDEFF0;--ink:#14181B;--ink2:#5A646B;--ink3:#7B858C;--line:#DFE3E5;--line2:#C7CDD1;--accent:#0F5C63;--accentH:#13757E;--accentTint:#E2F0F0;--ok:#1F6F4A;--okT:#E7F1EC;--warn:#8A5A00;--warnT:#F6EEDD;--bad:#A32A21;--badT:#F7E9E7;--info:#2C5A8A;--infoT:#E7EEF5;font-family:'IBM Plex Sans','IBM Plex Sans Devanagari',system-ui,sans-serif;color:var(--ink);background:var(--bg);min-height:100vh;display:grid;grid-template-columns:248px minmax(0,1fr)">
+
+  <aside style="background:#14181B;color:#C7CDD1;display:flex;flex-direction:column;gap:4px;padding:18px 12px;min-height:100vh">
+    <div style="display:flex;align-items:center;gap:11px;padding:6px 10px 20px">
+      <span aria-label="Civil Portal" style="width:32px;height:32px;border-radius:7px;background:#161C21;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)"><svg viewBox="0 0 100 100" style="width:86%;height:86%"><polygon points="50.0,12.0 50.0,12.0 71.6,30.0 28.4,30.0" fill="#B9C2C8"></polygon><polygon points="24.8,33.0 75.2,33.0 86.0,42.0 86.0,50.0 14.0,50.0 14.0,42.0" fill="#86919A"></polygon><polygon points="14.0,53.0 86.0,53.0 86.0,68.0 14.0,68.0" fill="#34C7B0"></polygon><polygon points="14.0,71.0 86.0,71.0 86.0,86.0 14.0,86.0" fill="#5C6770"></polygon></svg></span>
+      <span style="display:flex;flex-direction:column;line-height:1.25;min-width:0">
+        <span style="font-size:14px;font-weight:600;color:#F2F4F5">Civil Portal</span>
+        <span style="font-size:11px;color:#7B858C;font-family:{{ font }}">{{ t.areaName }}</span>
+      </span>
+    </div>
+    <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="7">
+      <button disabled="{{ n.disabled }}" style="display:flex;align-items:center;gap:11px;border:0;border-radius:8px;background:{{ n.bg }};color:{{ n.fg }};font:500 14px/1 'IBM Plex Sans';padding:11px 10px;cursor:{{ n.cursor }};text-align:left;min-height:42px;width:100%;font-family:{{ font }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex:none"><path d="{{ n.path }}"></path></svg>
+        <span style="flex:1;min-width:0">{{ n.label }}</span>
+      </button>
+    </sc-for>
+    <div style="margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px 10px;border-top:1px solid #2E363C">
+      <span style="width:32px;height:32px;border-radius:50%;background:#2E363C;color:#C7CDD1;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex:none">NY</span>
+      <span style="display:flex;flex-direction:column;line-height:1.3;min-width:0">
+        <span style="font-size:13px;font-weight:500;color:#F2F4F5">N. Yadav</span>
+        <span style="font-size:11px;color:#7B858C;font-family:{{ font }}">{{ t.role }}</span>
+      </span>
+    </div>
+  </aside>
+
+  <main style="display:flex;flex-direction:column;min-width:0">
+    <header style="position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 28px;background:var(--surface);border-bottom:1px solid var(--line)">
+      <div style="display:flex;flex-direction:column;gap:2px;margin-right:auto;min-width:0">
+        <span style="font-size:12px;color:var(--ink3);font-family:{{ font }}">{{ t.crumb }}</span>
+        <span style="font-size:20px;font-weight:600;line-height:26px;font-family:{{ font }}">{{ t.pageTitle }}</span>
+      </div>
+      <div style="display:flex;gap:4px;padding:3px;background:var(--surface2);border-radius:8px">
+        <sc-for list="{{ periods }}" as="p" hint-placeholder-count="3">
+          <button onClick="{{ p.pick }}" style="border:0;cursor:pointer;font:500 13px/1 'IBM Plex Sans';padding:9px 12px;border-radius:6px;background:{{ p.bg }};color:{{ p.fg }};font-family:{{ font }}">{{ p.label }}</button>
+        </sc-for>
+      </div>
+      <a href="Monthly Performance Report.dc.html" style="display:flex;align-items:center;gap:8px;border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);font:500 13px/1 'IBM Plex Sans';padding:11px 13px;min-height:42px;font-family:{{ font }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M6 3h8l4 4v14H6zM14 3v4h4M9 13h6M9 17h6"></path></svg>{{ t.monthlyReport }}
+      </a>
+      <cp-command-trigger></cp-command-trigger>
+      <cp-theme-toggle compact=""></cp-theme-toggle>
+      <div style="display:flex;gap:4px;padding:3px;background:var(--surface2);border-radius:8px">
+        <button onClick="{{ setEn }}" style="border:0;cursor:pointer;font:500 13px/1 'IBM Plex Sans';padding:9px 12px;border-radius:6px;background:{{ enBg }};color:{{ enFg }}">EN</button>
+        <button onClick="{{ setHi }}" style="border:0;cursor:pointer;font:500 13px/1 'IBM Plex Sans Devanagari';padding:9px 12px;border-radius:6px;background:{{ hiBg }};color:{{ hiFg }}">हिं</button>
+      </div>
+    </header>
+
+    <div style="padding:24px 28px 56px;display:flex;flex-direction:column;gap:24px;min-width:0">
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <sc-for list="{{ vendorTabs }}" as="v" hint-placeholder-count="3">
+          <button onClick="{{ v.pick }}" style="display:flex;flex-direction:column;gap:3px;align-items:flex-start;text-align:left;padding:11px 15px;border:1px solid {{ v.border }};border-radius:8px;background:{{ v.bg }};cursor:pointer;min-width:200px">
+            <span style="font-size:14px;font-weight:600;color:var(--ink);font-family:{{ font }}">{{ v.name }}</span>
+            <span style="font-size:12px;color:{{ v.slaColor }};font-variant-numeric:tabular-nums;font-family:{{ font }}">{{ v.meta }}</span>
+          </button>
+        </sc-for>
+      </div>
+
+      <section style="border-radius:14px;background:#1D2328;color:#F2F4F5;padding:26px 28px;display:flex;flex-direction:column;gap:22px;box-shadow:0 4px 12px rgba(20,24,27,.10)">
+        <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
+          <div style="display:flex;flex-direction:column;gap:4px;margin-right:auto;min-width:0">
+            <span style="font-size:24px;line-height:31px;font-weight:600;font-family:{{ font }}">{{ vendor.name }}</span>
+            <span style="font-size:13px;color:#A3ABB1;font-family:{{ font }}">{{ vendor.agreement }}</span>
+          </div>
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:4px;font-size:13px;font-weight:600;background:{{ vendor.badgeBg }};color:{{ vendor.badgeFg }};font-family:{{ font }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="{{ vendor.badgePath }}"></path></svg>{{ vendor.badge }}
+          </span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.10)">
+          <sc-for list="{{ metrics }}" as="m" hint-placeholder-count="5">
+            <button onClick="{{ m.pick }}" style="display:flex;flex-direction:column;gap:7px;padding:17px 18px 19px;background:{{ m.bg }};border:0;border-left:1px solid rgba(255,255,255,.10);border-top:1px solid rgba(255,255,255,.10);margin-left:-1px;margin-top:-1px;cursor:pointer;text-align:left;flex:1 1 176px;min-width:176px;box-shadow:{{ m.ring }}" style-hover="background:#232B31">
+              <span style="font-size:12px;color:#A3ABB1;line-height:16px;font-family:{{ font }}">{{ m.label }}</span>
+              <span style="font-size:30px;line-height:36px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;white-space:nowrap;color:{{ m.color }}">{{ m.value }}</span>
+              <span style="display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%">
+                <span style="font-size:12px;color:#A3ABB1;font-family:{{ font }}">{{ m.note }}</span>
+                <svg viewBox="0 0 80 22" preserveAspectRatio="none" style="width:64px;height:20px;flex:none"><polyline points="{{ m.spark }}" fill="none" stroke="{{ m.color }}" stroke-width="1.5" stroke-linejoin="round"></polyline></svg>
+              </span>
+              <span style="font-size:11px;font-weight:600;color:{{ m.linkColor }};font-family:{{ font }}">{{ m.link }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="display:flex;flex-direction:column;gap:14px;min-width:0;animation:riseIn .22s ease-out">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;flex-direction:column;gap:2px;margin-right:auto;min-width:0">
+            <h2 style="margin:0;font-size:18px;line-height:24px;font-weight:600;font-family:{{ font }}">{{ drillTitle }}</h2>
+            <span style="font-size:13px;color:var(--ink3);font-family:{{ font }}">{{ drillSub }}</span>
+          </div>
+          <button style="border:1px solid var(--line2);border-radius:8px;background:var(--surface);color:var(--ink);font:500 13px/1 'IBM Plex Sans';padding:10px 13px;cursor:pointer;min-height:40px;font-family:{{ font }}" style-hover="background:var(--surface2)">{{ t.exportCsv }}</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:20px;align-items:start">
+          <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:18px 20px;display:flex;flex-direction:column;gap:12px">
+            <span style="font-size:13px;font-weight:600;font-family:{{ font }}">{{ t.byMonth }}</span>
+            <div style="display:flex;align-items:flex-end;gap:8px;height:150px">
+              <sc-for list="{{ bars }}" as="b" hint-placeholder-count="6">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0">
+                  <span style="font-size:10px;color:var(--ink3);font-variant-numeric:tabular-nums;white-space:nowrap">{{ b.label }}</span>
+                  <div style="width:100%;border-radius:3px 3px 0 0;background:{{ b.color }};height:{{ b.h }}px"></div>
+                  <span style="font-size:10px;color:var(--ink3);white-space:nowrap">{{ b.month }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <span style="font-size:12px;line-height:18px;color:var(--ink2);font-family:{{ font }}">{{ drillInsight }}</span>
+          </div>
+
+          <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow-x:auto">
+            <div style="display:grid;min-width:620px;grid-template-columns:118px minmax(0,1.4fr) 88px 128px;gap:14px;padding:11px 16px;background:var(--surface2);border-bottom:1px solid var(--line);font-size:12px;font-weight:600;color:var(--ink2)">
+              <sc-for list="{{ cols }}" as="c" hint-placeholder-count="4"><span style="font-family:{{ font }}">{{ c }}</span></sc-for>
+            </div>
+            <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+              <div style="display:grid;min-width:620px;grid-template-columns:118px minmax(0,1.4fr) 88px 128px;gap:14px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;align-items:center" style-hover="background:var(--accentTint)">
+                <span style="font-family:'IBM Plex Mono';font-size:12px;color:var(--ink2)">{{ r.ref }}</span>
+                <span style="display:flex;align-items:center;gap:9px;min-width:0">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex:none;color:var(--ink3)"><path d="{{ r.path }}"></path></svg>
+                  <span style="display:flex;flex-direction:column;gap:1px;min-width:0">
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:{{ font }}">{{ r.title }}</span>
+                    <span style="font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums">{{ r.qtr }}</span>
+                  </span>
+                </span>
+                <span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:{{ r.valColor }}">{{ r.value }}</span>
+                <span style="font-size:12px;color:var(--ink2);font-family:{{ font }}">{{ r.extra }}</span>
+              </div>
+            </sc-for>
+            <div style="padding:11px 16px;font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums;font-family:{{ font }}">{{ rowsFoot }}</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<cp-command-palette></cp-command-palette>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1100}}">
+const P = { surface:'var(--surface)', ink:'var(--ink)', ink2:'var(--ink2)', line:'var(--line)', line2:'var(--line2)',
+  accent:'var(--accent)', accentTint:'var(--accentTint)', ok:'var(--ok)', warn:'var(--warn)', bad:'var(--bad)', surface2:'var(--surface2)' };
+const I = {
+  gauge:'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 12l4-3',
+  inbox:'M4 13h4l1.5 3h5L16 13h4M4 13 6.5 5h11L20 13v6H4v-6Z',
+  users:'M13 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M8 6.5m-3.5 0a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M17 13.5a4 4 0 0 1 4 4V20M15 3.3a3.5 3.5 0 0 1 0 6.4',
+  map:'M9 4 3 6.5v14L9 18l6 2.5 6-2.5v-14L15 6.5 9 4ZM9 4v14M15 6.5v14',
+  report:'M6 3h8l4 4v14H6zM14 3v4h4M9 13h6M9 17h6',
+  lock:'M6 10.5h12V21H6zM8.5 10.5V7a3.5 3.5 0 0 1 7 0v3.5',
+  settings:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
+  droplets:'M12 3c3 3.5 5 6.4 5 8.7A5 5 0 0 1 7 11.7C7 9.4 9 6.5 12 3Z',
+  rain:'M7.5 14.5a3.5 3.5 0 0 1 .4-7 5 5 0 0 1 9.4 1.3 3.2 3.2 0 0 1-.8 6.3M8 18l-1 2.5M12 18l-1 2.5M16 18l-1 2.5',
+  brick:'M3 6h18v12H3zM3 12h18M8 6v6M16 6v6M12 12v6',
+  door:'M4 20h16M6 20V5a1 1 0 0 1 1.2-1l7-1.4A1 1 0 0 1 15.5 3.6V20M12 12.5v1',
+  drain:'M2 7c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 13c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 19c2-2 4-2 6 0s4 2 6 0 4-2 6 0',
+  shield:'M12 3 4 6v6c0 4.6 3.2 7.9 8 9 4.8-1.1 8-4.4 8-9V6l-8-3ZM9 12l2 2 4-4',
+  alert:'M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0ZM12 9v4M12 17h.01'
+};
+const MONTHS = { en:['Apr','May','Jun','Jul','Aug','Sep'], hi:['अप्रै.','मई','जून','जुल.','अग.','सित.'] };
+
+const VENDORS = [
+  { name:['Shakti Constructions Pvt. Ltd.','शक्ति कंस्ट्रक्शंस प्रा. लि.'], ag:'NCL/CIV/2025-28', qtrs:'4,180',
+    sla:[90.1,92.3,88.4,91.0,89.3,92.4], avg:[36,33,38,34,35,31], reopen:[4.8,5.1,5.9,6.4,6.6,6.1], rating:[4.0,4.1,4.0,4.1,4.1,4.2], ded:[48200,39600,96400,88100,112300,124500] },
+  { name:['Vindhya Infra Services','विंध्य इंफ्रा सर्विसेज'], ag:'NCL/CIV/2025-31', qtrs:'2,240',
+    sla:[87.2,86.9,85.8,88.3,87.6,88.1], avg:[40,41,43,39,40,39], reopen:[5.6,5.9,6.2,5.8,5.7,5.9], rating:[3.8,3.8,3.7,3.9,3.9,3.9], ded:[71400,76800,98200,69300,74100,81600] },
+  { name:['Sai Ram Builders','साईं राम बिल्डर्स'], ag:'NCL/CIV/2025-35', qtrs:'1,110',
+    sla:[93.8,94.4,92.1,94.9,95.0,94.7], avg:[28,27,30,27,26,27], reopen:[3.6,3.4,4.1,3.2,3.3,3.5], rating:[4.3,4.4,4.2,4.4,4.5,4.4], ded:[12100,9800,21400,8600,7900,9200] }
+];
+
+const DRILL = {
+  sla: [
+    ['NGH/2609/0388','Seepage on bedroom ceiling','शयनकक्ष की छत में सीलन','B-12, Sector 2','3 d late','rain','bad','₹3,000'],
+    ['NGH/2609/0317','Seepage, roof slab','छत की स्लैब में सीलन','C-212, Sector 4','5 d late','rain','bad','₹5,000'],
+    ['NGH/2609/0251','Seepage near window','खिड़की के पास सीलन','B-44, Sector 2','5 d late','rain','bad','₹5,000'],
+    ['NGH/2609/0402','Drain choked behind quarter','क्वार्टर के पीछे नाली अवरुद्ध','A-101, Sector 1','2 d late','drain','bad','₹2,000'],
+    ['NGH/2609/0294','Kitchen sink trap leaking','रसोई सिंक से रिसाव','E-41, Sector 3','1 d late','droplets','warn','₹500']
+  ],
+  avg: [
+    ['NGH/2609/0317','Seepage, roof slab','छत की स्लैब में सीलन','C-212, Sector 4','192 h','rain','bad','72 h SLA'],
+    ['NGH/2609/0251','Seepage near window','खिड़की के पास सीलन','B-44, Sector 2','197 h','rain','bad','72 h SLA'],
+    ['NGH/2609/0388','Seepage on bedroom ceiling','शयनकक्ष की छत में सीलन','B-12, Sector 2','128 h','rain','bad','72 h SLA'],
+    ['NGH/2609/0356','Plaster patch, stairwell','सीढ़ी घर में पलस्तर','D-19, Sector 2','61 h','brick','warn','48 h SLA'],
+    ['NGH/2609/0402','Drain choked behind quarter','क्वार्टर के पीछे नाली अवरुद्ध','A-101, Sector 1','52 h','drain','bad','24 h SLA']
+  ],
+  reopen: [
+    ['NGH/2609/0133','Damp patch returned after rain','बारिश के बाद फिर सीलन','B-12, Sector 2','6 d','rain','bad','Resident'],
+    ['NGH/2609/0098','Tap leaking again from spindle','नल फिर से टपक रहा','C-245, Sector 4','11 d','droplets','bad','Resident'],
+    ['NGH/2608/0911','Roof sealant cracked','छत का सीलेंट चटका','C-212, Sector 4','14 d','rain','bad','Resident'],
+    ['NGH/2608/0874','Door hinge loose again','दरवाज़े का कब्ज़ा फिर ढीला','D-08, Sector 2','19 d','door','warn','Resident'],
+    ['NGH/2608/0850','Drain overflow after repair','मरम्मत के बाद नाली उफनी','A-101, Sector 1','22 d','drain','warn','Overseer']
+  ],
+  rating: [
+    ['NGH/2609/0271','Window pane fixed without putty','बिना पुट्टी के शीशा लगाया','GH-2, Sector 1','1 ★','door','bad','Untidy after work'],
+    ['NGH/2609/0212','Waterproofing on wet surface','गीली सतह पर जलरोधन','B-30, Sector 2','2 ★','rain','bad','Work left unfinished'],
+    ['NGH/2609/0356','Plaster patch, stairwell','सीढ़ी घर में पलस्तर','D-19, Sector 2','2 ★','brick','bad','Came late'],
+    ['NGH/2609/0294','Kitchen sink trap leaking','रसोई सिंक से रिसाव','E-41, Sector 3','3 ★','droplets','warn','Came late'],
+    ['NGH/2609/0412','Kitchen tap leaking','रसोई का नल टपक रहा','C-245, Sector 4','5 ★','droplets','ok','Polite and quick']
+  ],
+  ded: [
+    ['Clause 14.3(a)','SLA breach, per day late','समय-सीमा चूक, प्रति दिन','11 complaints · 29 days','₹21,500','alert','bad','Annex A-1'],
+    ['Clause 14.3(b)','Reopened within 30 days','30 दिन में पुनः खुली','9 complaints','₹45,000','rain','bad','Annex A-2'],
+    ['Clause 14.3(c)','Reopen rate above 5%','5% से अधिक पुनः खुलना','1.1 pts over','₹44,000','alert','bad','Lump sum'],
+    ['Clause 14.3(d)','Flagged poor quality','खराब गुणवत्ता चिह्नित','4 complaints','₹14,000','brick','warn','Annex A-3']
+  ]
+};
+
+const DRILL_HI = {"sla":[["3 दिन विलंब","₹3,000","बी-12, सेक्टर 2"],["5 दिन विलंब","₹5,000","सी-212, सेक्टर 4"],["5 दिन विलंब","₹5,000","बी-44, सेक्टर 2"],["2 दिन विलंब","₹2,000","ए-101, सेक्टर 1"],["1 दिन विलंब","₹500","ई-41, सेक्टर 3"]],"avg":[["192 घं.","समय-सीमा 72 घं.","सी-212, सेक्टर 4"],["197 घं.","समय-सीमा 72 घं.","बी-44, सेक्टर 2"],["128 घं.","समय-सीमा 72 घं.","बी-12, सेक्टर 2"],["61 घं.","समय-सीमा 48 घं.","डी-19, सेक्टर 2"],["52 घं.","समय-सीमा 24 घं.","ए-101, सेक्टर 1"]],"reopen":[["6 दिन","निवासी","बी-12, सेक्टर 2"],["11 दिन","निवासी","सी-245, सेक्टर 4"],["14 दिन","निवासी","सी-212, सेक्टर 4"],["19 दिन","निवासी","डी-08, सेक्टर 2"],["22 दिन","पर्यवेक्षक","ए-101, सेक्टर 1"]],"rating":[["1 ★","काम के बाद सफ़ाई नहीं","जीएच-2, सेक्टर 1"],["2 ★","काम अधूरा छोड़ा","बी-30, सेक्टर 2"],["2 ★","देर से आए","डी-19, सेक्टर 2"],["3 ★","देर से आए","ई-41, सेक्टर 3"],["5 ★","विनम्र और तेज़","सी-245, सेक्टर 4"]],"ded":[["₹21,500","अनुलग्नक A-1","11 शिकायतें · 29 दिन"],["₹45,000","अनुलग्नक A-2","9 शिकायतें"],["₹44,000","एकमुश्त","1.1 अंक अधिक"],["₹14,000","अनुलग्नक A-3","4 शिकायतें"]]};
+
+const STR = {
+  en: {
+    areaName:'Nigahi Area', role:'Area Civil In-charge', crumb:'Nigahi / Contractors', pageTitle:'Contractor scorecard',
+    nav:['Dashboard','Work queue','Contractors','Colony map','Reports','Allotment (coming soon)','Settings'],
+    periods:['This month','Last 3 months','Contract to date'], monthlyReport:'Monthly report', exportCsv:'Export CSV',
+    meeting:'Meeting SLA', below:'Below SLA target',
+    labels:['SLA compliance','Avg. resolution','Reopen rate','Resident rating','Deductions due'],
+    link:'Show complaints', linkOn:'Showing below',
+    byMonth:'By month',
+    drill:{
+      sla:['Complaints that missed the deadline','11 breaches in September · sorted by days late','Seepage accounts for 7 of 11 breaches. Roof work is waiting on dry weather, which the SLA does not allow for.', ['Complaint','Problem','Late by','Deduction']],
+      avg:['Slowest complaints this month','Hours from registration to resident confirmation','Three seepage jobs account for most of the average. Without them it falls to 24 h.', ['Complaint','Problem','Took','Deadline']],
+      reopen:['Reopened complaints','Closed, then raised again within 30 days','Five of nine reopens are in Sector 2 and 4 roofs. Same fault, same quarters.', ['Complaint','Problem','Reopened after','Raised by']],
+      rating:['Lowest-rated work','Resident ratings of 3 stars or below, with the reason chip they picked','"Came late" is the commonest reason. Punctuality, not workmanship, is costing the rating.', ['Complaint','Problem','Rating','Reason']],
+      ded:['How the deduction is made up','Under Clause 14.3 of the agreement','Reopen penalties now outweigh SLA-breach penalties. Fixing it right the first time is worth more than fixing it fast.', ['Clause','Head','Amount','Evidence']]
+    },
+    foot:n => `Showing ${n} · every row links to its complaint, photos and timeline`
+  },
+  hi: {
+    areaName:'निगाही क्षेत्र', role:'क्षेत्र सिविल प्रभारी', crumb:'निगाही / ठेकेदार', pageTitle:'ठेकेदार स्कोरकार्ड',
+    nav:['डैशबोर्ड','कार्य सूची','ठेकेदार','कॉलोनी मानचित्र','रिपोर्ट','आवंटन (शीघ्र)','सेटिंग्स'],
+    periods:['इस माह','पिछले 3 माह','अनुबंध से अब तक'], monthlyReport:'मासिक रिपोर्ट', exportCsv:'सीएसवी निर्यात',
+    meeting:'समय-सीमा का पालन', below:'लक्ष्य से कम',
+    labels:['समय-सीमा पालन','औसत निपटान','पुनः खुलने की दर','निवासी रेटिंग','देय कटौती'],
+    link:'शिकायतें देखें', linkOn:'नीचे दिखाई जा रही हैं',
+    byMonth:'माहवार',
+    drill:{
+      sla:['समय-सीमा चूकी शिकायतें','सितंबर में 11 चूक · विलंब के अनुसार','11 में से 7 चूक सीलन की हैं। छत का काम सूखे मौसम की प्रतीक्षा में है, जिसकी समय-सीमा में छूट नहीं।', ['शिकायत','समस्या','विलंब','कटौती']],
+      avg:['इस माह की सबसे धीमी शिकायतें','दर्ज होने से निवासी की पुष्टि तक घंटे','तीन सीलन कार्य औसत को बढ़ा रहे हैं। इनके बिना औसत 24 घं. है।', ['शिकायत','समस्या','समय','समय-सीमा']],
+      reopen:['पुनः खुली शिकायतें','बंद होकर 30 दिनों में फिर दर्ज','नौ में से पाँच सेक्टर 2 और 4 की छतों में। वही खराबी, वही क्वार्टर।', ['शिकायत','समस्या','कितने दिन बाद','किसने खोली']],
+      rating:['सबसे कम रेटिंग वाला कार्य','3 स्टार या कम रेटिंग, निवासी द्वारा चुना कारण','"देर से आए" सबसे आम कारण है। कारीगरी नहीं, समयपालन रेटिंग घटा रहा है।', ['शिकायत','समस्या','रेटिंग','कारण']],
+      ded:['कटौती का विवरण','अनुबंध की धारा 14.3 के अंतर्गत','पुनः खुलने का दंड अब समय-सीमा चूक से अधिक है। पहली बार में सही काम तेज़ काम से अधिक मूल्यवान है।', ['धारा','मद','राशि','साक्ष्य']]
+    },
+    foot:n => `${n} दिखाई जा रही हैं · हर पंक्ति शिकायत, फ़ोटो और समयरेखा से जुड़ी है`
+  }
+};
+const KEYS = ['sla','avg','reopen','rating','ded'];
+
+class Component extends DCLogic {
+  state = { lang:'en', v:0, metric:'sla', period:0 };
+
+  renderVals() {
+    const L = STR[this.state.lang], hi = this.state.lang === 'hi', li = hi ? 1 : 0;
+    const font = hi ? "'IBM Plex Sans Devanagari', sans-serif" : "'IBM Plex Sans', sans-serif";
+    const V0 = VENDORS[this.state.v], per = this.state.period;
+    const agg = (a, sum) => {
+      const w = per === 0 ? a.slice(-1) : per === 1 ? a.slice(-3) : a;
+      const t = w.reduce((s, x) => s + x, 0);
+      return sum ? t : +(t / w.length).toFixed(1);
+    };
+    const winLen = per === 0 ? 1 : per === 1 ? 3 : 6;
+    const V = { ...V0,
+      sla: [...V0.sla.slice(0, -1), agg(V0.sla)], avg: [...V0.avg.slice(0, -1), Math.round(agg(V0.avg))],
+      reopen: [...V0.reopen.slice(0, -1), agg(V0.reopen)], rating: [...V0.rating.slice(0, -1), agg(V0.rating)],
+      ded: [...V0.ded.slice(0, -1), agg(V0.ded, true)] };
+    const last = a => a[a.length - 1];
+    const inr = n => '₹' + n.toLocaleString('en-IN');
+    const hr = hi ? 'घं.' : 'h';
+    const spark = arr => {
+      const mn = Math.min(...arr), mx = Math.max(...arr), span = (mx - mn) || 1;
+      return arr.map((v, i) => `${(i / (arr.length - 1) * 78).toFixed(1)},${(20 - (v - mn) / span * 18).toFixed(1)}`).join(' ');
+    };
+    const slaNow = last(V.sla), meets = slaNow >= 90;
+    const vals = {
+      sla: { v: slaNow.toFixed(1) + '%', c: meets ? '#7FD3A6' : '#E0A63C', note: `${(slaNow - V.sla[4] >= 0 ? '+' : '')}${(slaNow - V.sla[4]).toFixed(1)} ${hi ? 'अंक' : 'pts'}`, s: spark(V0.sla) },
+      avg: { v: `${last(V.avg)} ${hr}`, c: '#F2F4F5', note: `${hi ? 'अग.' : 'Aug'}: ${V.avg[4]} ${hr}`, s: spark(V0.avg) },
+      reopen: { v: last(V.reopen).toFixed(1) + '%', c: last(V.reopen) > 5 ? '#F0A090' : '#7FD3A6', note: hi ? 'सीमा 5%' : 'Ceiling 5%', s: spark(V0.reopen) },
+      rating: { v: last(V.rating).toFixed(1), c: '#F2F4F5', note: hi ? '312 रेटिंग' : '312 ratings', s: spark(V0.rating) },
+      ded: { v: inr(last(V.ded)), c: '#E8C070', note: per === 0 ? (hi ? 'सित. 2026 बिल' : 'Sep 2026 bill') : per === 1 ? (hi ? 'जुल.–सित. कुल' : 'Jul–Sep total') : (hi ? 'अप्रै.–सित. कुल' : 'Apr–Sep total'), s: spark(V0.ded) }
+    };
+    const m = this.state.metric, D = L.drill[m];
+    const series = ({ sla:V0.sla, avg:V0.avg, reopen:V0.reopen, rating:V0.rating, ded:V0.ded }[m]).slice(-Math.max(winLen, 3));
+    const mx = Math.max(...series), mn = Math.min(...series);
+    const good = v => m === 'sla' ? v >= 90 : m === 'rating' ? v >= 4 : m === 'reopen' ? v <= 5 : m === 'avg' ? v <= 32 : v <= 60000;
+    const fmt = v => m === 'ded' ? '₹' + Math.round(v / 1000) + 'k' : m === 'avg' ? `${v}` : m === 'rating' ? v.toFixed(1) : v.toFixed(1) + '%';
+    const toneC = { bad:P.bad, warn:P.warn, ok:P.ok };
+    const rows = DRILL[m].map((r, i) => {
+      const h = DRILL_HI[m][i];
+      return { ref: hi && m === 'ded' ? r[0].replace('Clause', 'धारा') : r[0],
+        title: r[1 + li], qtr: hi ? h[2] : r[3],
+        value: hi ? h[0] : r[4], path: I[r[5]], valColor: toneC[r[6]], extra: hi ? h[1] : r[7] };
+    });
+
+    return {
+      t: L, font,
+      setEn: () => this.setState({ lang:'en' }), setHi: () => this.setState({ lang:'hi' }),
+      enBg: !hi ? P.accent : 'transparent', enFg: !hi ? '#fff' : P.ink2,
+      hiBg: hi ? P.accent : 'transparent', hiFg: hi ? '#fff' : P.ink2,
+      navItems: L.nav.map((label, i) => ({ label, path:[I.gauge,I.inbox,I.users,I.map,I.report,I.lock,I.settings][i],
+        disabled: i === 5, cursor: i === 5 ? 'not-allowed' : 'pointer',
+        bg: i === 2 ? 'rgba(15,92,99,.35)' : 'transparent', fg: i === 5 ? '#5A646B' : i === 2 ? '#F2F4F5' : '#C7CDD1' })),
+      periods: L.periods.map((label, i) => ({ label, pick: () => this.setState({ period:i }),
+        bg: this.state.period === i ? P.surface : 'transparent', fg: this.state.period === i ? P.ink : P.ink2 })),
+      vendorTabs: VENDORS.map((x, i) => {
+        const on = this.state.v === i, s = last(x.sla);
+        return { name:x.name[li], meta:`${hi ? 'समय-सीमा' : 'SLA'} ${s.toFixed(1)}% · ${x.qtrs} ${hi ? 'क्वा.' : 'qtrs'}`,
+          slaColor: s >= 90 ? P.ok : P.warn, pick: () => this.setState({ v:i }),
+          bg: on ? P.accentTint : P.surface, border: on ? P.accent : P.line2 };
+      }),
+      vendor: { name:V.name[li], agreement:`${hi ? 'अनुबंध' : 'Agreement'} ${V.ag} · ${hi ? 'निगाही क्षेत्र' : 'Nigahi Area'} · ${V.qtrs} ${hi ? 'क्वार्टर' : 'quarters'}`,
+        badge: meets ? L.meeting : L.below, badgePath: meets ? I.shield : I.alert,
+        badgeBg: meets ? 'rgba(95,190,140,.16)' : 'rgba(224,166,60,.18)', badgeFg: meets ? '#7FD3A6' : '#E8C070' },
+      metrics: KEYS.map((k, i) => {
+        const on = m === k;
+        return { label:L.labels[i], value:vals[k].v, color:vals[k].c, note:vals[k].note, spark:vals[k].s,
+          pick: () => this.setState({ metric:k }),
+          bg: on ? '#26303A' : '#1D2328', ring: on ? 'inset 0 -3px 0 #3FA7AE' : 'none',
+          link: on ? L.linkOn : L.link, linkColor: on ? '#5FC4CA' : '#7B858C' };
+      }),
+      drillTitle: D[0], drillSub: D[1], drillInsight: D[2], cols: D[3],
+      bars: series.map((v, i) => ({ month: MONTHS[this.state.lang].slice(-series.length)[i], label: fmt(v),
+        h: Math.round(24 + (mx === mn ? 0.5 : (v - mn) / (mx - mn)) * 96), color: good(v) ? P.ok : '#C08A3E' })),
+      rows, rowsFoot: L.foot(rows.length)
+    };
+  }
+}
+
+</script>
+</body>
+</html>

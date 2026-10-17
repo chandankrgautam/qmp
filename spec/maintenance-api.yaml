@@ -1,0 +1,3518 @@
+openapi: 3.0.3
+info:
+  title: NCL Colony Maintenance Service
+  version: "1.0.0"
+  description: |
+    Complaint lifecycle, SLA, inspection, contract performance.
+
+    AUTHORISATION
+    Bearer tokens are issued by the Identity service. This service reads
+    role, scope_path and premises_id from the token claims and sets the
+    corresponding database session variables per transaction. A client
+    cannot assert its own scope or premises under any circumstance.
+
+    STATE TRANSITIONS ARE ACTIONS, NOT FIELD EDITS
+    There is deliberately no PATCH /tickets/{id} that accepts a state.
+    Each transition is a separate endpoint, because each is restricted to
+    one role, carries its own payload, and has its own preconditions. The
+    endpoints map one-to-one onto the ticket_transition table in the
+    database, so the API and the schema cannot drift apart.
+
+      verify / reject          Civil Overseer
+      assign / reassign        Civil Maintenance Incharge
+      start / complete         Contractor Supervisor  (claim only)
+      inspect                  Civil Overseer         (accept or reject)
+      close                    Civil Overseer or Incharge
+      reopen                   Resident or Custodian
+      refer-special-repair     Overseer / Incharge / Staff Officer
+
+    A contractor cannot close a ticket. There is no endpoint through which
+    they could, and the database refuses it independently.
+
+    ZERO-ROW WRITES ARE FAILURES
+    Row-level security turns an out-of-scope write into a silent zero-row
+    update, not an error. Every write path must check the affected row
+    count and return 403 when it is zero. Returning 200 would report
+    success for an action that did nothing.
+
+servers:
+  - url: https://portal.nclcil.in/maintenance/v1
+
+tags:
+  - name: tickets
+  - name: contracts
+  - name: disputes
+  - name: measurement-book
+  - name: hq
+    description: |
+      Disputes the department must decide (2026-10-07). A rejection the
+      occupant contests once (Overseer or Incharge first, then the Area Civil
+      Staff Officer), and a complaint reopened for the third time (referred
+      to the Staff Officer by the database). The Staff Officer's written
+      decision is final in the portal: the occupant can neither contest nor
+      reopen that complaint again. Never shown to contractors.
+  - name: materials
+    description: |
+      Materials (decision 2026-09-30) — a record, never a bill: no rate,
+      price or amount anywhere (control 9). The master is kept by the HQ
+      System Administrator; the assigned supervisor claims lines while the
+      work is under way; the Overseer or Incharge verifies them after the
+      completion claim (never the person who claimed). Lines are withdrawn,
+      never changed or deleted. Reports are for the Overseer and above.
+  - name: job-cards
+    description: |
+      The job card (decision 2026-09-30). Prepared by the database when a
+      complaint is first assigned. Read by the Civil Overseer and every
+      role above, in scope; never by the occupant or the contractor, who
+      get 404. Changed only by the Overseer or the Civil Incharge; locked
+      once the complaint is closed or rejected; every change logged.
+  - name: admin
+  - name: lifecycle
+  - name: objections
+  - name: media
+  - name: sla
+  - name: inspection
+  - name: dashboards
+  - name: notifications
+  - name: masters
+
+paths:
+
+  /masters/categories:
+    get:
+      tags: [masters]
+      summary: Category tree for the complaint form
+      description: |
+        Includes electrical sub-categories, flagged classification=EM. The
+        client shows them but, on selection, presents the E&M referral
+        interstitial instead of creating a ticket.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Category' }
+
+  /masters/excluded-scope:
+    get:
+      tags: [masters]
+      summary: The "not handled in this portal at present" notice
+      description: Bilingual text plus area contact numbers, both admin-editable.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sections:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        heading_en: { type: string }
+                        heading_hi: { type: string }
+                        body_en:    { type: string }
+                        body_hi:    { type: string }
+                  area_contacts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        label: { type: string }
+                        label_en: { type: string }
+                        label_hi: { type: string }
+                        phone: { type: string }
+
+  /tickets:
+    post:
+      tags: [tickets]
+      summary: Raise a complaint
+      description: |
+        The premises is taken from the token, never from the request body.
+        A complaint may only be raised against the premises the calling
+        device is bound to.
+
+        For DEPARTMENT_ONLY premises, only Overseer and Incharge devices
+        may raise, and premises_id must then be supplied explicitly.
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema: { type: string }
+          description: |
+            Client-generated; not yet honoured by the server (open defect 7).
+            A double tap is caught anyway: a second open complaint for the
+            same premises and fault is refused with 409 and the existing
+            ticket.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sub_category_id]
+              description: |
+                Photographs are attached after raising, through
+                /media/upload-url with purpose COMPLAINT: the upload needs the
+                ticket. A photograph is not compulsory at raising.
+              properties:
+                sub_category_id: { type: string, format: uuid }
+                description:
+                  type: string
+                  maxLength: 500
+                  nullable: true
+                is_emergency:
+                  type: boolean
+                  default: false
+                  description: |
+                    Accepted only where the sub-category is emergency
+                    eligible. Otherwise 422 — the flag is a property of the
+                    category, not a free choice.
+                premises_id:
+                  type: string
+                  format: uuid
+                  nullable: true
+                  description: Only for DEPARTMENT_ONLY premises raised by civil staff
+      responses:
+        '201':
+          description: Raised
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ticket' }
+        '409':
+          description: |
+            An open ticket already exists for this premises and
+            sub-category. The response carries it so the client can offer
+            "add to existing" instead of creating a duplicate.
+          content:
+            application/problem+json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Problem'
+                  - type: object
+                    properties:
+                      existing_ticket: { $ref: '#/components/schemas/Ticket' }
+        '422':
+          description: Emergency flag not permitted for this sub-category
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+    get:
+      tags: [tickets]
+      summary: List tickets visible to the caller
+      description: |
+        No area or premises filter is accepted. Visibility is decided by
+        row-level security from the token: an occupant sees their premises,
+        a contractor sees their assigned jobs, a civil user sees their
+        scope subtree, GM sees all areas read-only.
+      parameters:
+        - in: query
+          name: state
+          schema:
+            type: array
+            items: { $ref: '#/components/schemas/TicketState' }
+          style: form
+          explode: false
+        - in: query
+          name: overdue_only
+          schema: { type: boolean }
+        - in: query
+          name: emergency_only
+          schema: { type: boolean }
+        - in: query
+          name: contract_id
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Ticket' }
+                  total: { type: integer }
+        '401':
+          description: Not signed in, or the token has expired (renew with /auth/refresh)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /tickets/{id}/escalation-remark:
+    post:
+      tags: [lifecycle]
+      summary: The Area Civil Staff Officer's remark on a level-4 complaint
+      description: |
+        A complaint that reached the GM (level 4) cannot be closed until the
+        Area Civil Staff Officer records a remark. Written once; who and when
+        are recorded by the database, and it enters the complaint's history.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [remark]
+              properties:
+                remark: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/TicketOk' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { description: Already recorded }
+        '422': { description: "No remark written, or the complaint has not reached level 4" }
+
+  /actors/{id}/open-jobs:
+    get:
+      tags: [lifecycle]
+      summary: A supervisor role's open jobs, before the role is ended
+      description: |
+        The complaints assigned to this role assignment that are still open —
+        shown in the role-ending dialog so nothing is left where nobody can
+        start it. Area office roles only; row security keeps it to the
+        caller's Area.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:           { type: string, format: uuid }
+                    ticket_no:    { type: string }
+                    state:        { $ref: '#/components/schemas/TicketState' }
+                    identifier:   { type: string }
+                    sub_category: { type: string }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /materials:
+    get:
+      tags: [materials]
+      summary: The materials master (active only unless all=true)
+      parameters:
+        - { in: query, name: all, schema: { type: boolean } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Material' } }
+    post:
+      tags: [materials]
+      summary: Add a material (HQ System Administrator)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name_en, name_hi, unit]
+              properties:
+                code:             { type: string }
+                name_en:          { type: string }
+                name_hi:          { type: string }
+                unit:             { type: string }
+                category:         { type: string }
+                norm_max_per_job: { type: number, exclusiveMinimum: 0 }
+      responses:
+        '201':
+          description: Added
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Material' }
+        '403': { description: Not the HQ System Administrator }
+        '409': { description: That code exists }
+        '422': { description: Missing fields or a norm not above zero }
+
+  /materials/{id}:
+    put:
+      tags: [materials]
+      summary: Change or deactivate a material — reason compulsory; the code is fixed
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                name_en:          { type: string }
+                name_hi:          { type: string }
+                unit:             { type: string }
+                category:         { type: string, nullable: true }
+                norm_max_per_job: { type: number, nullable: true }
+                active:           { type: boolean }
+                reason:           { type: string }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Material' }
+        '403': { description: Not the HQ System Administrator }
+        '404': { description: Not found }
+        '422': { description: 'No reason, or an attempt to change the code' }
+
+  /materials/consumption:
+    get:
+      tags: [materials]
+      summary: Consumption by material — claimed, verified, unverified, variance (quantities only)
+      description: Withdrawn lines are excluded. Overseer and above; anyone else 403.
+      parameters:
+        - { in: query, name: contract_id, schema: { type: string, format: uuid } }
+        - { in: query, name: from, schema: { type: string, format: date }, description: claimed on or after }
+        - { in: query, name: to, schema: { type: string, format: date }, description: claimed on or before }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        material_id:    { type: string, format: uuid }
+                        code:           { type: string }
+                        name_en:        { type: string }
+                        unit:           { type: string }
+                        jobs:           { type: integer }
+                        qty_claimed:    { type: number }
+                        qty_verified:   { type: number }
+                        qty_unverified: { type: number }
+                        variance:       { type: number, description: 'claimed minus verified, over verified lines' }
+                  period: { type: object }
+        '403': { description: Not an officer of Overseer rank or above }
+
+  /materials/consumption.csv:
+    get:
+      tags: [materials]
+      summary: The consumption report as CSV
+      parameters:
+        - { in: query, name: contract_id, schema: { type: string, format: uuid } }
+        - { in: query, name: from, schema: { type: string, format: date }, description: claimed on or after }
+        - { in: query, name: to, schema: { type: string, format: date }, description: claimed on or before }
+      responses:
+        '200':
+          description: CSV with header code,name_en,unit,jobs,qty_claimed,qty_verified,qty_unverified,variance
+          content:
+            text/csv: { schema: { type: string } }
+        '403': { description: Not an officer of Overseer rank or above }
+
+  /materials/anomalies:
+    get:
+      tags: [materials]
+      summary: Anomaly flags — over-claim, above norm, repeat at premises, unverified after inspection
+      description: Departmental signals; never shown to contractors or occupants (403).
+      parameters:
+        - { in: query, name: contract_id, schema: { type: string, format: uuid } }
+        - { in: query, name: from, schema: { type: string, format: date }, description: claimed on or after }
+        - { in: query, name: to, schema: { type: string, format: date }, description: claimed on or before }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        flag:         { type: string, enum: [OVER_CLAIM, ABOVE_NORM, REPEAT_AT_PREMISES, UNVERIFIED] }
+                        ticket_id:    { type: string, format: uuid }
+                        ticket_no:    { type: string }
+                        identifier:   { type: string }
+                        line_id:      { type: string, format: uuid, nullable: true }
+                        code:         { type: string }
+                        name_en:      { type: string }
+                        unit:         { type: string }
+                        qty_claimed:  { type: number }
+                        qty_verified: { type: number, nullable: true }
+                        detail:       { type: string }
+        '403': { description: Not an officer of Overseer rank or above }
+
+  /tickets/{id}/materials:
+    get:
+      tags: [materials]
+      summary: The complaint's material lines, and whether the caller may claim or verify
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:      { type: array, items: { $ref: '#/components/schemas/MaterialLine' } }
+                  stage:      { type: string, enum: [SUPERVISOR, OVERSEER, INCHARGE, STAFF_OFFICER, APPROVED] }
+                  can_claim:  { type: boolean, description: "The assigned supervisor while the work is under way or after it until he sends the sheet for review; an officer at their step of the approval chain" }
+                  can_verify: { type: boolean }
+                  reason_needed: { type: boolean, description: "The caller is at a step of the approval chain: a change needs a reason" }
+        '404': { description: 'Not visible, or the caller is the occupant' }
+    post:
+      tags: [materials]
+      summary: Claim a material used (the assigned supervisor, during and after the work until sent for review; or an officer at their step of the approval chain)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [material_id, qty_claimed]
+              properties:
+                material_id: { type: string, format: uuid }
+                qty_claimed: { type: number, exclusiveMinimum: 0 }
+                reason:      { type: string, description: "Needed when the Staff Officer adds a line after approval" }
+      responses:
+        '201':
+          description: Claimed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MaterialLine' }
+        '403': { description: Not the supervisor the job is assigned to }
+        '404': { description: Not found }
+        '422': { description: 'Not under way, inactive material, or quantity not above zero' }
+
+  /tickets/{id}/sheets:
+    get:
+      tags: [materials]
+      summary: The job's sheets in the approval chain after the work (materials, measurements)
+      description: |
+        User's decisions 2026-10-16. Each sheet moves up contractor supervisor,
+        Civil Overseer, Civil Colony Incharge, Area Civil Staff Officer. The
+        contractor sees each move's role and remark, never the officer's name.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  materials:    { allOf: [{ $ref: '#/components/schemas/JobSheet' }], nullable: true }
+                  measurements: { allOf: [{ $ref: '#/components/schemas/JobSheet' }], nullable: true }
+        '404': { description: 'Not visible, or the caller is the occupant' }
+  /tickets/{id}/sheets/{kind}/{action}:
+    post:
+      tags: [materials]
+      summary: Move a sheet - send for review, pass, pass with no change, send back, approve, or send approved materials back
+      description: |
+        Only the person at the sheet's step moves it; send back and reopen need
+        a remark; reopen is for approved materials until the MB is approved.
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { in: path, name: kind, required: true, schema: { type: string, enum: [materials, measurements] } }
+        - { in: path, name: action, required: true, schema: { type: string, enum: [submit, pass, pass-no-change, return, approve, reopen] } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                remark: { type: string }
+      responses:
+        '200':
+          description: The sheet as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobSheet' }
+        '403': { description: Not the person at this step }
+        '404': { description: Not found }
+        '409': { description: The sheet moved meanwhile }
+        '422': { description: 'Not allowed from this step yet, or no remark' }
+
+  /tickets/{id}/materials/{line}/withdraw:
+    post:
+      tags: [materials]
+      summary: Withdraw a claim line — reason compulsory; the line stays, marked withdrawn
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { in: path, name: line, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [reason], properties: { reason: { type: string } } }
+      responses:
+        '200':
+          description: Withdrawn
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MaterialLine' }
+        '403': { description: Not the supervisor who claimed it }
+        '404': { description: Not found }
+        '422': { description: 'No reason, verified already, or the work is no longer under way' }
+
+  /tickets/{id}/materials/{line}/verify:
+    post:
+      tags: [materials]
+      summary: Verify a claim line (Overseer or Incharge, after the completion claim, never the claimant)
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { in: path, name: line, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [qty_verified]
+              properties:
+                qty_verified: { type: number, minimum: 0 }
+                remark:       { type: string }
+                reason:       { type: string, description: Required when the line is already verified }
+      responses:
+        '200':
+          description: Verified
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MaterialLine' }
+        '403': { description: 'Not the Overseer or Incharge, or the person who claimed' }
+        '404': { description: Not found }
+        '422': { description: 'Wrong stage, withdrawn line, or a re-verification without a reason' }
+
+  /tickets/{id}/materials/history:
+    get:
+      tags: [materials]
+      summary: Every claim, withdrawal and verification on the complaint, newest first
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { description: 'OK (empty for contractors, who do not read the audit log)' }
+        '404': { description: 'Not visible, or the caller is the occupant' }
+
+  /tickets/{id}/contest:
+    post:
+      tags: [disputes]
+      summary: The occupant contests a rejection — once per complaint
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [reason], properties: { reason: { type: string } } }
+      responses:
+        '201':
+          description: Contested; the Overseer and Incharge are notified
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Review' }
+        '403': { description: Not the occupant }
+        '404': { description: Not visible }
+        '409': { description: 'Not rejected, already contested, or decided by the Staff Officer' }
+        '422': { description: No reason }
+
+  /tickets/{id}/reviews:
+    get:
+      tags: [disputes]
+      summary: The complaint's disputes and every note and decision on them
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Review' } }
+        '404': { description: 'Not visible, or the caller is a contractor' }
+
+  /notices:
+    get:
+      tags: [notices]
+      summary: Colony notices visible to the caller (V2 R4)
+      description: |
+        Residents and custodians see the live notices of their own colony;
+        officers those within their scope (all=true adds ended ones); HQ
+        all Areas; contractors none. Visibility is row security's.
+      parameters:
+        - { in: query, name: all, schema: { type: boolean } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/ColonyNotice' } }
+                  total: { type: integer }
+    post:
+      tags: [notices]
+      summary: Post a notice for a colony in the caller's Area (Overseer or Incharge)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [colony_id, title]
+              properties:
+                colony_id: { type: string, format: uuid }
+                title:     { type: string, maxLength: 120 }
+                body:      { type: string, maxLength: 600 }
+                ends_at:   { type: string, format: date-time, nullable: true }
+      responses:
+        '201':
+          description: Posted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ColonyNotice' }
+        '403': { description: Not the Overseer or Incharge }
+        '404': { description: No such colony in the caller's scope }
+        '422': { description: Title missing or too long }
+  /notices/{id}/end:
+    post:
+      tags: [notices]
+      summary: End a notice, with a reason (never edited or deleted)
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          description: Ended
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ColonyNotice' }
+        '403': { description: Not the Overseer or Incharge }
+        '404': { description: Not visible to the caller }
+        '409': { description: Already ended }
+        '422': { description: Reason missing }
+  /reviews:
+    get:
+      tags: [disputes]
+      summary: Disputes waiting for the caller (Overseer/Incharge — with officers; Staff Officer — with the Staff Officer)
+      parameters:
+        - { in: query, name: pending, schema: { type: boolean, default: true } }
+      responses:
+        '200':
+          description: OK (empty for roles that decide none)
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Review' } }
+
+  /reviews/{id}/officer:
+    post:
+      tags: [disputes]
+      summary: The Overseer or Incharge reinstates the complaint or upholds the rejection (note compulsory)
+      description: Reinstated, the complaint returns to RAISED for verification. Upheld, it goes to the Staff Officer.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [outcome, note]
+              properties:
+                outcome: { type: string, enum: [REINSTATE, UPHOLD] }
+                note:    { type: string }
+      responses:
+        '200':
+          description: Done
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Review' }
+        '403': { description: Not the Overseer or Incharge }
+        '404': { description: Not found }
+        '409': { description: Not at this stage }
+        '422': { description: No outcome or no note }
+
+  /reviews/{id}/decide:
+    post:
+      tags: [disputes]
+      summary: The Area Civil Staff Officer's written decision — final in the portal
+      description: |
+        Contested rejection: REINSTATE (back to RAISED) or UPHOLD. Repeated
+        dispute: REWORK (may be reassigned), CLOSE (closed) or SPECIAL_REPAIR.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [outcome, decision]
+              properties:
+                outcome:  { type: string, enum: [REINSTATE, UPHOLD, REWORK, CLOSE, SPECIAL_REPAIR] }
+                decision: { type: string }
+      responses:
+        '200':
+          description: Decided; the occupant, Overseer and Incharge are notified
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Review' }
+        '403': { description: Not the Staff Officer }
+        '404': { description: Not found }
+        '409': { description: 'Not at this stage, or already decided' }
+        '422': { description: 'No outcome, or no written decision' }
+
+  /mb/worklist:
+    get:
+      tags: [measurement-book]
+      summary: "An officer's worklist of a month's jobs in the approval chain"
+      description: |
+        For a contract and month (of the work's acceptance; 'open' for every job not yet approved):
+        what waits at the caller's own step, what is still below it, sent back, approved and
+        waiting longer than the setting; one row per job; and the Staff Officer's sample check per
+        contract. The officers of the chain, GM, HQ and the administrator; row security decides the jobs.
+      parameters:
+        - { in: query, name: contract_id, schema: { type: string, format: uuid } }
+        - { in: query, name: month, schema: { type: string } }
+        - { in: query, name: kind, schema: { type: string, enum: [measurements, materials] } }
+      responses:
+        '200':
+          description: The worklist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  month:     { type: string }
+                  kind:      { type: string, enum: [MEASUREMENTS, MATERIALS] }
+                  wait_days: { type: number }
+                  step:      { type: string, nullable: true }
+                  tiles:
+                    type: object
+                    properties:
+                      total:        { type: integer }
+                      mine:         { type: integer }
+                      below:        { type: integer }
+                      sent_back:    { type: integer }
+                      approved:     { type: integer }
+                      waiting_long: { type: integer }
+                  sample:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        contract_id:     { type: string, format: uuid, nullable: true }
+                        contractor_name: { type: string, nullable: true }
+                        jobs:            { type: integer }
+                        checked:         { type: integer }
+                        target_percent:  { type: number }
+                        required:        { type: integer }
+                        shortfall:       { type: integer }
+                  rows:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ticket_id:          { type: string, format: uuid }
+                        ticket_no:          { type: string }
+                        state:              { type: string }
+                        contract_id:        { type: string, format: uuid, nullable: true }
+                        contractor_name:    { type: string, nullable: true }
+                        identifier:         { type: string }
+                        sub_category:       { type: string }
+                        inspected_at:       { type: string, format: date-time }
+                        measurements_stage: { type: string, enum: [SUPERVISOR, OVERSEER, INCHARGE, STAFF_OFFICER, APPROVED] }
+                        materials_stage:    { type: string, enum: [SUPERVISOR, OVERSEER, INCHARGE, STAFF_OFFICER, APPROVED] }
+                        stage:              { type: string, enum: [SUPERVISOR, OVERSEER, INCHARGE, STAFF_OFFICER, APPROVED] }
+                        stage_since:        { type: string, format: date-time }
+                        days_at_step:       { type: number }
+                        approved_at:        { type: string, format: date-time, nullable: true }
+                        mine:               { type: boolean }
+                        below:              { type: boolean }
+                        sent_back:          { type: boolean }
+                        waiting_long:       { type: boolean }
+                        changes:            { type: integer, description: "Changes made by officers in the chain" }
+                        checked:            { type: boolean, description: "Check-measured by the Staff Officer" }
+        '403': { description: Not an officer of the chain }
+
+  /mb/search:
+    get:
+      tags: [measurement-book]
+      summary: "Find jobs in the MB reference record"
+      description: |
+        By words of an item (word beginnings), the complaint number, the quarter or the fault; by the
+        measurements' step, approval dates and MB page. One result per job, newest first, saying where
+        its lines are. Departmental roles and the contractor (its own jobs); never an occupant.
+      parameters:
+        - { in: query, name: q, schema: { type: string } }
+        - { in: query, name: contract_id, schema: { type: string, format: uuid } }
+        - { in: query, name: stage, schema: { type: string, enum: [SUPERVISOR, OVERSEER, INCHARGE, STAFF_OFFICER, APPROVED] } }
+        - { in: query, name: approved_from, schema: { type: string, format: date } }
+        - { in: query, name: approved_to, schema: { type: string, format: date } }
+        - { in: query, name: page_no, description: An MB page, schema: { type: integer, minimum: 1 } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+      responses:
+        '200':
+          description: The jobs found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ticket_id:       { type: string, format: uuid }
+                        ticket_no:       { type: string }
+                        identifier:      { type: string }
+                        sub_category:    { type: string }
+                        contract_id:     { type: string, format: uuid }
+                        contractor_name: { type: string, nullable: true }
+                        mb_no:           { type: string }
+                        pages:           { type: array, items: { type: integer } }
+                        first_line:      { type: integer }
+                        last_line:       { type: integer }
+                        stage:           { type: string, nullable: true }
+                        approved_at:     { type: string, format: date-time, nullable: true }
+                  total:     { type: integer }
+                  page:      { type: integer }
+                  page_size: { type: integer }
+        '404': { description: Not for this role }
+
+  /sheets/waiting:
+    get:
+      tags: [measurement-book]
+      summary: "Materials and measurements waiting longer than the setting at one step"
+      responses:
+        '200':
+          description: The sheets waiting too long
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wait_days: { type: number }
+                  by_stage:  { type: object, additionalProperties: { type: integer } }
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ticket_id:   { type: string, format: uuid }
+                        ticket_no:   { type: string }
+                        kind:        { type: string, enum: [MATERIALS, MEASUREMENTS] }
+                        stage:       { type: string, enum: [SUPERVISOR, OVERSEER, INCHARGE, STAFF_OFFICER, APPROVED] }
+                        stage_since: { type: string, format: date-time }
+                        days:        { type: number }
+        '404': { description: Not for this role }
+
+  /tickets/{id}/mb:
+    get:
+      tags: [measurement-book]
+      summary: "The job's lines in the MB reference record"
+      description: |
+        The paper Measurement Book stays official; the portal keeps the record it is copied from.
+        One MB number per contract; every version of a measurement takes the next line, 25 lines
+        to a page; a revision is appended and the old line kept, marked superseded. Officers see
+        who measured; the contractor the role. Never the occupant.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: The job's MB lines
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mb_no:          { type: string, nullable: true }
+                  contract_id:    { type: string, format: uuid, nullable: true }
+                  stage:          { type: string, nullable: true, enum: [SUPERVISOR, OVERSEER, INCHARGE, STAFF_OFFICER, APPROVED] }
+                  approved_at:    { type: string, format: date-time, nullable: true }
+                  lines_per_page: { type: integer }
+                  lines:          { type: array, items: { $ref: '#/components/schemas/MbLine' } }
+        '404': { description: Not found }
+
+  /contracts/{id}/mb:
+    get:
+      tags: [measurement-book]
+      summary: "A contract's MB reference record, by month or by page, with the index of jobs"
+      description: |
+        Opens on the latest month unless a month (YYYY-MM) or a page range is asked for; the
+        months list says which pages each month holds.
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { in: query, name: month, schema: { type: string, pattern: '^\\d{4}-\\d{2}$' } }
+        - { in: query, name: page_from, schema: { type: integer, minimum: 1 } }
+        - { in: query, name: page_to, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200':
+          description: The contract's MB
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mb_no:          { type: string }
+                  contract_id:    { type: string, format: uuid }
+                  opened_at:      { type: string, format: date-time }
+                  lines_per_page: { type: integer }
+                  pages:          { type: integer }
+                  months:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        month:      { type: string }
+                        first_page: { type: integer }
+                        last_page:  { type: integer }
+                        jobs:       { type: integer }
+                        lines:      { type: integer }
+                  jobs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ticket_id:   { type: string, format: uuid }
+                        ticket_no:   { type: string }
+                        pages:       { type: array, items: { type: integer } }
+                        stage:       { type: string, nullable: true, enum: [SUPERVISOR, OVERSEER, INCHARGE, STAFF_OFFICER, APPROVED] }
+                        approved_at: { type: string, format: date-time, nullable: true }
+                  lines:          { type: array, items: { $ref: '#/components/schemas/MbLine' } }
+        '404': { description: 'No MB yet, or not visible' }
+
+  /tickets/{id}/measurements:
+    get:
+      tags: [measurement-book]
+      summary: The complaint's work items with their measurements, and what the caller may do
+      description: |
+        Departmental roles and (since 2026-10-16) the supervisor the job is assigned to get every
+        live job-card item with its estimated quantity. The firm gets only the measured items, and
+        no contractor the check-measurement. The measurement sheet goes up the approval chain
+        (supervisor, Overseer, Incharge, Staff Officer); stage says where it is. Quantities only,
+        no rates (control 9).
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        item_id: { type: string, format: uuid }
+                        seq: { type: integer }
+                        description: { type: string }
+                        unit: { type: string }
+                        qty_estimated: { type: number, nullable: true }
+                        measurement: { allOf: [{ $ref: '#/components/schemas/Measurement' }], nullable: true }
+                  stage: { type: string, enum: [SUPERVISOR, OVERSEER, INCHARGE, STAFF_OFFICER, APPROVED] }
+                  reason_needed: { type: boolean, description: "An officer's measurement at their step needs a reason" }
+                  can_measure: { type: boolean }
+                  can_check: { type: boolean }
+                  can_record: { type: boolean }
+        '404': { description: 'Not visible, or no job card' }
+    post:
+      tags: [measurement-book]
+      summary: "Measure a work item (the supervisor's own sheet, then each officer at their step, once the work is accepted)"
+      description: When any dimension is given the database computes the quantity (Nos x L x B x D); otherwise Nos, or the quantity given.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MeasurementInput' }
+      responses:
+        '201':
+          description: Measured
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Measurement' }
+        '403': { description: 'Not the supervisor of the job, or not the officer at the step' }
+        '404': { description: Not found }
+        '409': { description: The item is already measured }
+        '422': { description: 'Work not yet accepted, item withdrawn or not on this card, or no quantity' }
+
+  /tickets/{id}/measurements/history:
+    get:
+      tags: [measurement-book]
+      summary: Every measurement, MB record and check-measurement on the complaint, newest first
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Audit entries (event_type MEASURED, REMEASURED, MB_RECORDED, CHECK_MEASURED, CHECK_REVISED)
+          content:
+            application/json:
+              schema: { type: array, items: { type: object } }
+        '403': { description: Not a departmental role }
+        '404': { description: Not found }
+
+  /measurements/{id}:
+    put:
+      tags: [measurement-book]
+      summary: Measure again, reason compulsory; refused once written into the MB
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - { $ref: '#/components/schemas/MeasurementInput' }
+                - type: object
+                  required: [reason]
+                  properties: { reason: { type: string } }
+      responses:
+        '200':
+          description: Measured again
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Measurement' }
+        '403': { description: Not the Overseer or Incharge }
+        '404': { description: Not found }
+        '422': { description: 'No reason, already in the MB, or no quantity' }
+
+  /measurements/{id}/check:
+    post:
+      tags: [measurement-book]
+      summary: The Area Civil Staff Officer's check-measurement, never by the person who measured
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [check_qty]
+              properties:
+                check_qty: { type: number, minimum: 0 }
+                remark: { type: string }
+                reason: { type: string, description: Compulsory when revising an earlier check }
+      responses:
+        '200':
+          description: Checked
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Measurement' }
+        '403': { description: 'Not the Staff Officer, or the person who measured' }
+        '404': { description: Not found }
+        '422': { description: 'No quantity, or revising without a reason' }
+
+  /mb/record:
+    post:
+      tags: [measurement-book]
+      summary: Record the MB number and page of entries written into the Measurement Book; frozen from then on
+      description: All or nothing. If any entry is already recorded or not visible, none is recorded.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [measurement_ids, mb_no, mb_page]
+              properties:
+                measurement_ids: { type: array, items: { type: string, format: uuid } }
+                mb_no: { type: string }
+                mb_page: { type: string }
+      responses:
+        '200':
+          description: Recorded
+          content:
+            application/json:
+              schema: { type: object, properties: { recorded: { type: integer } } }
+        '403': { description: Not the Overseer or Incharge }
+        '404': { description: An entry not found }
+        '409': { description: An entry is already written in the MB }
+        '422': { description: 'No entries, MB number or page' }
+
+  /mb/extract:
+    get:
+      tags: [measurement-book]
+      summary: MB-ready extract, every measurement of a contract and period as MB entries, with check coverage
+      parameters:
+        - { name: contract_id, in: query, schema: { type: string, format: uuid } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: status, in: query, schema: { type: string, enum: [all, unrecorded, recorded] } }
+      responses:
+        '200':
+          description: The extract, quantities only
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MbExtract' }
+        '403': { description: Not a departmental role }
+
+  /mb/extract.csv:
+    get:
+      tags: [measurement-book]
+      summary: The MB-ready extract as CSV, one row per entry
+      parameters:
+        - { name: contract_id, in: query, schema: { type: string, format: uuid } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: status, in: query, schema: { type: string, enum: [all, unrecorded, recorded] } }
+      responses:
+        '200':
+          description: CSV
+          content:
+            text/csv:
+              schema: { type: string }
+        '403': { description: Not a departmental role }
+
+  /hq/executive:
+    get:
+      tags: [hq]
+      summary: HQ executive dashboard, all Areas (GM Civil, Directors, CMD, HQ System Administrator)
+      description: |
+        Read-only figures computed from the record: KPIs this month against the previous month, all
+        thirteen Areas ranked by SLA compliance, SLA by Area and month, the trend, where the time goes,
+        the complaint funnel, category concentration, contractors across Areas and what needs HQ
+        attention. Evidence only: no deduction or amount (control 9). Months are calendar months in IST.
+      parameters:
+        - { name: months, in: query, schema: { type: integer, minimum: 1, maximum: 24, default: 12 } }
+      responses:
+        '200':
+          description: The dashboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period: { type: object }
+                  target_percent: { type: integer }
+                  generated_at: { type: string, format: date-time }
+                  kpis: { type: object }
+                  areas: { type: array, items: { type: object } }
+                  heatmap: { type: array, items: { type: object } }
+                  trend: { type: array, items: { type: object } }
+                  lag: { type: array, items: { type: object } }
+                  funnel: { type: array, items: { type: object } }
+                  funnel_exits: { type: object }
+                  categories: { type: object }
+                  contractors: { type: array, items: { type: object } }
+                  watch: { type: array, items: { type: object } }
+        '403': { description: Not an HQ role }
+        '422': { description: months outside 1 to 24 }
+
+  /hq/executive.csv:
+    get:
+      tags: [hq]
+      summary: The HQ ranking of all Areas as CSV
+      parameters:
+        - { name: months, in: query, schema: { type: integer, minimum: 1, maximum: 24, default: 12 } }
+      responses:
+        '200':
+          description: CSV, one row per Area
+          content:
+            text/csv:
+              schema: { type: string }
+        '403': { description: Not an HQ role }
+        '422': { description: months outside 1 to 24 }
+
+  /tickets/{id}/job-card:
+    get:
+      tags: [job-cards]
+      summary: The complaint's job card, with the complaint read live and the work items
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobCard' }
+        '404': { description: 'No job card yet (not assigned), or not visible to the caller' }
+    put:
+      tags: [job-cards]
+      summary: Fill in or correct the scope of work and site notes
+      description: Filling a blank needs no reason; correcting what is written does.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scope_of_work: { type: string }
+                site_notes:    { type: string }
+                reason:        { type: string }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobCard' }
+        '403': { description: Not the Overseer or Incharge }
+        '404': { description: Not found }
+        '422': { description: 'A correction without a reason, or the complaint is closed' }
+
+  /tickets/{id}/job-card/items:
+    post:
+      tags: [job-cards]
+      summary: Add a work item (description, unit, estimated quantity — no rates)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [description, unit]
+              properties:
+                description:   { type: string }
+                unit:          { type: string }
+                qty_estimated: { type: number, minimum: 0 }
+      responses:
+        '201':
+          description: Added
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobCardItem' }
+        '403': { description: Not the Overseer or Incharge }
+        '422': { description: 'Missing details, negative quantity, or the complaint is closed' }
+
+  /tickets/{id}/job-card/items/{item}:
+    put:
+      tags: [job-cards]
+      summary: Change a work item — reason compulsory
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { in: path, name: item, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                description:   { type: string }
+                unit:          { type: string }
+                qty_estimated: { type: number, minimum: 0 }
+                reason:        { type: string }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobCardItem' }
+        '403': { description: Not the Overseer or Incharge }
+        '404': { description: Not found }
+        '422': { description: 'No reason, withdrawn item, or the complaint is closed' }
+
+  /tickets/{id}/job-card/items/{item}/withdraw:
+    post:
+      tags: [job-cards]
+      summary: Withdraw a work item — reason compulsory; it stays on the card, marked withdrawn
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { in: path, name: item, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+      responses:
+        '200': { description: Withdrawn }
+        '403': { description: Not the Overseer or Incharge }
+        '404': { description: Not found }
+        '422': { description: 'No reason, or the complaint is closed' }
+
+  /tickets/{id}/job-card/history:
+    get:
+      tags: [job-cards]
+      summary: Every change to the job card, newest first, with its reason
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    occurred_at:  { type: string, format: date-time }
+                    event_type:   { type: string, enum: [JOB_CARD_PREPARED, JOB_CARD_CHANGED, JOB_CARD_ITEM_ADDED, JOB_CARD_ITEM_CHANGED, JOB_CARD_ITEM_WITHDRAWN] }
+                    actor_name:   { type: string }
+                    actor_role:   { type: string }
+                    before_value: { type: object, nullable: true }
+                    after_value:  { type: object, nullable: true }
+                    reason:       { type: string, nullable: true }
+        '404': { description: Not found }
+
+  /job-cards:
+    get:
+      tags: [job-cards]
+      summary: The job cards the caller may read
+      parameters:
+        - { in: query, name: open, schema: { type: boolean, default: true }, description: false includes closed and rejected complaints }
+        - { in: query, name: q, schema: { type: string }, description: 'Complaint number, premises or firm' }
+      responses:
+        '200':
+          description: OK (empty for occupants and contractors)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { type: object } }
+                  total: { type: integer }
+
+  /tickets/{id}:
+    get:
+      tags: [tickets]
+      summary: Ticket detail with full history
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TicketDetail' }
+        '404':
+          description: |
+            Returned for both "does not exist" and "not visible to you".
+            The two are deliberately indistinguishable, so ticket existence
+            in another area cannot be probed.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /tickets/{id}/verify:
+    post:
+      tags: [lifecycle]
+      summary: Verify a complaint (Civil Overseer)
+      description: |
+        Starts both SLA clocks and snapshots the SLA figures onto the
+        ticket. Later SLA edits cannot reach an already verified ticket.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                downgrade_emergency:
+                  type: boolean
+                  default: false
+                downgrade_reason:
+                  type: string
+                  description: Mandatory when downgrading; written to audit
+      responses:
+        '200': { $ref: '#/components/responses/TicketOk' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/WrongState' }
+
+  /tickets/{id}/reject:
+    post:
+      tags: [lifecycle]
+      summary: Reject a complaint (Civil Overseer)
+      description: Reason is mandatory and is shown to the resident. Never silent.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 3 }
+      responses:
+        '200': { $ref: '#/components/responses/TicketOk' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { description: No reason given }
+
+  /tickets/{id}/assign:
+    post:
+      tags: [lifecycle]
+      summary: Assign to the contractor (Civil Maintenance Incharge)
+      description: |
+        The device must be an ACTIVE contractor supervisor whose contract
+        covers this ticket's area. Validated against the device projection;
+        an out-of-area or revoked device is refused with 422.
+
+        Use GET /devices/assignable to populate the picker.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supervisor_id]
+              properties:
+                supervisor_id: { type: string, format: uuid, description: The contractor supervisor role assignment }
+                reason:
+                  type: string
+                  description: Mandatory on reassignment; logged
+      responses:
+        '200': { $ref: '#/components/responses/TicketOk' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { description: Not an active contractor supervisor of the caller's Area }
+
+  /tickets/assign-bulk:
+    post:
+      tags: [lifecycle]
+      summary: Assign many tickets at once (Civil Maintenance Incharge)
+      description: |
+        Necessary at scale — fifteen seepage complaints in one block go to
+        one contractor in a single action. Partial success is reported per
+        ticket rather than failing the whole batch.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ticket_ids, supervisor_id]
+              properties:
+                ticket_ids:
+                  type: array
+                  maxItems: 200
+                  items: { type: string, format: uuid }
+                supervisor_id: { type: string, format: uuid, description: The contractor supervisor role assignment }
+      responses:
+        '200':
+          description: Per-ticket outcome
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  assigned: { type: integer }
+                  failed:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ticket_id: { type: string, format: uuid }
+                        reason:    { type: string }
+
+  /tickets/{id}/start:
+    post:
+      tags: [lifecycle]
+      summary: Start work (Contractor Supervisor)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workmen_assigned]
+              properties:
+                workmen_assigned:
+                  type: string
+                  minLength: 3
+                  maxLength: 300
+                  description: |
+                    Names of the individual workmen allotted to this job,
+                    by departmental decision. Free text. Changes are traced
+                    in the ticket history.
+      responses:
+        '200': { $ref: '#/components/responses/TicketOk' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: Not in a state that can be started
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '422':
+          description: No workmen named
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /tickets/{id}/complete:
+    post:
+      tags: [lifecycle]
+      summary: Claim completion (Contractor Supervisor)
+      description: |
+        A CLAIM only. The ticket moves to WORK_COMPLETED and enters the
+        Overseer's inspection queue. It is not closed, and the contractor
+        has no means of closing it.
+
+        No body: the before and after photographs are attached beforehand
+        through /media/upload-url, and the database checks them (the
+        supervisor's own, of this round, at most three of each; at least
+        one of each once the HQ System Administrator requires them —
+        Ticket.photo_rules).
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/TicketOk' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: Already claimed, or not in a state that can be claimed
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '422':
+          description: Before and after photographs missing, while they are required
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /tickets/{id}/inspect:
+    post:
+      tags: [inspection]
+      summary: Record a physical inspection (Civil Overseer)
+      description: |
+        Mandatory on every completed job. The inspection photograph must
+        have been captured in-app with an embedded geo-tag; a gallery
+        upload is refused at the media stage and again here.
+
+        The inspecting device may not be the contractor's device. The
+        database enforces this independently of the API.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accepted]
+              properties:
+                accepted:
+                  type: boolean
+                  description: False sends the ticket to REWORK, clock still running
+                remark: { type: string, nullable: true, description: "The Overseer's remark; shown to the contractor on a send-back" }
+      responses:
+        '200': { $ref: '#/components/responses/TicketOk' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422':
+          description: Photograph lacks a verified in-app geo-tag
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /tickets/{id}/inspection-priority:
+    put:
+      tags: [inspection]
+      summary: Set or clear the departmental inspection priority
+      description: |
+        Civil Overseer and Maintenance Incharge only. The contractor and
+        the resident have no route to this field, and the database refuses
+        the write independently of the API.
+
+        Lower value is inspected sooner; null restores the normal position.
+        Used to pull a job forward ahead of its premises-type rank —
+        a dispensary reported unusable, a quarter with a vulnerable
+        occupant, a repeat failure the department wants seen quickly.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [priority]
+              properties:
+                priority:
+                  type: integer
+                  minimum: 1
+                  maximum: 9
+                  nullable: true
+                note:
+                  type: string
+                  nullable: true
+                  description: Reason for the override, shown in the queue
+      responses:
+        '200': { $ref: '#/components/responses/TicketOk' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /tickets/inspect-batch:
+    post:
+      tags: [inspection]
+      summary: Accept several inspections from one visit
+      description: |
+        Permitted where premises are in the same block. Each ticket still
+        carries its own photograph — batching the visit, not the evidence.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [inspections]
+              properties:
+                inspections:
+                  type: array
+                  maxItems: 50
+                  items:
+                    type: object
+                    required: [ticket_id]
+                    properties:
+                      ticket_id: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Per-ticket outcome
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accepted: { type: integer }
+                  failed:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ticket_id: { type: string, format: uuid }
+                        reason:    { type: string }
+
+  /tickets/{id}/close:
+    post:
+      tags: [lifecycle]
+      summary: Close a ticket
+      description: |
+        Two paths in, and only these two:
+
+          INSPECTED_ACCEPTED      -> CLOSED   Overseer or Incharge
+          REFERRED_SPECIAL_REPAIR -> CLOSED   Staff Officer (Civil)
+
+        The second exists because special-repair work leaves the
+        maintenance contract; it is closed out by the Staff Officer rather
+        than through contractor inspection.
+
+        A ticket that reached escalation level 4 requires a Staff Officer
+        remark first; the database refuses closure without one.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/TicketOk' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: L4 escalation requires a Staff Officer remark before closure
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /tickets/{id}/reopen:
+    post:
+      tags: [lifecycle]
+      summary: Reopen within the window (Resident or Custodian)
+      description: |
+        Reopens the ORIGINAL ticket rather than creating a new one, so
+        contractor metrics stay honest. Window is one day from closure.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 3 }
+      responses:
+        '200': { $ref: '#/components/responses/TicketOk' }
+        '409':
+          description: Reopen window has closed
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /tickets/{id}/refer-special-repair:
+    post:
+      tags: [lifecycle]
+      summary: Refer work beyond the maintenance contract
+      description: |
+        Stops the contractor clock and escalates to the Staff Officer.
+        Prevents structural cases from permanently distorting SLA figures.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 3 }
+      responses:
+        '200': { $ref: '#/components/responses/TicketOk' }
+
+  /tickets/{id}/feedback:
+    get:
+      tags: [tickets]
+      summary: The occupant's confirmation and rating
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: OK, or null where the occupant has not responded
+          content:
+            application/json:
+              schema:
+                type: object
+                nullable: true
+                properties:
+                  confirmed: { type: boolean, nullable: true }
+                  disputed:  { type: boolean }
+                  rating:    { type: integer, nullable: true }
+                  comment:   { type: string, nullable: true }
+                  reopen_window_ends_at: { type: string, format: date-time }
+                  submitted_at: { type: string, format: date-time }
+    post:
+      tags: [tickets]
+      summary: Confirm or dispute, and rate (Resident or Custodian)
+      description: Not applicable to DEPARTMENT_ONLY premises.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirmed]
+              properties:
+                confirmed: { type: boolean }
+                rating:    { type: integer, minimum: 1, maximum: 5 }
+                comment:   { type: string, nullable: true }
+      responses:
+        '200': { description: Recorded }
+
+  /tickets/{id}/objections:
+    post:
+      tags: [objections]
+      summary: Object while work is under way
+      description: |
+        Available to any device bound to the premises while the ticket is
+        IN_PROGRESS. Notified to the Overseer and Incharge, NOT to the
+        contractor. Does not change ticket state or pause the clock. The
+        Overseer must respond within 24 hours.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [note]
+              description: |
+                A photograph, if any, is attached separately through
+                /media/upload-url with purpose OBJECTION.
+              properties:
+                note: { type: string, minLength: 3, maxLength: 500 }
+      responses:
+        '201':
+          description: Objection recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Objection' }
+        '409':
+          description: Ticket is not in progress
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /objections/{id}/respond:
+    post:
+      tags: [objections]
+      summary: Respond to an objection (Civil Overseer)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [response_note]
+              properties:
+                response_note: { type: string, minLength: 3 }
+      responses:
+        '200': { description: Responded }
+
+  /tickets/{id}/pause:
+    post:
+      tags: [sla]
+      summary: Pause the SLA clock (departmental officers only)
+      description: |
+        Only OCCUPANT (premises locked, access refused) and FORCE_MAJEURE
+        qualify. Contractor unavailability and want of material are not
+        pausing grounds — material is the contractor's obligation under the
+        comprehensive contract.
+
+        A contractor cannot call this endpoint, and the database refuses a
+        pause recorded by a contractor role independently.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [clock, attribution, reason]
+              properties:
+                clock:       { type: string, enum: [RESPONSE, COMPLETION] }
+                attribution: { type: string, enum: [OCCUPANT, FORCE_MAJEURE] }
+                reason:      { type: string, minLength: 3 }
+      responses:
+        '200': { description: Paused }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /tickets/{id}/resume:
+    post:
+      tags: [sla]
+      summary: Resume a paused clock
+      description: |
+        The deadline moves forward by the paused duration. The original
+        deadline set at verification is preserved unchanged, so both
+        "late against the promise" and "late allowing for access refusals"
+        remain reportable.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/TicketOk' }
+
+  /breaches/{id}/attribute:
+    post:
+      tags: [sla]
+      summary: Attribute a recorded SLA breach
+      description: |
+        Without attribution every SLA report becomes an argument. With it,
+        the report is defensible in a contract dispute.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [attribution]
+              properties:
+                attribution:
+                  type: string
+                  enum: [CONTRACTOR, DEPARTMENT, OCCUPANT, FORCE_MAJEURE]
+                note: { type: string, nullable: true }
+      responses:
+        '200': { description: Attributed }
+
+  /media/upload-url:
+    post:
+      tags: [media]
+      summary: Obtain a pre-signed upload URL
+      description: |
+        Two-step upload: request a URL, PUT the image directly to object
+        storage, then confirm. Keeps large binaries off the application
+        server entirely.
+
+        Each purpose belongs to one role's act: COMPLETION to the
+        contractor supervisor, INSPECTION to the Civil Overseer, OBJECTION
+        to the occupant, COMPLAINT to the occupant or an Overseer/Incharge
+        raising for a departmental building. Anyone else gets 403.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ticket_id, purpose, content_type]
+              properties:
+                ticket_id: { type: string, format: uuid }
+                purpose:
+                  type: string
+                  enum: [COMPLAINT, BEFORE, COMPLETION, INSPECTION, OBJECTION]
+                  description: |
+                    BEFORE and COMPLETION ("after") are the assigned supervisor's. A
+                    completion claim needs at least one of each taken in the current
+                    round; at most three of each per round (the fourth is refused at confirm).
+                content_type: { type: string, enum: [image/jpeg, image/webp] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  media_id:   { type: string, format: uuid }
+                  upload_url: { type: string, description: "Signed link for the PUT; relative to the portal's address for its own store, absolute for S3" }
+                  expires_in: { type: integer, description: Seconds the link stays valid }
+                  max_bytes:  { type: integer }
+        '403':
+          description: Not your photograph to take, or the ticket is not visible to you
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /media/{id}/confirm:
+    post:
+      tags: [media]
+      summary: Confirm an upload and register capture metadata
+      description: |
+        Geo-tag and timestamp must be captured by the application at the
+        moment of exposure, not derived at upload. The coordinates are
+        mandatory for every photograph (user's decision, 2026-10-12); for
+        INSPECTION capture_verified must also be true, and a gallery image is
+        refused here and again by the database.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [captured_at, content_hash, capture_verified, latitude, longitude]
+              properties:
+                captured_at:      { type: string, format: date-time }
+                content_hash:     { type: string, description: SHA-256 of the bytes }
+                capture_verified:
+                  type: boolean
+                  description: True only for in-app camera capture
+                latitude:         { type: number }
+                longitude:        { type: number }
+                gps_accuracy_m:   { type: number, nullable: true }
+      responses:
+        '200': { description: Confirmed }
+        '422':
+          description: A photograph without a location, or an inspection photograph not taken in the app
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /devices/assignable:
+    get:
+      tags: [lifecycle]
+      summary: Contractor supervisor devices available for assignment
+      description: |
+        Populates the assignment picker and lets the service validate the
+        device offered to /tickets/{id}/assign. Without this the Incharge
+        would be typing a UUID, and the service could not check that the
+        device is an active contractor supervisor on the current contract
+        for this area.
+
+        Scoped by row-level security to the caller's area.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    actor_id:     { type: string, format: uuid }
+                    person_name:  { type: string, nullable: true }
+                    contractor_name: { type: string }
+                    contract_id:  { type: string, format: uuid }
+                    open_jobs:
+                      type: integer
+                      description: Current workload, so work can be spread sensibly
+
+  /inspections/queue:
+    get:
+      tags: [inspection]
+      summary: Pending inspection queue (Civil Overseer)
+      description: |
+        **Every ordering term is departmentally controlled.** The
+        contractor cannot influence the order in which their own work is
+        inspected — neither by the sequence in which they claim completion
+        nor by any other means.
+
+          1. emergency flag — Overseer holds the downgrade authority
+          2. departmental inspection priority — Overseer or Incharge
+          3. premises-type rank — essential public services, then quarters
+             D, C, B, MQ, A, then discretionary non-residential
+          4. date the OVERSEER verified the complaint
+
+        The fourth term is the verification date, not the completion
+        claim. Using the claim date would have let a contractor order the
+        Overseer's working day by claiming trivial jobs first, and it is
+        also less fair to residents: the queue now favours the oldest
+        complaint rather than the oldest claim.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Ticket' }
+                  total: { type: integer }
+                  oldest_pending_hours:
+                    type: number
+                    description: |
+                      Inspection backlog age — the system's principal
+                      failure indicator. Surfaced here so it cannot be
+                      overlooked.
+
+  /dashboard:
+    get:
+      tags: [dashboards]
+      summary: Dashboard for the calling role
+      description: |
+        One endpoint, shaped by the token's role. Avoids a per-role
+        endpoint family that would drift apart across three clients.
+
+        Cards, their order and their warning and critical thresholds come
+        from configuration, so the department can change what an officer
+        sees without a release.
+
+        Counts cover LIVE WORK ONLY. A closed ticket is archived out of
+        the working views after a configurable period, which is what keeps
+        this query bounded as years of history accumulate. The archived
+        record is reached through /search.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dashboard' }
+
+  /contracts/{id}/performance:
+    get:
+      tags: [dashboards]
+      summary: Contract performance report
+      description: |
+        Produces the evidence on which penalty or liquidated damages
+        decisions may be based. It does not compute or apply any financial
+        consequence; that decision remains with the department.
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ContractPerformance' }
+
+  /notifications:
+    get:
+      tags: [notifications]
+      summary: In-app notification inbox
+      description: |
+        In-app is authoritative; push is best effort. Every event lands
+        here regardless of push delivery, so nothing is lost to a disabled
+        permission or a stale token.
+      parameters:
+        - in: query
+          name: unread_only
+          schema: { type: boolean, default: false }
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Notification' }
+                  unread_count:
+                    type: integer
+                    description: Drives the unread badge
+
+  /notifications/read:
+    post:
+      tags: [notifications]
+      summary: Mark notifications read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items: { type: string, format: uuid }
+                all: { type: boolean, default: false }
+      responses:
+        '200': { description: Updated }
+
+  /notifications/push-token:
+    put:
+      tags: [notifications]
+      summary: Register or refresh the FCM token for this device
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fcm_token]
+              properties:
+                fcm_token: { type: string }
+      responses:
+        '204': { description: Stored }
+
+  /search.csv:
+    get:
+      tags: [search]
+      summary: Search results as CSV (the department only)
+      description: |
+        The same filters as GET /search; every match up to 20000 rows. Row
+        security decides the rows. Not for residents or contractor staff.
+      parameters:
+        - { in: query, name: q, schema: { type: string } }
+        - { in: query, name: state, schema: { type: string } }
+      responses:
+        '200': { description: CSV, content: { text/csv: { schema: { type: string } } } }
+        '403': { description: Not a departmental role }
+  /tickets.csv:
+    get:
+      tags: [tickets]
+      summary: Complaints as CSV (the department and the contractor firm)
+      description: |
+        Every complaint the caller may see (row security), the full record,
+        newest first, up to 20000 rows. The contractor firm gets its own
+        contract's jobs. Not for residents or supervisors.
+      parameters:
+        - { in: query, name: state, schema: { type: string }, description: "Comma-separated states, e.g. CLOSED" }
+        - { in: query, name: contract_id, schema: { type: string, format: uuid } }
+        - { in: query, name: supervisor_id, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: CSV, content: { text/csv: { schema: { type: string } } } }
+        '403': { description: Not the department or the contractor firm }
+  /search:
+    get:
+      tags: [tickets]
+      summary: Search the full record, archived tickets included
+      description: |
+        Dashboards and queues show live work only; this is where the rest
+        of the record is reached. Every ticket is searchable whatever its
+        age or state, with its history, photographs and objections intact.
+
+        Scope is applied by row-level security, not by query parameter, so
+        a filter can narrow a result set but never widen it: a Jayant
+        officer searching with no filters still sees only Jayant, and a
+        resident sees only their own premises.
+      parameters:
+        - { in: query, name: q,               schema: { type: string } }
+        - { in: query, name: ticket_no,       schema: { type: string } }
+        - { in: query, name: identifier,      schema: { type: string } }
+        - { in: query, name: premises_id,     schema: { type: string, format: uuid } }
+        - { in: query, name: area_id,         schema: { type: string, format: uuid } }
+        - { in: query, name: colony_id,       schema: { type: string, format: uuid } }
+        - { in: query, name: premises_type,   schema: { type: string } }
+        - { in: query, name: quarter_type,    schema: { type: string, enum: [A,B,C,D,MQ] } }
+        - { in: query, name: category_code,   schema: { type: string } }
+        - { in: query, name: sub_category_id, schema: { type: string, format: uuid } }
+        - in: query
+          name: state
+          description: One state or several, comma separated
+          schema: { type: string }
+        - in: query
+          name: archived
+          description: all (default) | open | archived
+          schema: { type: string, enum: [all, open, archived] }
+        - { in: query, name: raised_from,  schema: { type: string, format: date-time } }
+        - { in: query, name: raised_to,    schema: { type: string, format: date-time } }
+        - { in: query, name: closed_from,  schema: { type: string, format: date-time } }
+        - { in: query, name: closed_to,    schema: { type: string, format: date-time } }
+        - { in: query, name: contract_id,  schema: { type: string, format: uuid } }
+        - { in: query, name: contractor_device, schema: { type: string, format: uuid } }
+        - { in: query, name: is_emergency, schema: { type: string, enum: ['true','false'] } }
+        - { in: query, name: overdue,      schema: { type: string, enum: ['true'] } }
+        - { in: query, name: missed_sla,   schema: { type: string, enum: ['true'] } }
+        - { in: query, name: had_objection, schema: { type: string, enum: ['true'] } }
+        - { in: query, name: was_reopened, schema: { type: string, enum: ['true'] } }
+        - { in: query, name: had_rework,   schema: { type: string, enum: ['true'] } }
+        - { in: query, name: mb, description: "The measurements' approval: approved, or still in the chain", schema: { type: string, enum: [approved, pending] } }
+        - { in: query, name: min_escalation, schema: { type: integer, minimum: 0, maximum: 4 } }
+        - { in: query, name: min_rating,   schema: { type: integer, minimum: 1, maximum: 5 } }
+        - { in: query, name: max_rating,   schema: { type: integer, minimum: 1, maximum: 5 } }
+        - in: query
+          name: sort
+          schema: { type: string, enum: [raised_at, closed_at, ticket_no, escalation_level, premises] }
+        - { in: query, name: dir, schema: { type: string, enum: [asc, desc] } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/PageSize' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Ticket' }
+                  total:
+                    type: integer
+                    description: Total matches, not the size of this page
+                  page:       { type: integer }
+                  page_size:  { type: integer }
+                  filters_applied:
+                    type: array
+                    items: { type: string }
+
+  /search/filters:
+    get:
+      tags: [tickets]
+      summary: The filter vocabulary
+      description: |
+        Categories, states, quarter types, premises types, flags and sort
+        options, served rather than hard-coded, so a new filter reaches
+        all three clients without a release.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /tickets/{id}/pauses:
+    get:
+      tags: [sla]
+      summary: Pause history for a complaint
+      description: |
+        Who paused the clock, when, for what reason and under which
+        attribution. The record of why a deadline moved matters as much as
+        the deadline itself when a delay is later disputed.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:          { type: string, format: uuid }
+                    clock:       { type: string, enum: [RESPONSE, COMPLETION] }
+                    attribution: { type: string, enum: [OCCUPANT, FORCE_MAJEURE] }
+                    reason:      { type: string }
+                    paused_at:   { type: string, format: date-time }
+                    resumed_at:  { type: string, format: date-time, nullable: true }
+                    paused_by_role: { type: string }
+
+  /breaches:
+    get:
+      tags: [sla]
+      summary: SLA breaches, optionally only the unattributed ones
+      description: |
+        The working list for an officer settling attribution. An
+        unattributed breach is a gap in the contract performance evidence,
+        so `unattributed=true` is the view that matters.
+      parameters:
+        - { in: query, name: unattributed, schema: { type: boolean } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { type: object } }
+                  total: { type: integer }
+
+  /objections:
+    get:
+      tags: [objections]
+      summary: Objections, optionally only those still unanswered
+      description: |
+        Carries the 24-hour response deadline and an `overdue` flag. Not
+        visible to the contractor, for the reason given on the objection
+        endpoint itself.
+      parameters:
+        - { in: query, name: open, schema: { type: boolean } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/Objection' } }
+                  total: { type: integer }
+
+  /media/{id}/image:
+    get:
+      tags: [media]
+      summary: Fetch a stored photograph
+      description: |
+        Scoped: an officer sees the images of tickets they can see. A
+        photograph whose bytes have passed their retention period returns
+        410 rather than 404 — the record of the photograph, its hash and
+        its location survives the image.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: The image
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        '404': { description: 'Not found, or not yet uploaded' }
+        '410':
+          description: The bytes have been purged; the record remains
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /contracts:
+    get:
+      tags: [contracts]
+      summary: Contracts within the caller's scope
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Contract' } }
+    post:
+      tags: [contracts]
+      summary: Enter a work order (award a contract)
+      description: |
+        Civil Incharge or Staff Officer (Civil), for their own Area
+        (decision 2026-09-30). Several contracts may be live in one Area;
+        a complaint counts against the contract of the supervisor it was
+        assigned to. The award is audit-logged by the database.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [contractor_name, agreement_no, starts_on, expires_on]
+              properties:
+                area_id:          { type: string, format: uuid, description: Optional; must be the caller's own Area }
+                contractor_name:  { type: string, description: The firm }
+                firm_address:     { type: string }
+                contract_no:      { type: string, description: LOA or work order number }
+                agreement_no:     { type: string }
+                work_name:        { type: string }
+                awarded_on:       { type: string, format: date }
+                period_years:     { type: integer, enum: [1, 2] }
+                site_handover_on: { type: string, format: date }
+                starts_on:        { type: string, format: date }
+                expires_on:       { type: string, format: date, description: Completion date as awarded }
+                remarks:          { type: string }
+                reason:           { type: string }
+      responses:
+        '201':
+          description: Awarded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Contract' }
+        '403': { description: Not the Incharge or Staff Officer }
+        '409': { description: That agreement or contract number already exists }
+        '422': { description: 'Missing details, or not the caller''s own Area' }
+
+  /contracts/{id}:
+    get:
+      tags: [contracts]
+      summary: One work order with its extensions, supervisors and documents
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/Contract' }
+                  - type: object
+                    properties:
+                      extensions:  { type: array, items: { $ref: '#/components/schemas/ContractExtension' } }
+                      supervisors: { type: array, items: { type: object } }
+                      documents:   { type: array, items: { $ref: '#/components/schemas/ContractDocument' } }
+        '404': { description: 'Not found, or in another Area' }
+    put:
+      tags: [contracts]
+      summary: Correct or complete a work order — reason compulsory
+      description: |
+        The completion date is not changed here; it moves only by an
+        extension. Every change is audit-logged by the database with the
+        old value, the new one and the reason.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:           { type: string }
+                contractor_name:  { type: string }
+                firm_address:     { type: string }
+                contract_no:      { type: string }
+                agreement_no:     { type: string }
+                work_name:        { type: string }
+                awarded_on:       { type: string, format: date }
+                period_years:     { type: integer, enum: [1, 2] }
+                site_handover_on: { type: string, format: date }
+                starts_on:        { type: string, format: date }
+                remarks:          { type: string }
+      responses:
+        '200':
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Contract' }
+        '403': { description: Not the Incharge or Staff Officer }
+        '404': { description: Not found }
+        '422': { description: 'No reason, or an attempt to move the completion date' }
+
+  /contracts/{id}/extensions:
+    post:
+      tags: [contracts]
+      summary: Record an extension of the completion date — reason compulsory
+      description: |
+        Numbered in order (Extension 1, 2, …), must run beyond the present
+        completion date, and cannot be altered or deleted afterwards. The
+        completion date as awarded is kept unchanged.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [extended_to, reason]
+              properties:
+                extended_to: { type: string, format: date }
+                order_no:    { type: string }
+                granted_on:  { type: string, format: date }
+                reason:      { type: string }
+      responses:
+        '201':
+          description: Recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContractExtension' }
+        '403': { description: Not the Incharge or Staff Officer }
+        '422': { description: 'No reason, or not later than the present completion date' }
+
+  /contracts/{id}/documents:
+    post:
+      tags: [contracts]
+      summary: Attach the contract copy or an order (PDF or scanned JPEG, up to 10 MB)
+      description: |
+        The body is the file itself. Fingerprinted (SHA-256) on arrival and
+        checked again on every download. Cannot be altered or deleted.
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { in: query, name: file_name, schema: { type: string } }
+        - { in: query, name: kind, schema: { type: string, enum: [CONTRACT_COPY, EXTENSION_ORDER, OTHER] } }
+        - { in: query, name: note, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/pdf: { schema: { type: string, format: binary } }
+          image/jpeg:      { schema: { type: string, format: binary } }
+      responses:
+        '201':
+          description: Attached
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContractDocument' }
+        '403': { description: Not the Incharge or Staff Officer }
+        '422': { description: Not a PDF or JPEG }
+
+  /contracts/{id}/documents/{doc}:
+    get:
+      tags: [contracts]
+      summary: Download an attached document
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { in: path, name: doc, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: The file
+          content:
+            application/pdf: { schema: { type: string, format: binary } }
+            image/jpeg:      { schema: { type: string, format: binary } }
+        '404': { description: Not found }
+        '409': { description: The stored file no longer matches its fingerprint }
+
+  /contracts/{id}/history:
+    get:
+      tags: [contracts]
+      summary: Every change to the work order, newest first, with its reason
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    occurred_at:  { type: string, format: date-time }
+                    event_type:   { type: string, enum: [CONTRACT_AWARDED, CONTRACT_CHANGED, CONTRACT_EXTENDED, CONTRACT_SUPERVISOR_NAMED, CONTRACT_DOCUMENT_ATTACHED, CONTRACT_HANDOVER] }
+                    actor_name:   { type: string }
+                    actor_role:   { type: string }
+                    before_value: { type: object, nullable: true }
+                    after_value:  { type: object, nullable: true }
+                    reason:       { type: string, nullable: true }
+        '404': { description: Not found }
+
+  /contracts/comparison:
+    get:
+      tags: [contracts]
+      summary: Every Area's live contract side by side
+      description: Ordered weakest first, so the reader is not asked to do the analysis.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { type: object } }
+
+  /contracts/{id}/supervisors:
+    post:
+      tags: [contracts]
+      summary: Name a contractor supervisor on the work order — reason compulsory
+      description: |
+        The Civil Incharge or Staff Officer. The person and their supervisor
+        role are entered by the Area HR office; this says which contract
+        their work counts against. Audit-logged.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [actor_id, reason]
+              properties:
+                actor_id: { type: string, format: uuid, description: The supervisor role assignment }
+                reason:   { type: string }
+      responses:
+        '200': { description: Linked }
+
+  /contracts/{id}/handover:
+    post:
+      tags: [contracts]
+      summary: Hand a contract over to its successor
+      description: |
+        Open tickets move to the incoming contractor at a clean cut-off.
+        The outgoing record freezes at that moment and cannot be affected
+        by anything the incoming contractor does — a contractor must not
+        inherit blame, or credit. The outgoing supervisor's devices are
+        revoked in the same action.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to_contract_id]
+              properties:
+                to_contract_id: { type: string, format: uuid }
+                reason:         { type: string }
+      responses:
+        '200':
+          description: Handed over
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  from: { type: string }
+                  to:   { type: string }
+                  tickets_transferred: { type: integer }
+                  devices_revoked:     { type: integer }
+                  cutoff_at: { type: string, format: date-time }
+        '409': { description: Already handed over }
+
+  /contracts/{id}/performance.csv:
+    get:
+      tags: [contracts]
+      summary: Contract performance as CSV
+      description: Because this goes into a file and onto a desk.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            text/csv:
+              schema: { type: string }
+
+  /admin/config:
+    get:
+      tags: [admin]
+      summary: Every operational setting
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { type: object } }
+
+  /admin/config/{key}:
+    put:
+      tags: [admin]
+      summary: Change a setting
+      description: |
+        Administrator only. Takes effect immediately, for every officer,
+        with no release.
+      parameters:
+        - { in: path, name: key, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [value]
+              properties:
+                value: { type: string }
+      responses:
+        '200': { description: Changed }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/sla:
+    get:
+      tags: [admin]
+      summary: SLA figures by complaint type
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { type: object } }
+
+  /admin/sla/{subCategoryId}:
+    put:
+      tags: [admin]
+      summary: Change an SLA figure
+      description: |
+        Administrator or Civil Maintenance Incharge, the latter as the
+        job-assigning authority. Every change is written to the audit log
+        with its previous value, and applies prospectively only: a ticket
+        captures its SLA at verification, so an officer facing a breach
+        cannot clear it by editing the figure.
+      parameters:
+        - { in: path, name: subCategoryId, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                response_minutes:   { type: integer }
+                completion_minutes: { type: integer }
+      responses:
+        '200': { description: Changed }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/dashboard-cards:
+    get:
+      tags: [admin]
+      summary: Dashboard cards and their thresholds
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { type: object } }
+
+  /admin/dashboard-cards/{id}:
+    put:
+      tags: [admin]
+      summary: Change a card's thresholds, order, or whether it is shown
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                warn_above:     { type: number, nullable: true }
+                critical_above: { type: number, nullable: true }
+                active:         { type: boolean }
+                display_order:  { type: integer }
+      responses:
+        '200': { description: Changed }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/media/usage:
+    get:
+      tags: [admin]
+      summary: Photograph storage held, by purpose
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  by_purpose: { type: array, items: { type: object } }
+                  store: { type: object }
+                  driver: { type: string }
+
+  /admin/media/purge:
+    post:
+      tags: [admin]
+      summary: Purge photograph bytes past their retention
+      description: |
+        Administrator only. Removes the bytes; the media record, with its
+        hash, coordinates and timestamp, survives so that the fact an
+        inspection happened outlives the image.
+      responses:
+        '200':
+          description: Purged
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bytes_removed:  { type: integer }
+                  already_gone:   { type: integer }
+                  considered:     { type: integer }
+
+components:
+
+  securitySchemes:
+    deviceToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Id:
+      in: path
+      name: id
+      required: true
+      schema: { type: string, format: uuid }
+    Page:
+      in: query
+      name: page
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      in: query
+      name: page_size
+      schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+
+  responses:
+    TicketOk:
+      description: Updated ticket
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Ticket' }
+    Forbidden:
+      description: |
+        The caller's role or scope does not permit this action.
+
+        Row-level security makes an out-of-scope write a silent zero-row
+        update. The service MUST detect that and return 403 rather than
+        reporting success for an action that changed nothing.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    WrongState:
+      description: The ticket is not in a state from which this action is permitted
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    MeasurementInput:
+      type: object
+      properties:
+        item_id: { type: string, format: uuid, description: On POST only }
+        nos: { type: number, exclusiveMinimum: 0 }
+        length: { type: number, exclusiveMinimum: 0 }
+        breadth: { type: number, exclusiveMinimum: 0 }
+        depth: { type: number, exclusiveMinimum: 0 }
+        qty: { type: number, minimum: 0 }
+        remark: { type: string }
+    Measurement:
+      type: object
+      description: Check fields are left out for the contractor.
+      properties:
+        id: { type: string, format: uuid }
+        item_id: { type: string, format: uuid }
+        nos: { type: number, nullable: true }
+        length: { type: number, nullable: true }
+        breadth: { type: number, nullable: true }
+        depth: { type: number, nullable: true }
+        qty: { type: number }
+        remark: { type: string, nullable: true }
+        measured_at: { type: string, format: date-time }
+        measured_by_name: { type: string, nullable: true }
+        last_by_role: { type: string, nullable: true, description: "Who measured it last (the latest line of the MB record)" }
+        last_by_name: { type: string, nullable: true, description: "Officers only; the contractor sees the role" }
+        last_at: { type: string, format: date-time, nullable: true }
+        mb_no: { type: string, nullable: true }
+        mb_page: { type: string, nullable: true }
+        mb_recorded_at: { type: string, format: date-time, nullable: true }
+        check_qty: { type: number, nullable: true }
+        check_remark: { type: string, nullable: true }
+        checked_at: { type: string, format: date-time, nullable: true }
+        checked_by_name: { type: string, nullable: true }
+        variance_percent: { type: number, nullable: true }
+    MbExtract:
+      type: object
+      properties:
+        period: { type: object }
+        contract: { type: object, nullable: true }
+        summary:
+          type: object
+          properties:
+            entries: { type: integer }
+            recorded: { type: integer }
+            unrecorded: { type: integer }
+            checked: { type: integer }
+            check_percent: { type: number }
+            target_percent: { type: integer }
+            tolerance_percent: { type: integer }
+            flagged: { type: integer }
+        jobs:
+          type: array
+          items:
+            type: object
+            properties:
+              ticket_id: { type: string, format: uuid }
+              ticket_no: { type: string }
+              jc_no: { type: string }
+              identifier: { type: string }
+              sub_category: { type: string }
+              closed_at: { type: string, format: date-time, nullable: true }
+              entries: { type: array, items: { type: object } }
+              materials: { type: array, items: { type: object } }
+
+    Problem:
+      type: object
+      properties:
+        type:     { type: string }
+        title:    { type: string }
+        status:   { type: integer }
+        detail:   { type: string }
+        detail_hi: { type: string }
+        instance: { type: string }
+        error:    { type: string, description: "The refusal in plain words, where the answer is not a full problem document" }
+
+    TicketState:
+      type: string
+      enum: [RAISED, VERIFIED, ASSIGNED, IN_PROGRESS, WORK_COMPLETED,
+             INSPECTED_ACCEPTED, CLOSED, REJECTED, REWORK,
+             REFERRED_SPECIAL_REPAIR, REOPENED]
+
+    Category:
+      type: object
+      description: |
+        One sub-category per item, in display order, with the name of the
+        category it belongs to; the client groups them by `category`.
+      properties:
+        id:      { type: string, format: uuid, description: "The sub-category; what POST /tickets takes as sub_category_id" }
+        name_en: { type: string }
+        name_hi: { type: string }
+        category: { type: string, description: "The category's English name" }
+        emergency_eligible: { type: boolean }
+        classification:
+          type: string
+          enum: [CIVIL, EM]
+          description: EM sub-categories trigger the referral interstitial
+
+    EscalationStep:
+      type: object
+      required: [level, role, due_at, reached_at, reached]
+      properties:
+        level:      { type: integer, minimum: 1, maximum: 4 }
+        role:       { type: string, enum: [CIVIL_OVERSEER, MAINTENANCE_INCHARGE, STAFF_OFFICER_CIVIL, GM_CIVIL] }
+        due_at:     { type: string, format: date-time, nullable: true }
+        reached_at: { type: string, format: date-time, nullable: true }
+        reached:    { type: boolean }
+    ColonyNotice:
+      type: object
+      required: [id, colony_id, title, body, starts_at, posted_by_role, posted_at]
+      properties:
+        id:             { type: string, format: uuid }
+        colony_id:      { type: string, format: uuid }
+        title:          { type: string, maxLength: 120 }
+        body:           { type: string, maxLength: 600 }
+        starts_at:      { type: string, format: date-time }
+        ends_at:        { type: string, format: date-time, nullable: true }
+        posted_by_role: { type: string, enum: [CIVIL_OVERSEER, MAINTENANCE_INCHARGE] }
+        posted_at:      { type: string, format: date-time }
+        ended_at:       { type: string, format: date-time, nullable: true }
+        end_reason:     { type: string, nullable: true }
+    Ticket:
+      type: object
+      properties:
+        mb_no:    { type: string, nullable: true, description: "Search only: the contract's MB number, once the job has a line in it" }
+        mb_pages: { type: array, nullable: true, items: { type: integer }, description: "Search only: the MB pages the job's lines are on" }
+        mb_stage: { type: string, nullable: true, description: "Search only: where the job's measurements stand in the approval chain" }
+        rating:   { type: integer, nullable: true, description: "Search only: the occupant's latest rating" }
+        contractor_name: { type: string, nullable: true, description: "Search only: the firm of the contract" }
+        id:            { type: string, format: uuid }
+        ticket_no:     { type: string, example: JNT/2026/00042 }
+        state:         { $ref: '#/components/schemas/TicketState' }
+        premises_id:   { type: string, format: uuid }
+        identifier:    { type: string, description: "The quarter or building, e.g. D-12 (not in POST /tickets' answer)" }
+        quarter_type:  { type: string, nullable: true }
+        colony_id:     { type: string, format: uuid }
+        area_id:       { type: string, format: uuid }
+        scope_path:    { type: string }
+        inspection_rank: { type: integer, description: "Premises type's place in the inspection queue (control 8)" }
+        sub_category_id: { type: string, format: uuid }
+        classification:  { type: string }
+        contract_id:     { type: string, format: uuid, nullable: true }
+        raised_by:       { type: string, format: uuid, nullable: true }
+        verified_by:     { type: string, format: uuid, nullable: true }
+        assigned_to:     { type: string, format: uuid, nullable: true }
+        inspected_by:    { type: string, format: uuid, nullable: true }
+        verified_at:        { type: string, format: date-time, nullable: true }
+        assigned_at:        { type: string, format: date-time, nullable: true }
+        started_at:         { type: string, format: date-time, nullable: true }
+        completed_claim_at: { type: string, format: date-time, nullable: true }
+        inspected_at:       { type: string, format: date-time, nullable: true }
+        closed_at:          { type: string, format: date-time, nullable: true }
+        sla_response_minutes:   { type: integer, nullable: true, description: Fixed at verification }
+        sla_completion_minutes: { type: integer, nullable: true, description: Fixed at verification }
+        response_deadline_at:          { type: string, format: date-time, nullable: true }
+        original_response_deadline_at: { type: string, format: date-time, nullable: true }
+        total_paused_minutes: { type: integer, nullable: true }
+        response_met:         { type: boolean, nullable: true }
+        rework_count:         { type: integer, nullable: true }
+        referred_special_repair: { type: boolean, nullable: true }
+        contractor_window_started_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Set while the job is in the contractor's hands; their clock is running
+        reviews:
+          type: array
+          items: { $ref: '#/components/schemas/Review' }
+          description: Contested rejections and repeated disputes (never sent to contractors)
+        final_decision: { type: boolean, description: "The Area Civil Staff Officer has decided; no further dispute in the portal" }
+        final_note:     { type: string, description: What to tell the occupant once decided }
+        can_contest:    { type: boolean, description: The occupant may still contest this rejection }
+        breach_unattributed:
+          type: boolean
+          description: "An SLA breach on it is waiting for the Overseer or Incharge to say whose delay it was"
+        l4_remark_needed:
+          type: boolean
+          description: "It reached the GM (level 4) and cannot be closed until the Area Civil Staff Officer records a remark"
+        waiting_hours: { type: integer, nullable: true, description: "Inspection queue: hours since the completion claim" }
+        assignee_role_ended:
+          type: boolean
+          description: "The supervisor it is assigned to no longer holds that role; it must be reassigned"
+        photo_rules:
+          type: object
+          description: "Which photographs are compulsory now (settings of the HQ System Administrator; both off while the portal is adopted). Attached photographs are checked either way."
+          properties:
+            completion_photos_required: { type: boolean }
+            inspection_photo_required:  { type: boolean }
+        category:      { type: string }
+        sub_category:  { type: string }
+        description:   { type: string, nullable: true }
+        is_emergency:  { type: boolean }
+        raised_at:     { type: string, format: date-time }
+        completion_deadline_at:
+          type: string
+          format: date-time
+          nullable: true
+        original_completion_deadline_at:
+          type: string
+          format: date-time
+          nullable: true
+        contractor_minutes:
+          type: integer
+          description: |
+            The contractor's own time on this complaint: every period from
+            assignment (or a send-back, or reassignment after reopening) to
+            their completion claim, added up, less recorded occupant and
+            force-majeure pauses. completion_met compares this with the SLA.
+            Derived by the database; no role can write it.
+        completion_met:    { type: boolean, nullable: true }
+        overdue:           { type: boolean }
+        escalation_level:  { type: integer, minimum: 0, maximum: 4 }
+        objection_count:   { type: integer }
+        reopened_count:    { type: integer }
+        workmen_assigned:  { type: string, nullable: true }
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: |
+            Set when the ticket left the working views. The row is never
+            moved or deleted; an archived ticket stays fully retrievable
+            through search.
+        inspection_priority:
+          type: integer
+          nullable: true
+          description: Departmental override; null is the normal position
+        inspection_priority_note: { type: string, nullable: true }
+        premises_type:
+          type: string
+          description: QUARTER or a building type (GET /tickets only)
+        paused:
+          type: boolean
+          description: A recorded occupant or force-majeure pause is open (GET /tickets only; V2 O2)
+        pause_attribution:
+          type: string
+          nullable: true
+          description: Why the open pause stops the clock, OCCUPANT or FORCE_MAJEURE (GET /tickets only)
+        paused_since:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the open pause began (GET /tickets only)
+        escalation_path:
+          type: array
+          description: |
+            GET /tickets/{id} only (V2 R1). The escalation ladder from the
+            database's own rules: the role reached at each level, when (the
+            completion deadline plus the rule's interval; null before
+            verification), and whether it has been reached.
+          items: { $ref: '#/components/schemas/EscalationStep' }
+        available_actions:
+          type: array
+          items: { type: string }
+          description: |
+            Actions the CALLING role may perform on this ticket in its
+            current state, derived server-side from the transition table.
+            Clients drive their buttons from this and never hard-code the
+            state machine — three clients cannot then disagree about it.
+
+    TicketDetail:
+      allOf:
+        - $ref: '#/components/schemas/Ticket'
+        - type: object
+          properties:
+            history:
+              type: array
+              items:
+                type: object
+                properties:
+                  event_type:  { type: string }
+                  from_state:  { type: string, nullable: true }
+                  to_state:    { type: string, nullable: true }
+                  actor_role:  { type: string }
+                  reason:      { type: string, nullable: true }
+                  via:         { type: string, nullable: true, enum: [device, password, passkey, otp, null], description: "How the acting session signed in: device is the app; password or passkey an officer on the web; otp contractor staff on the web" }
+                  occurred_at: { type: string, format: date-time }
+            media:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:      { type: string, format: uuid }
+                  purpose: { type: string }
+                  url:     { type: string }
+                  latitude:  { type: number, nullable: true, description: "Where the phone was when the photograph was taken; compulsory for inspection photographs, recorded by the app for every other" }
+                  longitude: { type: number, nullable: true }
+                  gps_accuracy_m: { type: number, nullable: true, description: The location fix's accuracy in metres }
+                  captured_at: { type: string, format: date-time }
+            objections:
+              type: array
+              items: { $ref: '#/components/schemas/Objection' }
+            escalations:
+              type: array
+              items:
+                type: object
+                properties:
+                  level:        { type: integer }
+                  triggered_at: { type: string, format: date-time }
+                  attribution:  { type: string, nullable: true }
+                  remark:       { type: string, nullable: true }
+
+    Objection:
+      type: object
+      properties:
+        id:         { type: string, format: uuid }
+        ticket_id:  { type: string, format: uuid }
+        raised_by:  { type: string, format: uuid, nullable: true }
+        responded_by: { type: string, format: uuid, nullable: true }
+        note:       { type: string }
+        raised_at:  { type: string, format: date-time }
+        response_deadline_at: { type: string, format: date-time }
+        responded_at:  { type: string, format: date-time, nullable: true }
+        response_note: { type: string, nullable: true }
+        media:
+          type: array
+          items:
+            type: object
+            properties:
+              id:  { type: string, format: uuid }
+              url: { type: string }
+
+    Dashboard:
+      type: object
+      properties:
+        role: { type: string }
+        open_only:
+          type: boolean
+          description: True when archived tickets are excluded from the counts
+        cards:
+          type: array
+          items:
+            type: object
+            properties:
+              key:      { type: string, example: pending_inspections }
+              label_en: { type: string }
+              label_hi: { type: string }
+              value:    { type: number }
+              severity: { type: string, enum: [normal, warning, critical] }
+        alerts:
+          type: array
+          items:
+            type: object
+            properties:
+              key:     { type: string, example: inspection_backlog_age }
+              message_en: { type: string }
+              message_hi: { type: string }
+
+    ContractPerformance:
+      type: object
+      properties:
+        month:               { type: string, example: 2026-09 }
+        tickets_received:    { type: integer }
+        tickets_closed:      { type: integer }
+        sla_compliance_pct:  { type: number, nullable: true }
+        avg_closure_hours:   { type: number, nullable: true }
+        rejection_rate_pct:  { type: number }
+        objection_rate_pct:  { type: number }
+        reopen_rate_pct:     { type: number }
+        avg_rating:          { type: number, nullable: true }
+        contractor_delays:   { type: integer }
+        department_delays:   { type: integer }
+
+    Contract:
+      type: object
+      properties:
+        id:              { type: string, format: uuid }
+        area_id:         { type: string, format: uuid }
+        contractor_name: { type: string }
+        firm_address:    { type: string, nullable: true }
+        contract_no:     { type: string, nullable: true }
+        agreement_no:    { type: string }
+        work_name:       { type: string, nullable: true }
+        awarded_on:      { type: string, format: date }
+        period_years:    { type: integer, enum: [1, 2], nullable: true }
+        site_handover_on: { type: string, format: date, nullable: true }
+        starts_on:       { type: string, format: date }
+        expires_on:      { type: string, format: date, description: Completion date in force (as awarded or last extension) }
+        original_expires_on: { type: string, format: date, description: Completion date as awarded; never changes }
+        remarks:         { type: string, nullable: true }
+        days_remaining:  { type: integer }
+        open_tickets:    { type: integer }
+        active:          { type: boolean }
+        handover_cutoff_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Set at handover; the record is frozen from this moment
+
+    Review:
+      type: object
+      properties:
+        id:              { type: string, format: uuid }
+        ticket_id:       { type: string, format: uuid }
+        kind:            { type: string, enum: [REJECTION_CONTEST, REPEAT_DISPUTE] }
+        stage:           { type: string, enum: [WITH_OFFICERS, WITH_STAFF_OFFICER, DECIDED] }
+        raised_at:       { type: string, format: date-time }
+        raised_reason:   { type: string, nullable: true }
+        officer_outcome: { type: string, enum: [REINSTATE, UPHOLD], nullable: true }
+        officer_note:    { type: string, nullable: true }
+        officer_by_name: { type: string, nullable: true }
+        officer_by_role: { type: string, nullable: true, description: "What occupants see instead of the officer's name" }
+        officer_at:      { type: string, format: date-time, nullable: true }
+        so_outcome:      { type: string, enum: [REINSTATE, UPHOLD, REWORK, CLOSE, SPECIAL_REPAIR], nullable: true }
+        so_decision:     { type: string, nullable: true }
+        so_by_name:      { type: string, nullable: true }
+        so_by_role:      { type: string, nullable: true }
+        so_at:           { type: string, format: date-time, nullable: true }
+        ticket_no:       { type: string, description: In the pending list }
+        identifier:      { type: string, description: In the pending list }
+        sub_category:    { type: string, description: In the pending list }
+
+    Material:
+      type: object
+      properties:
+        id:               { type: string, format: uuid }
+        code:             { type: string }
+        name_en:          { type: string }
+        name_hi:          { type: string }
+        unit:             { type: string }
+        category:         { type: string, nullable: true }
+        norm_max_per_job: { type: number, nullable: true, description: Most one job normally needs }
+        active:           { type: boolean }
+
+    MaterialLine:
+      type: object
+      properties:
+        id:                  { type: string, format: uuid }
+        seq:                 { type: integer }
+        material_id:         { type: string, format: uuid }
+        code:                { type: string }
+        name_en:             { type: string }
+        name_hi:             { type: string, nullable: true }
+        unit:                { type: string }
+        qty_claimed:         { type: number }
+        claimed_at:          { type: string, format: date-time }
+        claimed_by:          { type: string, format: uuid, description: The claiming supervisor's role assignment }
+        claimed_by_name:     { type: string, nullable: true }
+        claimed_via:         { type: string, nullable: true, enum: [device, password, passkey, otp, null], description: "How the acting session signed in: device is the app; password or passkey an officer on the web; otp contractor staff on the web" }
+        withdrawn_at:        { type: string, format: date-time, nullable: true }
+        withdrawal_reason:   { type: string, nullable: true }
+        qty_verified:        { type: number, nullable: true }
+        verified_at:         { type: string, format: date-time, nullable: true }
+        verified_by_name:    { type: string, nullable: true }
+        verification_remark: { type: string, nullable: true }
+
+    JobCard:
+      type: object
+      properties:
+        ticket_id:     { type: string, format: uuid }
+        jc_no:         { type: string, example: JC/JNT/2026/00042 }
+        prepared_at:   { type: string, format: date-time }
+        scope_of_work: { type: string, nullable: true }
+        site_notes:    { type: string, nullable: true }
+        updated_at:    { type: string, format: date-time, nullable: true }
+        updated_by_name: { type: string, nullable: true }
+        editable:      { type: boolean, description: "Whether the caller may change the card now: it follows the job's measurement sheet (2026-10-16)" }
+        stage:         { type: string, enum: [SUPERVISOR, OVERSEER, INCHARGE, STAFF_OFFICER, APPROVED] }
+        reason_always: { type: boolean, description: "After the MB approval every change needs a reason" }
+        ticket:        { $ref: '#/components/schemas/JobCardTicket' }
+        items:         { type: array, items: { $ref: '#/components/schemas/JobCardItem' } }
+        lifecycle:
+          type: object
+          description: |
+            Every round of the job from the first (a round begins at assignment,
+            a send-back, or reassignment after the occupant reopens it), read from
+            the append-only history. The job ends only when the complainant is
+            satisfied.
+          properties:
+            status:
+              type: string
+              enum: [IN_HAND, AWAITING_CONFIRMATION, DISPUTED, SATISFIED, CLOSED_NO_DISPUTE, CLOSED_ON_INSPECTION, REJECTED, REFERRED]
+            rounds:
+              type: array
+              items:
+                type: object
+                properties:
+                  n:               { type: integer }
+                  began_at:        { type: string, format: date-time }
+                  cause:           { $ref: '#/components/schemas/JobRoundEvent' }
+                  supervisor_name: { type: string, nullable: true }
+                  started_at:      { type: string, format: date-time, nullable: true }
+                  workmen:         { type: string, nullable: true }
+                  materials:       { type: array, items: { $ref: '#/components/schemas/JobRoundMaterial' } }
+                  claimed_at:      { type: string, format: date-time, nullable: true }
+                  inspection:      { allOf: [{ $ref: '#/components/schemas/JobRoundEvent' }], nullable: true }
+                  closed_at:       { type: string, format: date-time, nullable: true }
+                  feedback:        { type: array, items: { $ref: '#/components/schemas/JobRoundAnswer' }, description: 'Every answer of the complainant in this round' }
+                  reopened:        { allOf: [{ $ref: '#/components/schemas/JobRoundEvent' }], nullable: true }
+                  referred_at:     { type: string, format: date-time, nullable: true }
+                  photos:
+                    type: object
+                    properties:
+                      before: { type: integer }
+                      after:  { type: integer }
+
+    JobSheet:
+      type: object
+      properties:
+        kind:        { type: string, enum: [MATERIALS, MEASUREMENTS] }
+        stage:       { type: string, enum: [SUPERVISOR, OVERSEER, INCHARGE, STAFF_OFFICER, APPROVED] }
+        stage_since: { type: string, format: date-time }
+        approved_at: { type: string, format: date-time, nullable: true }
+        can:         { type: array, items: { type: string, enum: [submit, pass, pass-no-change, return, approve, reopen] } }
+        events:
+          type: array
+          items:
+            type: object
+            properties:
+              action:     { type: string, enum: [SUBMIT, PASS, PASS_NO_CHANGE, RETURN, APPROVE, REOPEN] }
+              from_stage: { type: string, enum: [SUPERVISOR, OVERSEER, INCHARGE, STAFF_OFFICER, APPROVED] }
+              to_stage:   { type: string, enum: [SUPERVISOR, OVERSEER, INCHARGE, STAFF_OFFICER, APPROVED] }
+              actor_role: { type: string }
+              actor_name: { type: string, nullable: true, description: "Officers only; the contractor sees the role" }
+              remark:     { type: string, nullable: true }
+              via:        { type: string, nullable: true }
+              at:         { type: string, format: date-time }
+
+    MbLine:
+      type: object
+      properties:
+        line_no:        { type: integer }
+        page:           { type: integer }
+        ticket_id:      { type: string, format: uuid }
+        ticket_no:      { type: string }
+        measurement_id: { type: string, format: uuid }
+        item_seq:       { type: integer, nullable: true }
+        description:    { type: string, nullable: true }
+        unit:           { type: string, nullable: true }
+        nos:            { type: number, nullable: true }
+        length:         { type: number, nullable: true }
+        breadth:        { type: number, nullable: true }
+        depth:          { type: number, nullable: true }
+        qty:            { type: number }
+        by_role:        { type: string }
+        by_name:        { type: string, nullable: true, description: "Officers only; the contractor sees the role" }
+        reason:         { type: string, nullable: true }
+        correction:     { type: boolean, description: "The Staff Officer's correction after the MB approval" }
+        at:             { type: string, format: date-time }
+        superseded:     { type: boolean }
+
+    JobCardTicket:
+      type: object
+      description: The complaint, premises, contract and supervisor, read live
+      properties:
+        id:                     { type: string, format: uuid }
+        ticket_no:              { type: string }
+        state:                  { type: string }
+        description:            { type: string, nullable: true }
+        is_emergency:           { type: boolean }
+        raised_at:              { type: string, format: date-time }
+        verified_at:            { type: string, format: date-time, nullable: true }
+        contract_id:            { type: string, format: uuid, nullable: true }
+        assigned_at:            { type: string, format: date-time, nullable: true }
+        started_at:             { type: string, format: date-time, nullable: true }
+        completed_claim_at:     { type: string, format: date-time, nullable: true }
+        inspected_at:           { type: string, format: date-time, nullable: true }
+        closed_at:              { type: string, format: date-time, nullable: true }
+        completion_deadline_at: { type: string, format: date-time, nullable: true }
+        sla_completion_minutes: { type: integer, nullable: true }
+        contractor_minutes:     { type: integer, nullable: true }
+        completion_met:         { type: boolean, nullable: true }
+        workmen_assigned:       { type: string, nullable: true }
+        rework_count:           { type: integer }
+        reopened_count:         { type: integer }
+        objection_count:        { type: integer }
+        identifier:             { type: string }
+        premises_type:          { type: string }
+        quarter_type:           { type: string, nullable: true }
+        area_code:              { type: string, nullable: true }
+        occupancy_model:        { type: string, nullable: true }
+        sub_category:           { type: string }
+        sub_category_hi:        { type: string, nullable: true }
+        category:               { type: string }
+        contractor_name:        { type: string, nullable: true }
+        agreement_no:           { type: string, nullable: true }
+        contract_no:            { type: string, nullable: true }
+        supervisor_name:        { type: string, nullable: true }
+        verified_by_name:       { type: string, nullable: true }
+
+    JobRoundEvent:
+      type: object
+      description: What began a round (ASSIGNED, SENT_BACK, REOPENED) or its inspection (ACCEPTED, SENT_BACK)
+      properties:
+        type:   { type: string, enum: [ASSIGNED, SENT_BACK, REOPENED] }
+        result: { type: string, enum: [ACCEPTED, SENT_BACK] }
+        at:     { type: string, format: date-time }
+        by:     { type: string, nullable: true, description: "The officer's name or the role where the reader may not see names" }
+        reason: { type: string, nullable: true }
+        remark: { type: string, nullable: true }
+
+    JobRoundMaterial:
+      type: object
+      properties:
+        code:              { type: string }
+        name_en:           { type: string }
+        unit:              { type: string }
+        qty_claimed:       { type: number }
+        qty_verified:      { type: number, nullable: true }
+        claimed_at:        { type: string, format: date-time }
+        withdrawn:         { type: boolean }
+        withdrawal_reason: { type: string, nullable: true }
+
+    JobRoundAnswer:
+      type: object
+      properties:
+        confirmed: { type: boolean, nullable: true }
+        rating:    { type: integer, nullable: true }
+        comment:   { type: string, nullable: true }
+        at:        { type: string, format: date-time }
+
+    JobCardItem:
+      type: object
+      properties:
+        id:                { type: string, format: uuid }
+        seq:               { type: integer }
+        description:       { type: string }
+        unit:              { type: string }
+        qty_estimated:     { type: number, nullable: true }
+        added_at:          { type: string, format: date-time }
+        withdrawn_at:      { type: string, format: date-time, nullable: true }
+        withdrawal_reason: { type: string, nullable: true }
+
+    ContractExtension:
+      type: object
+      properties:
+        id:                  { type: string, format: uuid }
+        seq:                 { type: integer, description: 'Extension 1, 2, …' }
+        previous_expires_on: { type: string, format: date }
+        extended_to:         { type: string, format: date }
+        order_no:            { type: string, nullable: true }
+        granted_on:          { type: string, format: date, nullable: true }
+        reason:              { type: string }
+        recorded_at:         { type: string, format: date-time }
+
+    ContractDocument:
+      type: object
+      properties:
+        id:           { type: string, format: uuid }
+        kind:         { type: string, enum: [CONTRACT_COPY, EXTENSION_ORDER, OTHER] }
+        file_name:    { type: string }
+        content_type: { type: string, enum: [application/pdf, image/jpeg] }
+        content_hash: { type: string, description: SHA-256 }
+        size_bytes:   { type: integer }
+        uploaded_at:  { type: string, format: date-time }
+
+    Notification:
+      type: object
+      properties:
+        id:         { type: string, format: uuid }
+        event_type: { type: string }
+        title_en:   { type: string }
+        body_en:    { type: string }
+        title_hi:   { type: string }
+        body_hi:    { type: string }
+        ticket_id:  { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time }
+        read:       { type: boolean }
+
+security:
+  - deviceToken: []

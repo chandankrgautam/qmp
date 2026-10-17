@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;family=Noto+Sans+Devanagari:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Poppins','Noto Sans Devanagari',system-ui,sans-serif;background:#E9E6DC;-webkit-font-smoothing:antialiased}
+a{color:#0F4C4C;font-weight:600;text-decoration:none}a:hover{text-decoration:underline}*{box-sizing:border-box}
+</style>
+</helmet>
+<div style="min-height:100vh;padding:32px 24px 48px;display:flex;flex-direction:column;gap:28px;background:{{ canvasBg }}">
+  <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;max-width:1680px">
+    <div style="flex:1;min-width:260px"><h1 style="margin:0;font-size:22px;font-weight:700;color:{{ c.pr }}">{{ t.title }}</h1><p style="margin:2px 0 0;font-size:14px;color:{{ c.tm }}">{{ t.sub }}</p></div>
+    <div style="display:flex;border:1.5px solid {{ c.bd2 }};border-radius:999px;padding:2px;background:{{ c.sf }}">
+      <button onClick="{{ setEn }}" style="border:0;border-radius:999px;padding:6px 12px;font:600 12px Poppins;cursor:pointer;background:{{ enBg }};color:{{ enFg }}">EN</button>
+      <button onClick="{{ setHi }}" style="border:0;border-radius:999px;padding:6px 12px;font:600 12px 'Noto Sans Devanagari';cursor:pointer;background:{{ hiBg }};color:{{ hiFg }}">हिं</button>
+    </div>
+    <a href="v4 Landing and Login.dc.html" style="font-size:13px">{{ t.back }}</a>
+  </div>
+
+  <div style="display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start">
+    <sc-for list="{{ phones }}" as="ph" hint-placeholder-count="6">
+      <div style="display:flex;flex-direction:column;gap:10px;width:360px">
+        <div style="display:flex;gap:8px;align-items:center"><span style="font:600 11px ui-monospace,Menlo,monospace;background:#0F4C4C;color:#FFFFFF;border-radius:999px;padding:3px 9px">{{ ph.n }}</span><span style="font-size:13px;font-weight:600;color:{{ c.tx }}">{{ ph.label }}</span></div>
+        <div data-screen-label="{{ ph.label }}" style="width:360px;height:760px;border-radius:40px;background:#111;padding:10px;box-shadow:0 20px 50px rgba(15,76,76,.18)">
+          <div style="width:100%;height:100%;border-radius:31px;overflow:hidden;background:{{ c.bg }};color:{{ c.tx }};display:flex;flex-direction:column;position:relative">
+            <div style="height:34px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font:600 12px Poppins;color:{{ ph.sbFg }};background:{{ ph.sbBg }}"><span>10:32</span><span style="width:80px;height:20px;border-radius:999px;background:#111"></span><span>{{ ph.net }}</span></div>
+            <div style="flex:none;display:flex;align-items:center;gap:10px;padding:10px 16px 12px;background:{{ ph.sbBg }};color:{{ ph.sbFg }}">
+              <sc-if value="{{ ph.backFn }}" hint-placeholder-val="{{ false }}"><button onClick="{{ ph.backFn }}" aria-label="Back" style="border:0;background:rgba(255,255,255,.14);color:inherit;width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer">{{ ic.cl }}</button></sc-if>
+              <div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:700;line-height:1.25">{{ ph.title }}</div><div style="font-size:12px;opacity:.85">{{ ph.sub }}</div></div>
+              <button onClick="{{ toggleDark }}" aria-label="Toggle dark mode" style="border:0;background:rgba(255,255,255,.14);color:inherit;width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer">{{ themeIcon }}</button>
+            </div>
+            <sc-if value="{{ ph.offline }}" hint-placeholder-val="{{ false }}"><div role="status" style="flex:none;background:#FEF5E7;color:#8A5300;font-size:12px;font-weight:500;padding:8px 16px;display:flex;gap:8px;align-items:center">{{ ic.wifi }}<span>{{ t.offline }}</span></div></sc-if>
+            <div style="flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:14px">
+
+              <sc-if value="{{ ph.isHome }}" hint-placeholder-val="{{ false }}">
+                <div style="background:{{ c.sf }};border:1px solid {{ c.bd }};border-radius:16px;padding:14px;display:flex;gap:12px;align-items:center"><span style="width:44px;height:44px;border-radius:12px;background:{{ c.tint }};color:{{ c.pr }};display:flex;align-items:center;justify-content:center">{{ ic.home }}</span><div style="flex:1"><div style="font-size:12px;color:{{ c.tm }}">{{ t.myQtr }}</div><div style="font-weight:700;font-size:15px">Qtr No. C-245, {{ t.nigahi }}</div><div style="font-size:12px;color:{{ c.tm }}">Type-III · Sector C</div></div></div>
+                <button onClick="{{ goReport }}" style="border:0;border-radius:20px;background:linear-gradient(150deg,#0F4C4C,#0A3333);color:#FFFFFF;padding:20px;text-align:left;cursor:pointer;display:flex;gap:14px;align-items:center;font-family:Poppins,'Noto Sans Devanagari'"><span style="width:52px;height:52px;flex:none;border-radius:999px;background:#C9A96A;color:#0A3333;display:flex;align-items:center;justify-content:center">{{ ic.plus }}</span><span><span style="display:block;font-size:17px;font-weight:700">{{ t.report }}</span><span style="display:block;font-size:12px;color:rgba(255,255,255,.8);margin-top:2px">{{ t.reportSub }}</span></span></button>
+                <div style="font-size:11px;font-weight:600;letter-spacing:.1em;color:{{ c.tm }}">{{ t.openH }}</div>
+                <sc-for list="{{ myOpen }}" as="m" hint-placeholder-count="2">
+                  <button onClick="{{ goDetail }}" style="all:unset;cursor:pointer;background:{{ c.sf }};border:1px solid {{ c.bd }};border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px">
+                    <div style="display:flex;gap:10px;align-items:center"><span style="width:36px;height:36px;flex:none;border-radius:10px;background:{{ c.tint }};color:{{ c.pr }};display:flex;align-items:center;justify-content:center">{{ m.icon }}</span><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px">{{ m.cat }}</div><div style="font:500 11px ui-monospace,Menlo,monospace;color:{{ c.tm }}">{{ m.id }}</div></div><span style="border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;background:{{ m.stBg }};color:{{ m.stFg }}">{{ m.st }}</span></div>
+                    <div style="font-size:13px;color:{{ c.tm }}">{{ m.line }}</div>
+                    <div style="height:6px;border-radius:999px;background:{{ c.mu }}"><div style="height:100%;width:{{ m.pct }};border-radius:999px;background:{{ m.slaC }}"></div></div>
+                  </button>
+                </sc-for>
+              </sc-if>
+
+              <sc-if value="{{ ph.isReport }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;gap:6px"><sc-for list="{{ stepBars }}" as="b" hint-placeholder-count="3"><div style="flex:1;display:flex;flex-direction:column;gap:4px"><div style="height:5px;border-radius:999px;background:{{ b.c }}"></div><span style="font-size:11px;font-weight:{{ b.w }};color:{{ b.fg }}">{{ b.l }}</span></div></sc-for></div>
+                <sc-if value="{{ step1 }}" hint-placeholder-val="{{ true }}">
+                  <div style="font-weight:600;font-size:15px">{{ t.pickCat }}</div>
+                  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+                    <sc-for list="{{ catGrid }}" as="g" hint-placeholder-count="9"><button onClick="{{ g.pick }}" style="border:1.5px solid {{ g.bd }};background:{{ g.bg }};color:{{ g.fg }};border-radius:14px;padding:12px 4px;min-height:84px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;font:500 11px Poppins,'Noto Sans Devanagari';line-height:1.25;text-align:center">{{ g.icon }}<span>{{ g.l }}</span></button></sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ step2 }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-weight:600;font-size:15px">{{ t.describe }}</div>
+                  <div style="position:relative"><textarea style="width:100%;min-height:110px;border:1.5px solid {{ c.bd2 }};border-radius:14px;padding:12px 12px 28px;font:400 14px Poppins,'Noto Sans Devanagari';background:{{ c.sf }};color:{{ c.tx }};resize:none" defaultValue="{{ t.sample }}"></textarea><span style="position:absolute;right:12px;bottom:10px;font-size:11px;color:{{ c.tm }}">86 / 500</span></div>
+                  <button style="border:1.5px solid {{ c.bd2 }};background:{{ c.sf }};color:{{ c.pr }};border-radius:999px;min-height:44px;font:600 13px Poppins,'Noto Sans Devanagari';display:flex;gap:8px;align-items:center;justify-content:center">{{ ic.mic }}{{ t.voice }}</button>
+                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div style="aspect-ratio:1;border-radius:12px;background:repeating-linear-gradient(135deg,{{ c.mu }} 0 8px,{{ c.sf }} 8px 16px);border:1px solid {{ c.bd }};display:flex;align-items:flex-end;padding:6px;font:500 10px ui-monospace,monospace;color:{{ c.tm }}">photo 1</div><div style="aspect-ratio:1;border-radius:12px;border:1.5px dashed {{ c.bd2 }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:{{ c.pr }};font-size:11px;font-weight:600">{{ ic.cam }}{{ t.addPhoto }}</div></div>
+                </sc-if>
+                <sc-if value="{{ step3 }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-weight:600;font-size:15px">{{ t.when }}</div>
+                  <sc-for list="{{ slots }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.pick }}" style="border:1.5px solid {{ s.bd }};background:{{ s.bg }};color:{{ c.tx }};border-radius:14px;padding:12px 14px;min-height:52px;text-align:left;font:500 14px Poppins,'Noto Sans Devanagari';cursor:pointer">{{ s.l }}</button></sc-for>
+                  <div style="background:{{ c.sf }};border:1px solid {{ c.bd }};border-radius:14px;padding:14px;font-size:13px;line-height:1.7"><div style="font-weight:600;color:{{ c.pr }}">{{ t.summary }}</div><div>{{ chosenCat }} · Qtr No. C-245</div><div style="color:{{ c.tm }}">{{ t.slaNote }}</div></div>
+                </sc-if>
+                <div style="flex:1"></div>
+                <button onClick="{{ next }}" style="border:0;border-radius:999px;background:#0F4C4C;color:#FFFFFF;min-height:50px;font:600 15px Poppins,'Noto Sans Devanagari';cursor:pointer">{{ nextLabel }}</button>
+              </sc-if>
+
+              <sc-if value="{{ ph.isDetail }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#FEF5E7;border-radius:16px;padding:14px;display:flex;gap:14px;align-items:center"><div style="width:64px;height:64px;flex:none;border-radius:999px;background:conic-gradient(#B9770E 0 82%,#FFFFFF 0);display:flex;align-items:center;justify-content:center"><div style="width:50px;height:50px;border-radius:999px;background:#FEF5E7;display:flex;align-items:center;justify-content:center;font:700 13px Poppins;color:#8A5300">4h</div></div><div><div style="font-weight:700;color:#8A5300">{{ t.dueSoon }}</div><div style="font-size:12px;color:#5C4A2A">{{ t.expected }}</div></div></div>
+                <div style="background:{{ c.sf }};border:1px solid {{ c.bd }};border-radius:16px;padding:14px;display:flex;gap:12px;align-items:center"><span style="width:44px;height:44px;border-radius:999px;background:#0F4C4C;color:#FFFFFF;font:700 13px Poppins;display:flex;align-items:center;justify-content:center">RY</span><div style="flex:1"><div style="font-weight:600">Ramesh Yadav</div><div style="font-size:12px;color:{{ c.tm }}">Shree Balaji Constructions</div></div><button style="border:0;background:{{ c.tint }};color:{{ c.pr }};width:44px;height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center">{{ ic.phone }}</button></div>
+                <div style="background:{{ c.sf }};border:1px solid {{ c.bd }};border-radius:16px;padding:14px">
+                  <sc-for list="{{ tl }}" as="s" hint-placeholder-count="5"><div style="display:flex;gap:12px"><div style="display:flex;flex-direction:column;align-items:center"><span style="width:12px;height:12px;border-radius:999px;border:2px solid {{ s.c }};background:{{ s.f }};margin-top:4px"></span><span style="flex:1;width:2px;background:{{ c.bd }};min-height:16px"></span></div><div style="padding-bottom:10px"><div style="font-size:13px;font-weight:600;color:{{ s.tc }}">{{ s.l }}</div><div style="font-size:11px;color:{{ c.tm }}">{{ s.m }}</div></div></div></sc-for>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ ph.isVerify }}" hint-placeholder-val="{{ false }}">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><sc-for list="{{ ba }}" as="p" hint-placeholder-count="2"><div style="aspect-ratio:3/4;border-radius:14px;background:repeating-linear-gradient(135deg,{{ c.mu }} 0 8px,{{ c.sf }} 8px 16px);border:1px solid {{ c.bd }};display:flex;align-items:flex-end;padding:8px;font:500 11px ui-monospace,monospace;color:{{ c.tm }}">{{ p }}</div></sc-for></div>
+                <div style="font-weight:600;font-size:15px">{{ t.fixedQ }}</div>
+                <div style="display:flex;justify-content:center;gap:6px"><sc-for list="{{ stars }}" as="s" hint-placeholder-count="5"><button onClick="{{ s.pick }}" aria-label="{{ s.n }} stars" style="border:0;background:transparent;color:{{ s.c }};font-size:32px;line-height:1;width:44px;height:44px;cursor:pointer">★</button></sc-for></div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ rChips }}" as="r" hint-placeholder-count="4"><button onClick="{{ r.pick }}" style="border:1.5px solid {{ r.bd }};background:{{ r.bg }};color:{{ r.fg }};border-radius:999px;padding:7px 12px;font:500 12px Poppins,'Noto Sans Devanagari';cursor:pointer">{{ r.l }}</button></sc-for></div>
+                <div style="flex:1"></div>
+                <button onClick="{{ confirmFix }}" style="border:0;border-radius:999px;background:#2E7D32;color:#FFFFFF;min-height:50px;font:600 15px Poppins,'Noto Sans Devanagari';cursor:pointer">{{ t.yesFixed }}</button>
+                <button style="border:1.5px solid #E6B0AA;border-radius:999px;background:{{ c.sf }};color:#A93226;min-height:48px;font:600 14px Poppins,'Noto Sans Devanagari';cursor:pointer">{{ t.notFixed }}</button>
+              </sc-if>
+
+              <sc-if value="{{ ph.isJobs }}" hint-placeholder-val="{{ false }}">
+                <sc-for list="{{ jobGroups }}" as="g" hint-placeholder-count="2">
+                  <div style="font-size:11px;font-weight:600;letter-spacing:.1em;color:{{ c.tm }}">{{ g.colony }}</div>
+                  <sc-for list="{{ g.jobs }}" as="j" hint-placeholder-count="2">
+                    <button onClick="{{ goJob }}" style="all:unset;cursor:pointer;background:{{ c.sf }};border:1px solid {{ c.bd }};border-left:0;border-radius:16px;padding:14px;display:flex;gap:12px;align-items:center">
+                      <div style="width:50px;height:50px;flex:none;border-radius:999px;background:conic-gradient({{ j.c }} 0 {{ j.pct }},{{ c.mu }} 0);display:flex;align-items:center;justify-content:center"><div style="width:38px;height:38px;border-radius:999px;background:{{ c.sf }};display:flex;align-items:center;justify-content:center;font:700 11px Poppins;color:{{ j.c }}">{{ j.left }}</div></div>
+                      <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px">{{ j.q }}</div><div style="font-size:12px;color:{{ c.tm }}">{{ j.cat }}</div></div>
+                      <span style="color:{{ c.pr }};display:flex">{{ j.icon }}</span>
+                    </button>
+                  </sc-for>
+                </sc-for>
+              </sc-if>
+
+              <sc-if value="{{ ph.isUpdate }}" hint-placeholder-val="{{ false }}">
+                <div style="background:{{ c.sf }};border:1px solid {{ c.bd }};border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:6px"><div style="font-weight:700">Qtr No. B-112 · {{ t.nigahi }}</div><div style="font-size:13px;color:{{ c.tm }}">{{ t.roofDesc }}</div><div style="display:flex;gap:8px;margin-top:6px"><button style="flex:1;border:0;background:{{ c.tint }};color:{{ c.pr }};border-radius:999px;min-height:44px;font:600 13px Poppins,'Noto Sans Devanagari';display:flex;gap:6px;align-items:center;justify-content:center">{{ ic.nav }}{{ t.directions }}</button><button style="flex:1;border:0;background:{{ c.tint }};color:{{ c.pr }};border-radius:999px;min-height:44px;font:600 13px Poppins;display:flex;gap:6px;align-items:center;justify-content:center">{{ ic.phone }}98•••••210</button></div></div>
+                <sc-for list="{{ upSteps }}" as="u" hint-placeholder-count="3"><div style="background:{{ c.sf }};border:1px solid {{ u.bd }};border-radius:16px;padding:14px;display:flex;gap:12px;align-items:center"><span style="width:36px;height:36px;flex:none;border-radius:999px;background:{{ u.bg }};color:{{ u.fg }};display:flex;align-items:center;justify-content:center">{{ u.icon }}</span><div style="flex:1"><div style="font-weight:600;font-size:14px">{{ u.l }}</div><div style="font-size:12px;color:{{ c.tm }}">{{ u.m }}</div></div></div></sc-for>
+                <div style="flex:1"></div>
+                <button style="border:0;border-radius:999px;background:#0F4C4C;color:#FFFFFF;min-height:50px;font:600 15px Poppins,'Noto Sans Devanagari'">{{ t.markDone }}</button>
+              </sc-if>
+            </div>
+            <sc-if value="{{ ph.tabs }}" hint-placeholder-val="{{ true }}">
+              <div style="flex:none;display:flex;border-top:1px solid {{ c.bd }};background:{{ c.sf }};padding:6px 6px 14px"><sc-for list="{{ ph.tabs }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;min-height:48px;color:{{ tb.c }};font-size:10px;font-weight:{{ tb.w }}">{{ tb.icon }}<span>{{ tb.l }}</span></div></sc-for></div>
+            </sc-if>
+            <sc-if value="{{ ph.sheet }}" hint-placeholder-val="{{ false }}"><div onClick="{{ closeSheet }}" style="position:absolute;inset:0;z-index:6;background:rgba(10,51,51,.5);display:flex;align-items:flex-end"><div onClick="{{ stop }}" role="dialog" aria-label="Report a problem" style="width:100%;max-height:88%;overflow:auto;background:{{ c.bg }};border-radius:24px 24px 0 0;padding:10px 16px 20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 -12px 32px rgba(0,0,0,.25)"><div style="align-self:center;width:40px;height:5px;border-radius:999px;background:{{ c.bd2 }}"></div><div style="display:flex;align-items:center;gap:10px"><div style="flex:1"><div style="font-size:17px;font-weight:700;color:{{ c.pr }}">{{ t.report }}</div><div style="font-size:12px;color:{{ c.tm }}">Qtr No. C-245, {{ t.nigahi }}</div></div><button onClick="{{ closeSheet }}" aria-label="Close" style="border:0;background:{{ c.mu }};color:{{ c.tm }};width:36px;height:36px;border-radius:999px;cursor:pointer;font:600 16px Poppins">×</button></div>
+                <div style="display:flex;gap:6px"><sc-for list="{{ stepBars }}" as="b" hint-placeholder-count="3"><div style="flex:1;display:flex;flex-direction:column;gap:4px"><div style="height:5px;border-radius:999px;background:{{ b.c }}"></div><span style="font-size:11px;font-weight:{{ b.w }};color:{{ b.fg }}">{{ b.l }}</span></div></sc-for></div>
+                <sc-if value="{{ step1 }}" hint-placeholder-val="{{ true }}">
+                  <div style="font-weight:600;font-size:15px">{{ t.pickCat }}</div>
+                  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+                    <sc-for list="{{ catGrid }}" as="g" hint-placeholder-count="9"><button onClick="{{ g.pick }}" style="border:1.5px solid {{ g.bd }};background:{{ g.bg }};color:{{ g.fg }};border-radius:14px;padding:12px 4px;min-height:84px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;font:500 11px Poppins,'Noto Sans Devanagari';line-height:1.25;text-align:center">{{ g.icon }}<span>{{ g.l }}</span></button></sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ step2 }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-weight:600;font-size:15px">{{ t.describe }}</div>
+                  <div style="position:relative"><textarea style="width:100%;min-height:110px;border:1.5px solid {{ c.bd2 }};border-radius:14px;padding:12px 12px 28px;font:400 14px Poppins,'Noto Sans Devanagari';background:{{ c.sf }};color:{{ c.tx }};resize:none" defaultValue="{{ t.sample }}"></textarea><span style="position:absolute;right:12px;bottom:10px;font-size:11px;color:{{ c.tm }}">86 / 500</span></div>
+                  <button style="border:1.5px solid {{ c.bd2 }};background:{{ c.sf }};color:{{ c.pr }};border-radius:999px;min-height:44px;font:600 13px Poppins,'Noto Sans Devanagari';display:flex;gap:8px;align-items:center;justify-content:center">{{ ic.mic }}{{ t.voice }}</button>
+                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div style="aspect-ratio:1;border-radius:12px;background:repeating-linear-gradient(135deg,{{ c.mu }} 0 8px,{{ c.sf }} 8px 16px);border:1px solid {{ c.bd }};display:flex;align-items:flex-end;padding:6px;font:500 10px ui-monospace,monospace;color:{{ c.tm }}">photo 1</div><div style="aspect-ratio:1;border-radius:12px;border:1.5px dashed {{ c.bd2 }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:{{ c.pr }};font-size:11px;font-weight:600">{{ ic.cam }}{{ t.addPhoto }}</div></div>
+                </sc-if>
+                <sc-if value="{{ step3 }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-weight:600;font-size:15px">{{ t.when }}</div>
+                  <sc-for list="{{ slots }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.pick }}" style="border:1.5px solid {{ s.bd }};background:{{ s.bg }};color:{{ c.tx }};border-radius:14px;padding:12px 14px;min-height:52px;text-align:left;font:500 14px Poppins,'Noto Sans Devanagari';cursor:pointer">{{ s.l }}</button></sc-for>
+                  <div style="background:{{ c.sf }};border:1px solid {{ c.bd }};border-radius:14px;padding:14px;font-size:13px;line-height:1.7"><div style="font-weight:600;color:{{ c.pr }}">{{ t.summary }}</div><div>{{ chosenCat }} · Qtr No. C-245</div><div style="color:{{ c.tm }}">{{ t.slaNote }}</div></div>
+                </sc-if>
+                
+                <button onClick="{{ next }}" style="border:0;border-radius:999px;background:#0F4C4C;color:#FFFFFF;min-height:50px;font:600 15px Poppins,'Noto Sans Devanagari';cursor:pointer">{{ nextLabel }}</button>
+              </div></div></sc-if><sc-if value="{{ ph.toast }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:16px;right:16px;bottom:86px;background:#0A3333;color:#FFFFFF;border-radius:14px;padding:12px 14px;font-size:13px;display:flex;gap:8px;align-items:center;box-shadow:0 10px 24px rgba(0,0,0,.25)"><span style="color:#7FD3A6;display:flex">{{ ic.check }}</span>{{ ph.toast }}</div></sc-if>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { sheet: false, lang: 'en', dark: false, step: 1, cat: 'plumbing', slot: 0, stars: 4, reasons: ['On time'], toastR: null };
+  I(p, s = 20) { return React.createElement('svg', { width: s, height: s, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true }, p.split('|').map((d, i) => React.createElement('path', { key: i, d }))); }
+  renderVals() {
+    const s = this.state, hi = s.lang === 'hi', L = (a, b) => hi ? b : a, d = s.dark;
+    const c = d ? { bg:'#0E1A1A', sf:'#152424', bd:'#22393A', bd2:'#2E4A4B', tx:'#E7EDEA', tm:'#A4B4B3', pr:'#8FD3CB', mu:'#1B2E2E', tint:'#1D3838' } : { bg:'#F8F6EF', sf:'#FFFFFF', bd:'#EAE8E0', bd2:'#DDD9CC', tx:'#1C2B2B', tm:'#617074', pr:'#0F4C4C', mu:'#EFEDE4', tint:'#E8F4F4' };
+    const P = { cl:'M15 18l-6-6 6-6', home:'M3 10l9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10', plus:'M12 5v14|M5 12h14', list:'M8 6h13|M8 12h13|M8 18h13|M3 6h.01|M3 12h.01|M3 18h.01', bell:'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9|M13.7 21a2 2 0 0 1-3.4 0', user:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2|M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z', check:'M20 6 9 17l-5-5', mic:'M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z|M19 10v2a7 7 0 0 1-14 0v-2|M12 19v3', cam:'M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z|M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', phone:'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z', wifi:'M1 1l22 22|M16.7 11.1A11 11 0 0 1 19 12.6|M5 12.6a11 11 0 0 1 5.2-2.5|M10.7 5A16 16 0 0 1 22.6 9|M1.4 9a16 16 0 0 1 4.4-2.8|M8.5 16.1a5 5 0 0 1 7 0|M12 20h.01', nav:'M3 11l19-9-9 19-2-8-8-2z', sun:'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z|M12 2v2|M12 20v2|M2 12h2|M20 12h2', moon:'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z', box:'M21 16V8l-9-5-9 5v8l9 5 9-5z|M3.3 7 12 12l8.7-5|M12 22V12',
+      plumbing:'M12 2.7 5.6 9.1a9 9 0 1 0 12.8 0z', roof:'M3 12l9-8 9 8|M5 10v10h14V10|M9 16c1 1 2 1.5 3 0s2-1 3 0', door:'M5 21V3h11l3 2v16|M3 21h18|M13 12h.01', drain:'M4 6h16|M4 10h16|M8 14c0 3 1.5 5 4 6 2.5-1 4-3 4-6', floor:'M3 3h18v18H3z|M3 12h18|M12 3v18', paint:'M4 3h13v6H4z|M17 6h3v5h-9v3|M10 14h2v7h-2z', masonry:'M2 6h20v12H2z|M2 12h20|M8 6v6|M16 6v6|M12 12v6', window:'M4 3h16v18H4z|M12 3v18|M4 12h16', other:'M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z|M19 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z|M5 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z' };
+    const ic = {}; Object.keys(P).forEach(k => ic[k] = this.I(P[k]));
+    const CAT = { plumbing:L('Plumbing','प्लंबिंग'), roof:L('Roof and seepage','छत व रिसाव'), masonry:L('Masonry','चिनाई'), door:L('Doors','दरवाज़े'), window:L('Windows','खिड़कियाँ'), floor:L('Flooring','फ़र्श'), paint:L('Painting','पेंटिंग'), drain:L('Drainage','जल निकासी'), other:L('Other','अन्य') };
+    const t = { title:L('Mobile apps · Resident and contractor','मोबाइल ऐप · निवासी और ठेकेदार'), sub:L('Figma theme applied. Tap through the report flow; every phone has its own dark-mode switch.','हर फ़ोन में डार्क मोड स्विच है।'), back:L('Back to landing page','लैंडिंग पेज पर लौटें'),
+      offline:L('You are offline. 2 updates will sync automatically.','आप ऑफ़लाइन हैं। 2 अपडेट अपने-आप सिंक होंगे।'), myQtr:L('My quarter','मेरा क्वार्टर'), nigahi:L('Nigahi','निगाही'), report:L('Report a problem','समस्या दर्ज करें'), reportSub:L('Takes under a minute','एक मिनट से कम'), openH:L('MY OPEN COMPLAINTS','मेरी खुली शिकायतें'),
+      pickCat:L('What needs fixing?','क्या ठीक करना है?'), describe:L('Describe the problem','समस्या बताएँ'), sample:L('Kitchen tap leaking continuously since morning. Water collecting under the sink.','सुबह से रसोई का नल लगातार टपक रहा है। सिंक के नीचे पानी जमा हो रहा है।'), voice:L('Speak instead of typing','बोलकर लिखें'), addPhoto:L('Add photo','फ़ोटो जोड़ें'),
+      when:L('When can the contractor visit?','ठेकेदार कब आ सकता है?'), summary:L('Summary','सारांश'), slaNote:L('Expected fix within 24 hours','24 घंटे में सुधार अपेक्षित'), dueSoon:L('Due soon · 4 h left','जल्द नियत · 4 घं. शेष'), expected:L('Expected by 26 Sep 2026, 2:30 PM','26 सित. 2026, 2:30 PM तक अपेक्षित'),
+      fixedQ:L('How was the work?','काम कैसा रहा?'), yesFixed:L('Yes, it’s fixed','हाँ, ठीक हो गया'), notFixed:L('Not fixed, reopen','ठीक नहीं, फिर खोलें'), directions:L('Directions','रास्ता'), roofDesc:L('Seepage from roof slab in bedroom after rain; plaster flaking.','बारिश के बाद शयनकक्ष की छत से रिसाव।'), markDone:L('Mark work complete','काम पूरा चिह्नित करें') };
+    const set = o => () => this.setState(o), pill = on => ({ bd: on ? c.pr : c.bd2, bg: on ? '#0F4C4C' : c.sf, fg: on ? '#FFFFFF' : c.tm });
+    const tabsR = a => [[ic.home,L('Home','होम')],[ic.list,L('Complaints','शिकायतें')],[ic.bell,L('Alerts','सूचनाएँ')],[ic.user,L('Profile','प्रोफ़ाइल')]].map((x, i) => ({ icon: x[0], l: x[1], c: i === a ? c.pr : c.tm, w: i === a ? 600 : 500 }));
+    const tabsC = a => [[ic.list,L('Today','आज')],[ic.box,L('Materials','सामग्री')],[ic.bell,L('Alerts','सूचनाएँ')],[ic.user,L('Profile','प्रोफ़ाइल')]].map((x, i) => ({ icon: x[0], l: x[1], c: i === a ? c.pr : c.tm, w: i === a ? 600 : 500 }));
+    const green = { sbBg: '#0F4C4C', sbFg: '#FFFFFF', net: '4G' };
+    const base = { isHome:false,isReport:false,isDetail:false,isVerify:false,isJobs:false,isUpdate:false, offline:false, backFn:null, toast:null };
+    const phones = [
+      Object.assign({}, base, green, { n:'R1', label:L('Resident · Home','निवासी · होम'), title:L('Namaste, R. K. Tiwari','नमस्ते, आर. के. तिवारी'), sub:L('NCL employee · NCL/EMP/2011/0043','एनसीएल कर्मचारी'), isHome:true, tabs: tabsR(0), sheet: s.sheet, toast: s.step === 4 && !s.sheet ? L('Complaint registered · CP-24518','शिकायत दर्ज · CP-24518') : null }),
+      Object.assign({}, base, green, { n:'R2', label:L('Resident · Report a problem','निवासी · समस्या दर्ज'), title:t.report, sub:L(`Step ${s.step} of 3`,`चरण ${s.step} / 3`), isReport:true, backFn: s.step > 1 ? () => this.setState(x => ({ step: x.step - 1 })) : null, tabs:null, toast: s.step === 4 ? L('Complaint registered · CP-24518','शिकायत दर्ज · CP-24518') : null }),
+      Object.assign({}, base, green, { n:'R3', label:L('Resident · Complaint detail','निवासी · शिकायत विवरण'), title:'CP-24516', sub:L('Roof and seepage · Qtr No. B-112','छत व रिसाव'), isDetail:true, backFn: () => {}, tabs: tabsR(1) }),
+      Object.assign({}, base, green, { n:'R4', label:L('Resident · Verify and rate','निवासी · पुष्टि व रेटिंग'), title:L('Confirm the fix','सुधार की पुष्टि करें'), sub:'CP-24507 · ' + CAT.drain, isVerify:true, backFn: () => {}, tabs:null, toast: s.toastR }),
+      Object.assign({}, base, { sbBg:'#0A3333', sbFg:'#FFFFFF', net:L('Offline','ऑफ़लाइन') }, { n:'C1', label:L('Contractor · Today’s jobs','ठेकेदार · आज के काम'), title:L('Today’s jobs · 5','आज के काम · 5'), sub:L('Sorted by SLA urgency','SLA तात्कालिकता अनुसार'), isJobs:true, offline:true, tabs: tabsC(0) }),
+      Object.assign({}, base, { sbBg:'#0A3333', sbFg:'#FFFFFF', net:'4G' }, { n:'C2', label:L('Contractor · Update work','ठेकेदार · काम अपडेट'), title:'CP-24516', sub:L('Roof and seepage','छत व रिसाव'), isUpdate:true, backFn: () => {}, tabs:null })
+    ];
+    const stepL = [L('Category','श्रेणी'), L('Details','विवरण'), L('Visit time','समय')];
+    return {
+      c, t, ic, phones, canvasBg: d ? '#0A1414' : '#E9E6DC',
+      setEn: set({ lang:'en' }), setHi: set({ lang:'hi' }), enBg: hi ? 'transparent' : '#0F4C4C', enFg: hi ? c.tm : '#FFFFFF', hiBg: hi ? '#0F4C4C' : 'transparent', hiFg: hi ? '#FFFFFF' : c.tm,
+      toggleDark: () => this.setState(x => ({ dark: !x.dark })), themeIcon: d ? ic.sun : ic.moon,
+      goReport: set({ step: 1, sheet: true }), closeSheet: set({ sheet: false }), stop: e => e.stopPropagation(), goDetail: () => {}, goJob: () => {},
+      myOpen: [{ icon: ic.roof, cat: CAT.roof, id:'CP-24516', st:L('Contractor assigned','ठेकेदार नियुक्त'), stBg:'#E8F1FA', stFg:'#1F5F8B', line:L('Ramesh Yadav arriving today, 2:00–4:00 PM','रमेश यादव आज 2–4 बजे आएँगे'), pct:'82%', slaC:'#B9770E' }, { icon: ic.drain, cat: CAT.drain, id:'CP-24507', st:L('Confirm fix','पुष्टि करें'), stBg:'#E8F5EC', stFg:'#1E6B34', line:L('Work verified by overseer. Please confirm.','ओवरसियर द्वारा सत्यापित। कृपया पुष्टि करें।'), pct:'75%', slaC:'#2E7D32' }],
+      stepBars: stepL.map((l, i) => ({ l, c: i < s.step ? '#0F4C4C' : c.bd, w: i + 1 === s.step ? 600 : 500, fg: i < s.step ? c.pr : c.tm })),
+      step1: s.step === 1, step2: s.step === 2, step3: s.step >= 3,
+      catGrid: Object.keys(CAT).map(k => Object.assign({ icon: this.I(P[k], 24), l: CAT[k], pick: set({ cat: k }) }, (() => { const on = s.cat === k; return { bd: on ? c.pr : c.bd, bg: on ? c.tint : c.sf, fg: on ? c.pr : c.tx }; })())),
+      slots: [L('Today, 2:00–4:00 PM','आज, 2–4 बजे'), L('Tomorrow, 9:00–11:00 AM','कल, 9–11 बजे'), L('Tomorrow, 4:00–6:00 PM','कल, 4–6 बजे')].map((l, i) => ({ l, pick: set({ slot: i }), bd: s.slot === i ? c.pr : c.bd2, bg: s.slot === i ? c.tint : c.sf })),
+      chosenCat: CAT[s.cat],
+      next: () => this.setState(x => x.step >= 3 ? { step: 4, sheet: false } : { step: x.step + 1 }), nextLabel: s.step < 3 ? L('Continue','आगे बढ़ें') : L('Report problem','समस्या दर्ज करें'),
+      tl: [[L('Registered','दर्ज'),'23 Sep 2026, 9:14 AM',1],[L('Assigned to Shree Balaji Constructions','श्री बालाजी कंस्ट्रक्शन्स को सौंपा'),'23 Sep, 11:02 AM · S. P. Mishra',1],[L('Visit scheduled','विज़िट निर्धारित'),'Today, 2:00–4:00 PM',1],[L('Work completed','काम पूरा'),L('Pending','लंबित'),0],[L('Verified and closed','सत्यापित व बंद'),L('Pending','लंबित'),0]].map(x => ({ l: x[0], m: x[1], c: x[2] ? '#2E7D32' : c.bd2, f: x[2] ? '#2E7D32' : 'transparent', tc: x[2] ? c.tx : c.tm })),
+      ba: [L('before · 22 Sep','पहले · 22 सित.'), L('after · 24 Sep','बाद · 24 सित.')],
+      stars: [1,2,3,4,5].map(n => ({ n, c: n <= s.stars ? '#C9A96A' : c.bd2, pick: set({ stars: n }) })),
+      rChips: [L('On time','समय पर'), L('Clean work','साफ़ काम'), L('Polite staff','विनम्र कर्मचारी'), L('Photos uploaded','फ़ोटो अपलोड')].map(r => Object.assign({ l: r, pick: () => this.setState(x => ({ reasons: x.reasons.includes(r) ? x.reasons.filter(y => y !== r) : [...x.reasons, r] })) }, pill(s.reasons.includes(r)))),
+      confirmFix: () => { this.setState({ toastR: L('Fix confirmed. Thank you for rating.','सुधार की पुष्टि हुई।') }); setTimeout(() => this.setState({ toastR: null }), 3500); },
+      jobGroups: [{ colony: L('SECTOR B','सेक्टर B'), jobs: [['Qtr No. B-112',CAT.roof,'#C0392B','100%','+2h','roof'],['Qtr No. B-087',CAT.plumbing,'#B9770E','80%','5h','plumbing']] }, { colony: L('SECTOR C','सेक्टर C'), jobs: [['Qtr No. C-301',CAT.floor,'#B9770E','72%','9h','floor'],['Qtr No. C-245',CAT.plumbing,'#2E7D32','40%','14h','plumbing']] }].map(g => ({ colony: g.colony, jobs: g.jobs.map(j => ({ q: j[0], cat: j[1], c: j[2], pct: j[3], left: j[4], icon: this.I(P[j[5]]) })) })),
+      upSteps: [[ic.cam,L('Before photo','पहले की फ़ोटो'),L('Captured 11:48 AM · compressed to 180 KB','11:48 AM · 180 KB'),1],[ic.cam,L('After photo','बाद की फ़ोटो'),L('Queued · uploads when online','कतार में · ऑनलाइन होने पर'),2],[ic.box,L('Materials used','प्रयुक्त सामग्री'),L('Waterproof coating 4 L, cement 1 bag','वॉटरप्रूफ़ कोटिंग 4 L, सीमेंट 1 बोरी'),1]].map(u => ({ icon: u[0], l: u[1], m: u[2], bd: u[3] === 2 ? '#F5CBA7' : c.bd, bg: u[3] === 2 ? '#FEF5E7' : '#E8F5EC', fg: u[3] === 2 ? '#8A5300' : '#1E6B34' }))
+    };
+  }
+}
+</script>
+</body>
+</html>
